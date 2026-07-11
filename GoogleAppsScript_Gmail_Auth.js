@@ -42,10 +42,12 @@ function doPost(e) {
         timestamp: timestamp
       }));
 
-      // ២. បង្កើត Link Approve និង Reject សម្រាប់ចុចក្នុង Gmail
+      // ២. បង្កើត Link Approve, Reject និង Block សម្រាប់ចុចក្នុង Gmail
       const scriptUrl = ScriptApp.getService().getUrl();
       const approveUrl = `${scriptUrl}?action=approve&machine_id=${encodeURIComponent(machineId)}&token=${ADMIN_SECRET_TOKEN}`;
       const rejectUrl = `${scriptUrl}?action=reject&machine_id=${encodeURIComponent(machineId)}&token=${ADMIN_SECRET_TOKEN}`;
+      const block15Url = `${scriptUrl}?action=block&duration=900&machine_id=${encodeURIComponent(machineId)}&token=${ADMIN_SECRET_TOKEN}`;
+      const block60Url = `${scriptUrl}?action=block&duration=3600&machine_id=${encodeURIComponent(machineId)}&token=${ADMIN_SECRET_TOKEN}`;
 
       // ៣. ផ្ញើ Email ចូល Gmail របស់អ្នកភ្លាមៗ!
       const emailSubject = `🚨 [REMOTE UNLOCK REQUEST] Stage Crew: ${clientName} (${machineId})`;
@@ -74,8 +76,18 @@ function doPost(e) {
           </div>
 
           <div style="text-align: center; margin-top: 16px;">
-            <a href="${rejectUrl}" style="color: #ef4444; text-decoration: underline; font-size: 12px;">
+            <a href="${rejectUrl}" style="color: #ef4444; text-decoration: underline; font-size: 13px; font-weight: bold;">
               ❌ Reject Request / Keep Locked
+            </a>
+          </div>
+
+          <div style="background-color: #221111; border: 1px dashed #ef4444; padding: 12px; margin-top: 20px; border-radius: 6px; text-align: center;">
+            <div style="color: #ef4444; font-size: 11px; font-weight: bold; margin-bottom: 8px;">⚠️ ANTI-SPAM LOCKDOWN & BLOCK APP (បើចុចស្នើសុំរំខានច្រើនដង)៖</div>
+            <a href="${block15Url}" style="background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; margin: 0 4px; display: inline-block;">
+              🚫 BLOCK APP 15 MINS
+            </a>
+            <a href="${block60Url}" style="background-color: #b91c1c; color: #ffffff; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; margin: 0 4px; display: inline-block;">
+              🚫 BLOCK APP 1 HOUR
             </a>
           </div>
 
@@ -179,11 +191,40 @@ function doGet(e) {
     `).setMimeType(ContentService.MimeType.HTML);
   }
 
-  // ៣. ករណី Laptop លើឆាកធ្វើការ Polling ពិនិត្យមើល status (`GET ?action=check&machine_id=...`)
+  // ៣. ករណី Admin/Super Admin ចុច Link "BLOCK" ក្នុង Gmail (Block App ចោលតាមរយៈពេលដែលយើងកំណត់)
+  if (action === "block") {
+    if (token !== ADMIN_SECRET_TOKEN) return ContentService.createTextOutput("Unauthorized Token");
+    const duration = parseInt(e.parameter.duration || "900");
+    props.setProperty(`STATUS_${machineId}`, `BLOCKED:${duration}`);
+    return ContentService.createTextOutput(`
+      <html>
+      <body style="background:#161616; color:#fff; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;">
+        <div style="background:#1e1e1e; border:2px solid #ef4444; padding:40px; border-radius:10px; text-align:center; max-width:450px;">
+          <h1 style="color:#ef4444; margin-bottom:10px;">🚫 APPLICATION BLOCKED!</h1>
+          <p style="color:#aaa; line-height:1.6;">Machine ID <b>${machineId}</b> is now locked down and blocked for <b>${Math.round(duration/60)} minutes</b> across all interactions.</p>
+        </div>
+      </body>
+      </html>
+    `).setMimeType(ContentService.MimeType.HTML);
+  }
+
+  // ៤. ករណី Laptop លើឆាកធ្វើការ Polling ពិនិត្យមើល status (`GET ?action=check&machine_id=...`)
   if (action === "check" && machineId) {
     const status = props.getProperty(`STATUS_${machineId}`);
     const globalPassword = props.getProperty("GLOBAL_MASTER_PASSWORD") || "resolume2026";
     const passwordVersion = parseInt(props.getProperty("GLOBAL_PASSWORD_VERSION") || "0");
+    if (status && status.toString().indexOf("BLOCKED:") === 0) {
+      const parts = status.split(":");
+      const duration = parseInt(parts[1] || "900");
+      return ContentService.createTextOutput(JSON.stringify({
+        approved: false,
+        blocked: true,
+        duration: duration,
+        message: `🚨 BLOCKED BY ADMIN / SUPER ADMIN FOR ${Math.round(duration/60)} MINUTES FOR REPEATED REQUESTS!`,
+        global_password: globalPassword,
+        password_version: passwordVersion
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
     if (status === "APPROVED") {
       return ContentService.createTextOutput(JSON.stringify({
         approved: true,

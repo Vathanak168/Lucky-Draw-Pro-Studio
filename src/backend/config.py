@@ -8,6 +8,12 @@ APP_VERSION = "5.0.0"
 # Local storage path for machine-bound authentication token
 AUTH_TOKEN_FILE = os.path.join(os.path.expanduser("~"), ".lucky_draw_v5_auth.json")
 SYNC_PASSWORD_FILE = os.path.join(os.path.expanduser("~"), ".lucky_draw_v5_password_sync.json")
+BLOCK_STATE_FILE = os.path.join(os.path.expanduser("~"), ".lucky_draw_v5_block.json")
+
+# Anti-Spam / Rate-Limiting Thresholds (Block App if exceeded)
+MAX_FAILED_ATTEMPTS = 5
+MAX_REMOTE_REQUESTS = 3
+DEFAULT_BLOCK_DURATION_SECONDS = 900 # 15 minutes default penalty
 
 # Master Password Hash (Default: 'resolume2026' - owner can change in setup)
 # SHA-256 of 'resolume2026'

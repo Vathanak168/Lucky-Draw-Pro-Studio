@@ -19,6 +19,10 @@ class GatekeeperUI {
                 const badge = document.getElementById("machineIdDisplay");
                 if (badge) badge.textContent = `MACHINE ID: ${status.machine_id}`;
             }
+            if (status.blocked) {
+                this.showBlockedLockdown(status.blocked_remaining, status.block_reason);
+                return;
+            }
             if (status.unlocked) {
                 this.unlockConsole();
             } else {
@@ -58,6 +62,9 @@ class GatekeeperUI {
         } catch (err) {
             alertBox.className = "status-alert error";
             alertBox.textContent = err.message || "Wrong Master Password.";
+            if (err.message && err.message.includes("BLOCKED")) {
+                this.showBlockedLockdown(900, err.message);
+            }
         }
     }
 
@@ -72,6 +79,12 @@ class GatekeeperUI {
             alertBox.textContent = "Sending Remote Request to Admin Gmail...";
             
             const res = await StudioAPI.requestRemoteGmailUnlock(nameInput.value || "Event Crew Laptop");
+            if (res.blocked) {
+                alertBox.className = "status-alert error";
+                alertBox.textContent = res.message;
+                this.showBlockedLockdown(900, res.message);
+                return;
+            }
             
             alertBox.textContent = "Request Sent! Polling Admin approval via Gmail...";
             this.startPollingForApproval();
@@ -89,6 +102,13 @@ class GatekeeperUI {
         this.pollingInterval = setInterval(async () => {
             try {
                 const check = await StudioAPI.checkRemoteGmailUnlock();
+                if (check.details && check.details.blocked) {
+                    clearInterval(this.pollingInterval);
+                    alertBox.className = "status-alert error";
+                    alertBox.textContent = check.details.message;
+                    this.showBlockedLockdown(check.details.duration || 900, check.details.message);
+                    return;
+                }
                 if (check.unlocked || (check.details && check.details.approved)) {
                     clearInterval(this.pollingInterval);
                     alertBox.className = "status-alert info";
@@ -103,10 +123,10 @@ class GatekeeperUI {
 
     unlockConsole() {
         if (this.pollingInterval) clearInterval(this.pollingInterval);
+        if (this.blockCountdown) clearInterval(this.blockCountdown);
         if (this.overlay) {
             this.overlay.classList.add("hidden");
         }
-        // Initialize Core VJ Console if available
         if (window.VJConsole && window.VJConsole.init) {
             window.VJConsole.init();
         }
@@ -116,6 +136,47 @@ class GatekeeperUI {
         if (this.overlay) {
             this.overlay.classList.remove("hidden");
         }
+    }
+
+    showBlockedLockdown(remainingSeconds = 900, reason = "Repeated requests spammed") {
+        this.lockConsole();
+        if (this.pollingInterval) clearInterval(this.pollingInterval);
+        if (this.blockCountdown) clearInterval(this.blockCountdown);
+
+        const alertBoxes = document.querySelectorAll(".status-alert");
+        const reqBtn = document.getElementById("reqRemoteBtn");
+        const pwdInput = document.getElementById("masterPwdInput");
+        if (reqBtn) reqBtn.disabled = true;
+        if (pwdInput) pwdInput.disabled = true;
+
+        let rem = remainingSeconds;
+        const updateText = () => {
+            const mins = Math.floor(rem / 60);
+            const secs = rem % 60;
+            alertBoxes.forEach(box => {
+                box.className = "status-alert error";
+                box.style.border = "2px solid #ef4444";
+                box.style.background = "#220000";
+                box.style.color = "#ff6b6b";
+                box.style.fontWeight = "bold";
+                box.innerHTML = `⛔ APPLICATION BLOCKED BY ADMIN/SUPER ADMIN<br><span style="font-size:12px; font-weight:normal;">Reason: ${reason}</span><br>⏱️ Unlocks in: ${mins}m ${secs}s`;
+            });
+            if (rem <= 0) {
+                clearInterval(this.blockCountdown);
+                if (reqBtn) reqBtn.disabled = false;
+                if (pwdInput) pwdInput.disabled = false;
+                alertBoxes.forEach(box => {
+                    box.className = "status-alert info";
+                    box.style.border = "";
+                    box.style.background = "";
+                    box.style.color = "";
+                    box.textContent = "Block expired. You may try again.";
+                });
+            }
+            rem--;
+        };
+        updateText();
+        this.blockCountdown = setInterval(updateText, 1000);
     }
 
     setupSuperAdminWifiSync() {
