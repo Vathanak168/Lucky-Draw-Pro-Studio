@@ -10,9 +10,8 @@
   --stage-scale: 0.197; /* dynamically updated by JS ResizeObserver */
 }
 
-.virtual-canvas *, .virtual-canvas-shell * {
-  font-weight: 400 !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+.virtual-canvas, .virtual-canvas-shell {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Rounded', 'Outfit', 'Plus Jakarta Sans', sans-serif;
 }
 
 /* Outer viewport boundary that acts as the "Video Player" container */
@@ -61,7 +60,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Rounded', 'Outfit', 'Plus Jakarta Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -122,10 +121,12 @@
 .virtual-winner-value {
   max-width: 100%;
   overflow: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-weight: 400;
-  line-height: 1.05;
-  letter-spacing: 0.02em;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Rounded', 'Outfit', 'Plus Jakarta Sans', 'Chakra Petch', sans-serif !important;
+  font-weight: 800 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" on, "cv01" on, "cv02" on !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0.04em !important;
   text-align: center;
   white-space: nowrap;
   text-shadow: 0 6px 20px rgba(0,0,0,0.8), 0 0 25px rgba(255,255,255,0.25);
@@ -135,10 +136,10 @@
   margin-top: 14px;
   max-width: 90%;
   overflow: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-weight: 400;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Rounded', 'Outfit', 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 700 !important;
   line-height: 1.2;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em !important;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
