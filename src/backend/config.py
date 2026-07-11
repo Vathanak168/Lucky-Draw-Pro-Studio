@@ -20,4 +20,4 @@ DEFAULT_BLOCK_DURATION_SECONDS = 900 # 15 minutes default penalty
 DEFAULT_MASTER_PASSWORD_HASH = hashlib.sha256("resolume2026".encode('utf-8')).hexdigest()
 
 # Google Apps Script Webhook URL for Gmail Remote Approval
-GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw9aGWSKDTWQYdPTRv86LRfcXOON20d6dANP4ot5HdWQJHCFFIECCkolhfj3M6rJhLQ/exec"
+GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzQHmHkUKvsAENJOhlm7Q2rz83SFpGo9HIG7A8y2xfSzs960HI5ociNoPaplid1Hp8/exec"
