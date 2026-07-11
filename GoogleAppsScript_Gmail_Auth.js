@@ -583,56 +583,56 @@ function renderIOSPortal(e, props, statusOverride, toastMessage) {
   </div>
 
   <div class="container">
-    ${toastMessage ? \`
+    ${toastMessage ? `
       <div class="toast-banner">
         <span style="font-size: 20px;">ℹ️</span>
-        <span>\${toastMessage}</span>
+        <span>${toastMessage}</span>
       </div>
-    \` : ''}
+    ` : ''}
 
     <div class="group-header">Stage Crew Hardware Profile</div>
     <div class="ios-card">
       <div class="cell-row">
         <span class="cell-label">Operator / Venue</span>
-        <span class="cell-value">👤 \${clientName}</span>
+        <span class="cell-value">👤 ${clientName}</span>
       </div>
       <div class="cell-row">
         <span class="cell-label">Hardware Machine ID</span>
-        <span class="cell-value mono">🖥️ \${machineId}</span>
+        <span class="cell-value mono">🖥️ ${machineId}</span>
       </div>
       <div class="cell-row">
         <span class="cell-label">Request Last Seen</span>
-        <span class="cell-value">\${lastSeen}</span>
+        <span class="cell-value">${lastSeen}</span>
       </div>
       <div class="cell-row">
         <span class="cell-label">Access State</span>
-        <span class="cell-value">\${statusBadgeHtml}</span>
+        <span class="cell-value">${statusBadgeHtml}</span>
       </div>
     </div>
 
     <div class="group-header">Instant Access Controls</div>
     <div class="ios-card">
-      <a href="\${approveUrl}" class="btn-cell btn-green">🔓 Grant Approval & Unlock Laptop</a>
-      <a href="\${rejectUrl}" class="btn-cell btn-red">❌ Revoke Access & Lock Console</a>
-      <a href="\${unblockUrl}" class="btn-cell btn-blue">⚡ Clear Block / Unblock Laptop</a>
+      <a href="${approveUrl}" class="btn-cell btn-green">🔓 Grant Approval & Unlock Laptop</a>
+      <a href="${rejectUrl}" class="btn-cell btn-red">❌ Revoke Access & Lock Console</a>
+      <a href="${unblockUrl}" class="btn-cell btn-blue">⚡ Clear Block / Unblock Laptop</a>
     </div>
 
     <div class="group-header">Anti-Spam Security Lockdown</div>
     <div class="ios-card">
-      <a href="\${block15Url}" class="btn-cell btn-orange">🚫 Lockdown & Block for 15 Minutes</a>
-      <a href="\${block60Url}" class="btn-cell btn-red">🚫 Lockdown & Block for 1 Hour</a>
+      <a href="${block15Url}" class="btn-cell btn-orange">🚫 Lockdown & Block for 15 Minutes</a>
+      <a href="${block60Url}" class="btn-cell btn-red">🚫 Lockdown & Block for 1 Hour</a>
     </div>
 
-    \${superAdminHtml}
+    ${superAdminHtml}
 
     <div class="footer-note">
       Lucky Draw Pro Studio v5.0.0 • Apple iOS Design System<br>
-      Role-Based Access Gateway (\${isSuperAdmin ? 'Super Admin Privilege Enabled' : 'Standard Admin Mode — Super Admin Features Hidden'})
+      Role-Based Access Gateway (${isSuperAdmin ? 'Super Admin Privilege Enabled' : 'Standard Admin Mode — Super Admin Features Hidden'})
     </div>
   </div>
 </body>
 </html>
-  \`;
+  `;
 
   return ContentService.createTextOutput(htmlContent).setMimeType(ContentService.MimeType.HTML);
 }
