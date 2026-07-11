@@ -284,10 +284,10 @@
     // Initialize display & fetch Machine ID from backend
     async function initSimulator() {
       try {
-        const res = await fetch("/api/auth/machine-id");
+        const res = await fetch("/api/auth/status");
         if (res.ok) {
           const data = await res.json();
-          currentMachineId = data.machine_id;
+          currentMachineId = data.machine_id || "STAGE-CREW-PC-01";
           document.getElementById("machineIdDisplay").innerText = `🖥️ ${currentMachineId}`;
           logToConsole(`Fetched Machine ID: ${currentMachineId}`);
         }
