@@ -35,11 +35,15 @@ window.Display = {
         const count = winners.length || 1;
         const layout = window.VirtualStageFitter ? VirtualStageFitter.calculateLayout(count) : { columns: 2, gap: 32, cardWidth: 600, cardHeight: 280, fontSize: 100, labelSize: 28 };
 
-        gridEl.style.display = 'grid';
-        gridEl.style.gridTemplateColumns = `repeat(${layout.columns}, ${layout.cardWidth}px)`;
-        gridEl.style.gap = `${layout.gap}px`;
+        const totalRowWidth = layout.columns * layout.cardWidth + (layout.columns - 1) * layout.gap;
+        gridEl.style.display = 'flex';
+        gridEl.style.flexDirection = 'row';
+        gridEl.style.flexWrap = 'wrap';
         gridEl.style.justifyContent = 'center';
         gridEl.style.alignContent = 'center';
+        gridEl.style.gap = `${layout.gap}px`;
+        gridEl.style.width = `${Math.min(1860, totalRowWidth)}px`;
+        gridEl.style.margin = '0 auto';
 
         let html = '';
         winners.forEach((w, i) => {

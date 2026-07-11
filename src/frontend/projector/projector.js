@@ -142,11 +142,15 @@ class StageProjectorSync {
         const layout = window.VirtualStageFitter ? VirtualStageFitter.calculateLayout(count) : { columns: 2, gap: 36, cardWidth: 700, cardHeight: 280, fontSize: 110, labelSize: 30 };
 
         const gridEl = this.canvasEl.querySelector("#virtualWinnerGrid") || this.canvasEl;
-        gridEl.style.display = 'grid';
-        gridEl.style.gridTemplateColumns = `repeat(${layout.columns}, ${layout.cardWidth}px)`;
-        gridEl.style.gap = `${layout.gap}px`;
+        const totalRowWidth = layout.columns * layout.cardWidth + (layout.columns - 1) * layout.gap;
+        gridEl.style.display = 'flex';
+        gridEl.style.flexDirection = 'row';
+        gridEl.style.flexWrap = 'wrap';
         gridEl.style.justifyContent = 'center';
         gridEl.style.alignContent = 'center';
+        gridEl.style.gap = `${layout.gap}px`;
+        gridEl.style.width = `${Math.min(1860, totalRowWidth)}px`;
+        gridEl.style.margin = '0 auto';
 
         let html = '';
         winners.forEach((w, idx) => {

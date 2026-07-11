@@ -66,21 +66,30 @@ window.VirtualStageFitter = {
         } else if (N === 3) {
             // ៣ ប្រអប់៖ ១ ជួរធំកណ្តាល (3 columns in 1 horizontal row)
             columns = 3; gap = 36; cardWidth = 580; cardHeight = 320; fontSize = 120;
-        } else if (N >= 4 && N <= 6) {
-            // ៤ - ៦ ប្រអប់៖ បង្ហាញជា ២ Column
-            columns = 2; gap = 32; cardWidth = 800; cardHeight = 260; fontSize = 115;
-        } else if (N >= 7 && N <= 9) {
-            // ៧ - ៩ ប្រអប់៖ បង្ហាញជា ៣ Column
-            columns = 3; gap = 26; cardWidth = 560; cardHeight = 220; fontSize = 92;
-        } else if (N === 10) {
-            // ១០ ប្រអប់៖ បង្ហាញជា ២ Column (៥ ជួរ)
-            columns = 2; gap = 20; cardWidth = 760; cardHeight = 180; fontSize = 78;
-        } else if (N >= 11 && N <= 20) {
-            // ១១ - ២០ ប្រអប់៖ បង្ហាញជា ៤ Column (ឬ ៣ Column)
-            columns = 4; gap = 20; cardWidth = 430; cardHeight = 175; fontSize = 64;
+        } else if (N === 4) {
+            // ៤ ប្រអប់៖ ២ លើ + ២ ក្រោម (2x2 Grid)
+            columns = 2; gap = 36; cardWidth = 800; cardHeight = 280; fontSize = 118;
+        } else if (N === 5 || N === 6) {
+            // ៥ - ៦ ប្រអប់៖ ៣ ប្រអប់ក្នុង ១ ជួរ (3x2 Grid / 3+2 Centered)
+            columns = 3; gap = 32; cardWidth = 580; cardHeight = 270; fontSize = 115;
+        } else if (N === 7 || N === 8) {
+            // ៧ - ៨ ប្រអប់៖ ៤ ប្រអប់ក្នុង ១ ជួរ (4x2 Grid / 4+3 Centered)
+            columns = 4; gap = 24; cardWidth = 430; cardHeight = 240; fontSize = 105;
+        } else if (N === 9) {
+            // ៩ ប្រអប់៖ ៣ ប្រអប់ក្នុង ១ ជួរ (3x3 Grid)
+            columns = 3; gap = 26; cardWidth = 560; cardHeight = 220; fontSize = 96;
+        } else if (N >= 10 && N <= 12) {
+            // ១០ - ១២ ប្រអប់៖ ៤ ប្រអប់ក្នុង ១ ជួរ (៣ ជួរដេក)
+            columns = 4; gap = 24; cardWidth = 430; cardHeight = 200; fontSize = 88;
+        } else if (N >= 13 && N <= 16) {
+            // ១៣ - ១៦ ប្រអប់៖ ៤ ប្រអប់ក្នុង ១ ជួរ (៤ ជួរដេក)
+            columns = 4; gap = 20; cardWidth = 430; cardHeight = 170; fontSize = 74;
+        } else if (N >= 17 && N <= 20) {
+            // ១៧ - ២០ ប្រអប់៖ ៤ ប្រអប់ក្នុង ១ ជួរ (៥ ជួរដេក)
+            columns = 4; gap = 18; cardWidth = 430; cardHeight = 150; fontSize = 64;
         } else {
-            // ២១ - ២៥ ប្រអប់៖ បង្ហាញជា ៥ Column
-            columns = 5; gap = 16; cardWidth = 340; cardHeight = 160; fontSize = 52;
+            // ២១ - ២៥ ប្រអប់៖ ៥ ប្រអប់ក្នុង ១ ជួរ
+            columns = 5; gap = 16; cardWidth = 340; cardHeight = 145; fontSize = 56;
         }
 
         return { columns, gap, cardWidth, cardHeight, fontSize };
