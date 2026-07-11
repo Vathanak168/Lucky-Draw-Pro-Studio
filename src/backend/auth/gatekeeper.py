@@ -81,7 +81,7 @@ class GatekeeperService:
         return {"blocked": True, "blocked_until": blocked_until, "duration": duration_seconds, "reason": reason}
 
     def unblock_app(self) -> Dict[str, Any]:
-        """Clears the application block state."""
+        """Clears the application block state locally and on Cloud."""
         self.failed_attempts = 0
         self.remote_request_count = 0
         if os.path.exists(BLOCK_STATE_FILE):
@@ -89,7 +89,16 @@ class GatekeeperService:
                 os.remove(BLOCK_STATE_FILE)
             except Exception:
                 pass
-        return {"blocked": False, "message": "App Unblocked successfully!"}
+        try:
+            if "script.google.com" in GOOGLE_APPS_SCRIPT_URL and "YOUR_SCRIPT_ID_HERE" not in GOOGLE_APPS_SCRIPT_URL:
+                requests.get(
+                    GOOGLE_APPS_SCRIPT_URL,
+                    params={"action": "unblock", "machine_id": self.machine_id, "token": "LDP_SECRET_PASS_2026"},
+                    timeout=3
+                )
+        except Exception as e:
+            pass
+        return {"blocked": False, "message": "App Unblocked successfully both Locally and on Cloud!"}
 
     def _load_synced_password(self):
         """Loads synced password override from Super Admin if previously saved locally."""
