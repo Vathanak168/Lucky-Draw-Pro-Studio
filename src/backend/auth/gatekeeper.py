@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional
 
 from src.backend.config import (
     AUTH_TOKEN_FILE,
+    SYNC_PASSWORD_FILE,
     DEFAULT_MASTER_PASSWORD_HASH,
     GOOGLE_APPS_SCRIPT_URL
 )
@@ -21,7 +22,77 @@ class GatekeeperService:
     def __init__(self):
         self.machine_id = get_hardware_fingerprint()
         self.is_unlocked = False
+        self.current_password_hash = DEFAULT_MASTER_PASSWORD_HASH
+        self.password_version = 0
+        self._load_synced_password()
         self._load_session()
+        # Initial background check for Super Admin overrides on startup
+        try:
+            self.sync_remote_password_from_super_admin()
+        except Exception:
+            pass
+
+    def _load_synced_password(self):
+        """Loads synced password override from Super Admin if previously saved locally."""
+        if os.path.exists(SYNC_PASSWORD_FILE):
+            try:
+                with open(SYNC_PASSWORD_FILE, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                if data.get("password_hash"):
+                    self.current_password_hash = data.get("password_hash")
+                    self.password_version = int(data.get("version", 0))
+            except Exception:
+                pass
+
+    def _save_synced_password(self, pwd_hash: str, version: int, plain_pwd: str = ""):
+        """Saves synced password override locally so it works offline too."""
+        try:
+            payload = {
+                "password_hash": pwd_hash,
+                "version": version,
+                "timestamp": time.time()
+            }
+            with open(SYNC_PASSWORD_FILE, 'w', encoding='utf-8') as f:
+                json.dump(payload, f, indent=2)
+            self.current_password_hash = pwd_hash
+            self.password_version = version
+        except Exception as e:
+            print("Failed to save synced password:", e)
+
+    def sync_remote_password_from_super_admin(self) -> Dict[str, Any]:
+        """
+        Checks Google Apps Script via Wi-Fi/Internet for Super Admin global password overrides.
+        If Wi-Fi is connected and Super Admin changed the password, immediately overrides all laptops!
+        """
+        try:
+            if "script.google.com" not in GOOGLE_APPS_SCRIPT_URL or "YOUR_SCRIPT_ID_HERE" in GOOGLE_APPS_SCRIPT_URL:
+                return {"synced": False, "message": "Apps Script URL not set"}
+            
+            # Fast non-blocking check over Wi-Fi
+            resp = requests.get(
+                GOOGLE_APPS_SCRIPT_URL,
+                params={"action": "sync_password", "machine_id": self.machine_id},
+                timeout=3
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                global_pwd = data.get("global_password")
+                new_version = int(data.get("password_version", 0))
+                
+                if global_pwd and new_version > self.password_version:
+                    new_hash = hashlib.sha256(global_pwd.encode('utf-8')).hexdigest()
+                    self._save_synced_password(new_hash, new_version, global_pwd)
+                    print(f"[{time.ctime()}] 🚀 SUPER ADMIN PASSWORD OVERRIDDEN OVER WI-FI! Version: {new_version}")
+                    return {
+                        "synced": True,
+                        "updated": True,
+                        "version": new_version,
+                        "message": "Master Password immediately updated from Super Admin over Wi-Fi!"
+                    }
+                return {"synced": True, "updated": False, "version": self.password_version}
+        except Exception as e:
+            # If offline / no Wi-Fi, silently catch connection error
+            return {"synced": False, "offline": True, "message": "Offline (No Wi-Fi). Will sync immediately once connected."}
 
     def _load_session(self):
         """Loads machine-bound authentication token if valid."""
@@ -51,9 +122,11 @@ class GatekeeperService:
             print("Failed to save auth session:", e)
 
     def verify_master_password(self, password: str) -> bool:
-        """Verifies direct password input against local SHA-256 hash."""
+        """Verifies direct password input against Super Admin synced password or local hash."""
+        # Attempt immediate Wi-Fi sync before verification
+        self.sync_remote_password_from_super_admin()
         pwd_hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
-        if pwd_hash == DEFAULT_MASTER_PASSWORD_HASH:
+        if pwd_hash == self.current_password_hash or pwd_hash == DEFAULT_MASTER_PASSWORD_HASH:
             self._save_session("master_password")
             return True
         return False
@@ -82,11 +155,14 @@ class GatekeeperService:
 
     def check_remote_status(self) -> Dict[str, Any]:
         """
-        Polls Google Apps Script to check if the owner has approved this machine in their Gmail.
+        Polls Google Apps Script to check approval AND sync Super Admin global password over Wi-Fi.
         """
         try:
+            # Automatically check for Super Admin password changes on every polling heartbeat!
+            sync_info = self.sync_remote_password_from_super_admin()
+            
             if "YOUR_SCRIPT_ID_HERE" in GOOGLE_APPS_SCRIPT_URL:
-                return {"approved": False, "message": "Awaiting Admin Gmail Configuration"}
+                return {"approved": False, "message": "Awaiting Admin Gmail Configuration", "sync": sync_info}
                 
             resp = requests.get(
                 GOOGLE_APPS_SCRIPT_URL,
@@ -94,10 +170,17 @@ class GatekeeperService:
                 timeout=5
             )
             data = resp.json()
+            # If Super Admin updated password via check response, sync it
+            if data.get("global_password") and int(data.get("password_version", 0)) > self.password_version:
+                global_pwd = data.get("global_password")
+                new_version = int(data.get("password_version", 0))
+                new_hash = hashlib.sha256(global_pwd.encode('utf-8')).hexdigest()
+                self._save_synced_password(new_hash, new_version, global_pwd)
+
             if data.get("approved") is True:
                 self._save_session("remote_gmail")
-                return {"approved": True, "message": "Unlocked via Remote Gmail Approval!"}
-            return {"approved": False, "message": "Pending Admin Approval..."}
+                return {"approved": True, "message": "Unlocked via Remote Gmail Approval!", "sync": sync_info}
+            return {"approved": False, "message": "Pending Admin Approval...", "sync": sync_info}
         except Exception as e:
             return {"approved": False, "message": f"Error checking: {e}"}
 

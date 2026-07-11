@@ -15,11 +15,20 @@ class RemoteUnlockRequest(BaseModel):
 
 @router.get("/status")
 def get_auth_status():
-    """Returns current lock status and unique Machine ID."""
+    """Returns current lock status, unique Machine ID, and syncs Super Admin password over Wi-Fi."""
+    sync_res = gatekeeper.sync_remote_password_from_super_admin()
     return {
         "unlocked": gatekeeper.is_unlocked,
-        "machine_id": gatekeeper.machine_id
+        "machine_id": gatekeeper.machine_id,
+        "password_version": gatekeeper.password_version,
+        "sync": sync_res
     }
+
+@router.get("/sync-password")
+def sync_password_override():
+    """Explicitly triggers a Wi-Fi sync to pull any new Super Admin global password."""
+    res = gatekeeper.sync_remote_password_from_super_admin()
+    return res
 
 @router.post("/login")
 def login_master_password(req: LoginRequest):

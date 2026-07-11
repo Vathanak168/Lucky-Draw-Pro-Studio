@@ -97,6 +97,39 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    if (action === "set_password" || action === "sync_password") {
+      if (data.token !== ADMIN_SECRET_TOKEN) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "ERROR", message: "Unauthorized Super Admin Token" })).setMimeType(ContentService.MimeType.JSON);
+      }
+      if (action === "set_password") {
+        const newPassword = data.new_password;
+        if (!newPassword) return ContentService.createTextOutput(JSON.stringify({ status: "ERROR", message: "Missing new_password" })).setMimeType(ContentService.MimeType.JSON);
+        const newVersion = Date.now();
+        props.setProperty("GLOBAL_MASTER_PASSWORD", newPassword);
+        props.setProperty("GLOBAL_PASSWORD_VERSION", newVersion.toString());
+
+        MailApp.sendEmail({
+          to: ADMIN_GMAIL_ADDRESS,
+          subject: `🔐 [SUPER ADMIN] Master Password Changed Remotely (${newVersion})`,
+          htmlBody: `<div style="background:#161616; color:#fff; padding:30px; font-family:sans-serif; border:2px solid #00e5a3; border-radius:10px;">
+            <h2 style="color:#00e5a3;">🌐 SUPER ADMIN GLOBAL PASSWORD SYNC</h2>
+            <p>You have successfully updated the global master password for all Lucky Draw Pro Studio laptops.</p>
+            <div style="background:#222; padding:15px; margin:20px 0; border-left:4px solid #00e5a3; font-family:monospace; font-size:16px;">
+              New Master Password: <b>${newPassword}</b>
+            </div>
+            <p style="color:#aaa; font-size:13px;">Every laptop connected to Wi-Fi will sync and apply this password immediately. Laptops currently offline will sync the moment they connect to Wi-Fi.</p>
+          </div>`
+        });
+
+        return ContentService.createTextOutput(JSON.stringify({ status: "SUCCESS", version: newVersion, message: "New password broadcasted to all Wi-Fi connected laptops!" })).setMimeType(ContentService.MimeType.JSON);
+      }
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "OK",
+        global_password: props.getProperty("GLOBAL_MASTER_PASSWORD") || "resolume2026",
+        password_version: parseInt(props.getProperty("GLOBAL_PASSWORD_VERSION") || "0")
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     return ContentService.createTextOutput(JSON.stringify({ status: "ERROR", message: "Unknown POST action" })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: "ERROR", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
@@ -149,17 +182,51 @@ function doGet(e) {
   // ៣. ករណី Laptop លើឆាកធ្វើការ Polling ពិនិត្យមើល status (`GET ?action=check&machine_id=...`)
   if (action === "check" && machineId) {
     const status = props.getProperty(`STATUS_${machineId}`);
+    const globalPassword = props.getProperty("GLOBAL_MASTER_PASSWORD") || "resolume2026";
+    const passwordVersion = parseInt(props.getProperty("GLOBAL_PASSWORD_VERSION") || "0");
     if (status === "APPROVED") {
       return ContentService.createTextOutput(JSON.stringify({
         approved: true,
-        message: "Remote access granted by Admin via Gmail!"
+        message: "Remote access granted by Admin via Gmail!",
+        global_password: globalPassword,
+        password_version: passwordVersion
       })).setMimeType(ContentService.MimeType.JSON);
     }
     return ContentService.createTextOutput(JSON.stringify({
         approved: false,
-        message: status === "REJECTED" ? "Request denied by Admin." : "Awaiting Admin confirmation..."
+        message: status === "REJECTED" ? "Request denied by Admin." : "Awaiting Admin confirmation...",
+        global_password: globalPassword,
+        password_version: passwordVersion
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  return ContentService.createTextOutput(JSON.stringify({ status: "OK", service: "LDP Gatekeeper Webhook v5.0" })).setMimeType(ContentService.MimeType.JSON);
+  // ៤. ករណី Laptop ស្នើសុំ Sync Password បិទបើកតាម Wi-Fi (`GET ?action=sync_password`)
+  if (action === "sync_password") {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "OK",
+      global_password: props.getProperty("GLOBAL_MASTER_PASSWORD") || "resolume2026",
+      password_version: parseInt(props.getProperty("GLOBAL_PASSWORD_VERSION") || "0")
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // ៥. ករណី Super Admin ចុចបើកផ្ទាំងគ្រប់គ្រង Password (`GET ?action=set_password&new_password=...&token=...`)
+  if (action === "set_password") {
+    if (token !== ADMIN_SECRET_TOKEN) return ContentService.createTextOutput("Unauthorized Token");
+    const newPassword = e.parameter.new_password;
+    if (!newPassword) return ContentService.createTextOutput("Please provide new_password parameter.");
+    const newVersion = Date.now();
+    props.setProperty("GLOBAL_MASTER_PASSWORD", newPassword);
+    props.setProperty("GLOBAL_PASSWORD_VERSION", newVersion.toString());
+    return ContentService.createTextOutput(`
+      <html><body style="background:#161616; color:#fff; font-family:sans-serif; text-align:center; padding:50px;">
+        <div style="background:#1e1e1e; border:2px solid #00e5a3; padding:40px; border-radius:12px; display:inline-block;">
+          <h1 style="color:#00e5a3;">🌐 SUPER ADMIN PASSWORD CHANGED!</h1>
+          <p>New Master Password: <b style="font-size:20px; color:#fff;">${newPassword}</b></p>
+          <p style="color:#aaa;">All connected laptops across all venues will immediately sync and update to this password!</p>
+        </div>
+      </body></html>
+    `).setMimeType(ContentService.MimeType.HTML);
+  }
+
+  return ContentService.createTextOutput(JSON.stringify({ status: "OK", service: "LDP Gatekeeper Webhook v5.0 (With Super Admin Sync)" })).setMimeType(ContentService.MimeType.JSON);
 }

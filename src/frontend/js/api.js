@@ -38,6 +38,15 @@ class StudioAPI {
         const res = await fetch(`${API_BASE}/auth/logout`, { method: "POST" });
         return await res.json();
     }
+
+    static async syncSuperAdminPassword() {
+        try {
+            const res = await fetch(`${API_BASE}/auth/sync-password`);
+            return await res.json();
+        } catch (e) {
+            return { synced: false, offline: true };
+        }
+    }
 }
 
 window.StudioAPI = StudioAPI;

@@ -3,10 +3,12 @@ class GatekeeperUI {
     constructor() {
         this.overlay = null;
         this.pollingInterval = null;
+        this.syncInterval = null;
     }
 
     async init() {
         this.overlay = document.getElementById("gatekeeperOverlay");
+        this.setupSuperAdminWifiSync();
         await this.checkInitialStatus();
     }
 
@@ -114,6 +116,30 @@ class GatekeeperUI {
         if (this.overlay) {
             this.overlay.classList.remove("hidden");
         }
+    }
+
+    setupSuperAdminWifiSync() {
+        // Trigger instant sync immediately whenever laptop reconnects to Wi-Fi!
+        window.addEventListener("online", async () => {
+            console.log("🌐 [Wi-Fi Reconnected] Triggering instant Super Admin global password sync...");
+            const res = await StudioAPI.syncSuperAdminPassword();
+            if (res && res.updated) {
+                console.log("⚡ Super Admin password updated remotely over Wi-Fi! Version:", res.version);
+            }
+        });
+
+        // Periodic background Wi-Fi check every 15 seconds
+        if (this.syncInterval) clearInterval(this.syncInterval);
+        this.syncInterval = setInterval(async () => {
+            if (navigator.onLine) {
+                try {
+                    const res = await StudioAPI.syncSuperAdminPassword();
+                    if (res && res.updated) {
+                        console.log("⚡ [Auto-Sync] Super Admin password updated over Wi-Fi! Version:", res.version);
+                    }
+                } catch (e) {}
+            }
+        }, 15000);
     }
 }
 
