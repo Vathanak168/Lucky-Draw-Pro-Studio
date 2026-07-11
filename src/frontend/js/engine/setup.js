@@ -624,8 +624,8 @@ export function generatePresetRoundInputs() {
                 <div class="input-group" style="margin-bottom: 0;">
                     <label for="preset-r${i}-datasource">Data Source:</label>
                     <select id="preset-r${i}-datasource" data-round-index="${i}" onchange="window.checkNumericInputsVisibility(); window.updatePresetOptions(${i})">
-                        <option value="list" ${old.datasource === 'list' ? 'selected' : ''}>Custom List</option>
-                        <option value="numeric" ${old.datasource === 'numeric' ? 'selected' : ''}>Numeric Range</option>
+                        <option value="list" ${old.datasource === 'list' ? 'selected' : ''}>Name</option>
+                        <option value="numeric" ${old.datasource === 'numeric' ? 'selected' : ''}>Number</option>
                     </select>
                 </div>
                 <div class="input-group" style="margin-bottom: 0;">

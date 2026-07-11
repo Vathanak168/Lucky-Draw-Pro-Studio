@@ -123,8 +123,8 @@ window.ZoneD = {
                         <div class="inspector-row">
                             <span class="inspector-label">Data Source:</span>
                             <select onchange="ZoneD.updateField('dataSource', this.value)" style="flex:1;">
-                                <option value="list" ${rc.dataSource === 'list' ? 'selected' : ''}>👥 Name List (from Pool Browser)</option>
-                                <option value="numeric" ${rc.dataSource === 'numeric' ? 'selected' : ''}>🔢 Numeric Range (e.g. 001 - 500)</option>
+                                <option value="list" ${rc.dataSource === 'list' ? 'selected' : ''}>Name</option>
+                                <option value="numeric" ${rc.dataSource === 'numeric' ? 'selected' : ''}>Number</option>
                             </select>
                         </div>
                         <div class="inspector-row">
@@ -174,7 +174,7 @@ window.ZoneD = {
                     </div>
 
                     <div class="inspector-section">
-                        <div class="inspector-section-title"><span>🔢 NUMERIC RANGE KNOBS</span></div>
+                        <div class="inspector-section-title"><span>Number Configuration</span></div>
                         <div class="inspector-row">
                             <span class="inspector-label">Start Number:</span>
                             <input type="number" value="${ds.startNumber || 1}" onchange="ZoneD.updateGlobal('startNumber', this.value)">

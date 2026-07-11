@@ -81,7 +81,7 @@ window.ZoneC = {
                         <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-light); padding-bottom:6px;">
                             <span style="color:var(--text-secondary);">Pool Source:</span>
                             <span style="color:var(--accent-cyan);">
-                                ${dataSource === 'numeric' ? 'Numeric Range' : 'Name List'} (${activePoolCount} active)
+                                ${dataSource === 'numeric' ? 'Number' : 'Name'} (${activePoolCount} active)
                             </span>
                         </div>
                         <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-light); padding-bottom:6px;">

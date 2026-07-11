@@ -74,7 +74,7 @@ window.ZoneA = {
                             ${targetWinCount} ${targetWinCount > 1 ? 'Winners' : 'Winner'}
                         </div>
                         <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">
-                            ${rc.dataSource === 'numeric' ? 'Numeric Range' : 'Name List'} · ${rc.animationStyle}
+                            ${rc.dataSource === 'numeric' ? 'Number' : 'Name'} · ${rc.animationStyle}
                         </div>
                     </div>
 
