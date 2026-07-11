@@ -256,6 +256,7 @@ window.Draw = {
         S.currentRound = 0;
         S.drawCompletedThisRound = false;
         S.isDrawing = false;
+        try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
         S.allWinners = [];
         S.roundResults = {};
         this.initializePoolsSilently();

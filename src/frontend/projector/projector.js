@@ -31,23 +31,25 @@ class StageProjectorSync {
     syncFromStorage() {
         if (!this.canvasEl) return;
         try {
-            // 1. Direct HTML Mirroring from Display Engine (Fastest & 100% Identical to Mini Screen)
-            const mirrorTime = localStorage.getItem("vj_stage_mirror_time") || '';
+            // 1. Direct HTML Mirroring from Display Engine (Guarantees 100% exact same video/screen replication)
             const mirrorHtml = localStorage.getItem("vj_stage_mirror_html");
-            if (mirrorHtml && mirrorTime !== this.lastMirrorTime) {
-                this.lastMirrorTime = mirrorTime;
-                this.canvasEl.innerHTML = mirrorHtml;
+            if (mirrorHtml && mirrorHtml.trim().length > 0) {
+                const mirrorTime = localStorage.getItem("vj_stage_mirror_time") || '';
+                if (mirrorTime !== this.lastMirrorTime || this.canvasEl.innerHTML !== mirrorHtml) {
+                    this.lastMirrorTime = mirrorTime;
+                    this.canvasEl.innerHTML = mirrorHtml;
+                }
                 return;
             }
 
-            // 2. Fallback State Reconstruction
+            // 2. Fallback State Reconstruction if mirror not initialized
             const isDrawing = localStorage.getItem("ldp_is_drawing") === "true";
             const tickerText = localStorage.getItem("ldp_ticker_text") || "SPINNING...";
             const lastWinnerJson = localStorage.getItem("ldp_last_winner");
             const lastWinner = lastWinnerJson ? JSON.parse(lastWinnerJson) : null;
 
-            let roundTitle = "Column #1";
-            let prizeName = "Lucky Prize";
+            let roundTitle = "Col #1";
+            let prizeName = "Draw";
             let winners = [];
 
             const stateJson = localStorage.getItem("luckyDrawState");
@@ -58,7 +60,7 @@ class StageProjectorSync {
                     winners = stateData.roundResults[currentRound].winners || [];
                 }
                 if (stateData.settings) {
-                    roundTitle = stateData.settings.roundCategories?.[currentRound] || `Column #${currentRound + 1}`;
+                    roundTitle = stateData.settings.roundCategories?.[currentRound] || `Col #${currentRound + 1}`;
                     prizeName = `${roundTitle}`;
                 }
             }
@@ -102,13 +104,10 @@ class StageProjectorSync {
         gridEl.innerHTML = `
             <div style="background: rgba(20,20,24,0.95); border: 4px solid var(--accent-cyan, #00e5a3); border-radius: 32px; padding: 60px 100px; text-align: center; box-shadow: 0 0 60px rgba(0,229,163,0.3);">
                 <div style="font-size: 32px; font-weight: 800; color: var(--accent-cyan, #00e5a3); letter-spacing: 6px; text-transform: uppercase; margin-bottom: 16px;">
-                    ✨ READY FOR LAUNCH ✨
+                    READY
                 </div>
                 <div style="font-size: 72px; font-weight: 900; color: #fff; line-height: 1.1; margin-bottom: 24px;">
                     ${slot.title}
-                </div>
-                <div style="font-size: 36px; color: #ccc; font-family: var(--font-mono, monospace);">
-                    [ AWAITING STAGE CREW LAUNCH ]
                 </div>
             </div>
         `;
@@ -125,7 +124,7 @@ class StageProjectorSync {
         gridEl.innerHTML = `
             <div style="background: rgba(20,20,24,0.95); border: 4px solid #00b4d8; border-radius: 32px; padding: 60px 100px; text-align: center; box-shadow: 0 0 60px rgba(0,180,216,0.3);">
                 <div style="font-size: 32px; font-weight: 800; color: #00b4d8; letter-spacing: 6px; text-transform: uppercase; margin-bottom: 16px;">
-                    💫 DRAWING ON STAGE... 💫
+                    SPINNING...
                 </div>
                 <div style="font-size: 64px; font-weight: 900; color: #fff; line-height: 1.1; margin-bottom: 28px;">
                     ${slot.title}

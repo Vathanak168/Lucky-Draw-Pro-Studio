@@ -84,6 +84,8 @@ window.Display = {
 
     resetDisplayForNewRound() {
         const S = EngineState;
+        S.isDrawing = false;
+        try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
         const rc = S.roundConfigs[S.currentRound] || S.getDefaultRoundConfig(S.currentRound);
         const count = rc.winnerCount || 1;
         const placeholders = Array.from({ length: count }, (_, i) => ({ id: `dummy_${i}`, name: '', type: 'dummy' }));
@@ -92,6 +94,8 @@ window.Display = {
 
     showWinnersInstantly(winners) {
         const S = EngineState;
+        S.isDrawing = false;
+        try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
         const rc = S.roundConfigs[S.currentRound] || S.getDefaultRoundConfig(S.currentRound);
         this.renderGridMode(winners, rc);
 
@@ -121,6 +125,7 @@ window.Display = {
         const S = EngineState;
         S.isDrawing = false;
         S.drawCompletedThisRound = true;
+        try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
         S.saveDrawState();
 
         if (window.AudioSynth) AudioSynth.playFanfare();
