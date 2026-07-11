@@ -22,6 +22,23 @@ const ADMIN_SECRET_TOKEN = "LDP_SECRET_PASS_2026"; // Secret Token ការព�
 const SUPER_ADMIN_SECRET_TOKEN = "LDP_SUPER_ADMIN_2026_PRO"; // Token សម្រាប់ Super Admin (មានសិទ្ធិប្តូរ Password គ្រប់ Laptop)
 
 /**
+ * មុខងារទាញយក Email Admin ទាំងអស់ (បញ្ចូលបន្ថែមដោយ Super Admin ក្នុង iOS Portal)
+ */
+function getAllAuthorizedEmails(props) {
+  let list = [ADMIN_GMAIL_ADDRESS];
+  try {
+    if (props) {
+      const stored = props.getProperty("AUTHORIZED_ADMIN_EMAILS");
+      if (stored) {
+        const extra = stored.split(",").map(s => s.trim()).filter(s => s.length > 0);
+        list = Array.from(new Set([...list, ...extra]));
+      }
+    }
+  } catch (err) {}
+  return list;
+}
+
+/**
  * ដោះស្រាយ POST Requests ពីកម្មវិធី Lucky Draw (ពេលបុគ្គលិកចុច 🚀 REQUEST REMOTE UNLOCK)
  */
 function doPost(e) {
@@ -105,15 +122,20 @@ function doPost(e) {
         </div>
       `;
 
-      MailApp.sendEmail({
-        to: ADMIN_GMAIL_ADDRESS,
-        subject: emailSubject,
-        htmlBody: emailHtml
+      const allAdmins = getAllAuthorizedEmails(props);
+      allAdmins.forEach(email => {
+        try {
+          MailApp.sendEmail({
+            to: email,
+            subject: emailSubject,
+            htmlBody: emailHtml
+          });
+        } catch (mailErr) {}
       });
 
       return ContentService.createTextOutput(JSON.stringify({
         status: "SUCCESS",
-        message: "Request emailed to Admin Gmail! Awaiting confirmation."
+        message: `Request emailed to ${allAdmins.length} authorized Admin Gmail(s)! Awaiting confirmation.`
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -247,7 +269,35 @@ function doGet(e) {
     return renderIOSPortal(e, props, null, `🚀 Universal Master Password Broadcasted to [ ${newPassword} ] Worldwide!`);
   }
 
-  // ៨. ករណីបើកផ្ទាំង Unified iOS Portal ផ្ទាល់ (`GET ?action=portal`)
+  // ៨. ករណី Super Admin ចុច Add Admin Gmail (`GET ?action=add_admin_email&new_email=...`)
+  if (action === "add_admin_email") {
+    if (token !== SUPER_ADMIN_SECRET_TOKEN && token !== ADMIN_SECRET_TOKEN) return ContentService.createTextOutput("Unauthorized Token");
+    const newEmail = (e.parameter.new_email || "").trim();
+    if (newEmail) {
+      const currentStr = props.getProperty("AUTHORIZED_ADMIN_EMAILS") || "";
+      let list = currentStr ? currentStr.split(",").map(s => s.trim()).filter(Boolean) : [];
+      if (!list.includes(newEmail)) {
+        list.push(newEmail);
+        props.setProperty("AUTHORIZED_ADMIN_EMAILS", list.join(","));
+      }
+    }
+    return renderIOSPortal(e, props, null, `✅ Admin Gmail [ ${newEmail} ] added successfully! They will now receive instant unlock requests.`);
+  }
+
+  // ៩. ករណី Super Admin ចុច Remove Admin Gmail (`GET ?action=remove_admin_email&remove_email=...`)
+  if (action === "remove_admin_email") {
+    if (token !== SUPER_ADMIN_SECRET_TOKEN && token !== ADMIN_SECRET_TOKEN) return ContentService.createTextOutput("Unauthorized Token");
+    const removeEmail = (e.parameter.remove_email || "").trim();
+    if (removeEmail) {
+      const currentStr = props.getProperty("AUTHORIZED_ADMIN_EMAILS") || "";
+      let list = currentStr ? currentStr.split(",").map(s => s.trim()).filter(Boolean) : [];
+      list = list.filter(item => item !== removeEmail);
+      props.setProperty("AUTHORIZED_ADMIN_EMAILS", list.join(","));
+    }
+    return renderIOSPortal(e, props, null, `🗑️ Admin Gmail [ ${removeEmail} ] removed successfully.`);
+  }
+
+  // ១០. ករណីបើកផ្ទាំង Unified iOS Portal ផ្ទាល់ (`GET ?action=portal`)
   if (action === "portal") {
     return renderIOSPortal(e, props, null, null);
   }
@@ -314,6 +364,19 @@ function renderIOSPortal(e, props, statusOverride, toastMessage) {
   // Super Admin section (Stripped out completely when Admin opens)
   let superAdminHtml = "";
   if (isSuperAdmin) {
+    const allAuthorizedEmails = getAllAuthorizedEmails(props);
+    let emailRowsHtml = allAuthorizedEmails.map((em, idx) => {
+      const isOwner = (idx === 0);
+      return `
+        <div class="cell-row" style="padding: 14px 18px;">
+          <span style="font-size: 14px; font-weight: 600; color: #fff;">📧 ${em} ${isOwner ? '<span class="pill-badge blue" style="margin-left:6px;">SUPER ADMIN</span>' : ''}</span>
+          ${isOwner ? '<span style="font-size:12px; color:#636366;">Primary</span>' : `
+            <a href="${scriptUrl}${baseParams}&action=remove_admin_email&remove_email=${encodeURIComponent(em)}" style="color: var(--ios-red); text-decoration: none; font-size: 13px; font-weight: 700;">🗑️ Remove</a>
+          `}
+        </div>
+      `;
+    }).join('');
+
     superAdminHtml = `
       <div class="group-header" style="color: #0a84ff;">👑 Super Admin Global Security Portal</div>
       <div class="ios-card super-admin-card">
@@ -342,6 +405,35 @@ function renderIOSPortal(e, props, statusOverride, toastMessage) {
           
           <button type="submit" class="btn-solid-blue">
             🚀 BROADCAST TO ALL LAPTOPS NOW
+          </button>
+        </form>
+      </div>
+
+      <div class="group-header" style="color: #30d158; margin-top: 28px;">👥 Instant Multi-Admin Gmail Authorization</div>
+      <div class="ios-card super-admin-card" style="border-color: rgba(48, 209, 88, 0.45); box-shadow: 0 8px 32px rgba(48, 209, 88, 0.1);">
+        <div class="super-badge-header">
+          <span style="font-size: 16px; font-weight: 700; color: #fff;">⚡ Add Admin Gmail (Zero-Setup Access)</span>
+          <span class="pill-badge green" style="background: rgba(48,209,88,0.2); color: var(--ios-green); border: 1px solid var(--ios-green);">1-CLICK PROCESS</span>
+        </div>
+        
+        <p style="color: #a0a0a5; font-size: 13px; line-height: 1.5; margin: 12px 0 16px;">
+          Added Admins immediately receive unlock request emails in their Gmail (<code>ដំណើរការតែម្តង</code>). When an Admin opens the iOS Portal, Super Admin powers are automatically hidden from them!
+        </p>
+
+        <div style="background: #1c1c1e; border-radius: 12px; border: 1px solid var(--ios-divider); overflow: hidden; margin-bottom: 18px;">
+          ${emailRowsHtml}
+        </div>
+
+        <form action="${scriptUrl}" method="GET" style="margin-top: 14px;">
+          <input type="hidden" name="action" value="add_admin_email">
+          <input type="hidden" name="machine_id" value="${machineId}">
+          <input type="hidden" name="token" value="${token}">
+          <input type="hidden" name="role" value="superadmin">
+          
+          <input type="email" name="new_email" class="input-ios" placeholder="Type Admin Gmail (e.g. stage.admin2026@gmail.com)..." required autocomplete="off">
+          
+          <button type="submit" class="btn-solid-green" style="background: var(--ios-green); color: #000; font-weight: 700; border: none; padding: 16px; border-radius: 14px; width: 100%; cursor: pointer; font-size: 16px; box-shadow: 0 4px 16px rgba(48,209,88,0.3);">
+            ➕ AUTHORIZE ADMIN GMAIL INSTANTLY
           </button>
         </form>
       </div>
