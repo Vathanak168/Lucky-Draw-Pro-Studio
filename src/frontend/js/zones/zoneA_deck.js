@@ -1,4 +1,4 @@
-﻿/**
+/**
  * zoneA_deck.js - Top Half: Deck Matrix Grid & Columns
  * Displays Category Deck tabs and horizontally scrollable Round Column Slots.
  * Resolume Arena 7 1-to-1 visual layout.
@@ -53,41 +53,41 @@ window.ZoneA = {
             const winCount = roundResult ? roundResult.winners.length : 0;
             const targetWinCount = rc.winnerCount || 1;
 
-            let statusPill = `<span style="color:var(--success-color); background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:3px; font-size:9px; font-weight:800;">READY</span>`;
+            let statusPill = `<span style="color:var(--success-color); background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:3px; font-size:9px;">READY</span>`;
             if (isDrawing) {
-                statusPill = `<span style="color:var(--accent-blue); background:rgba(0,180,216,0.2); padding:2px 6px; border-radius:3px; font-size:9px; font-weight:800;">DRAWING...</span>`;
+                statusPill = `<span style="color:var(--accent-blue); background:rgba(0,180,216,0.2); padding:2px 6px; border-radius:3px; font-size:9px;">DRAWING...</span>`;
             } else if (isCompleted) {
-                statusPill = `<span style="color:var(--warning-color); background:rgba(245,158,11,0.2); padding:2px 6px; border-radius:3px; font-size:9px; font-weight:800;">DONE ✓ (${winCount})</span>`;
+                statusPill = `<span style="color:var(--warning-color); background:rgba(245,158,11,0.2); padding:2px 6px; border-radius:3px; font-size:9px;">DONE (${winCount})</span>`;
             }
 
             columnsHtml += `
                 <div class="arena-column-slot ${isActive ? 'active' : ''} ${isDrawing ? 'drawing' : ''}" onclick="ZoneA.selectSlot(${i})">
                     <div>
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-                            <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-secondary); font-weight:700;">COLUMN ${i + 1}</span>
+                            <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-secondary);">COLUMN ${i + 1}</span>
                             ${statusPill}
                         </div>
-                        <div style="font-weight:800; font-size:13px; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${category}">
+                        <div style="font-size:13px; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                             ${category}
                         </div>
-                        <div style="font-size:11px; color:var(--accent-cyan); font-weight:600; margin-top:2px;">
-                            🏆 ${targetWinCount} ${targetWinCount > 1 ? 'Winners' : 'Winner'}
+                        <div style="font-size:11px; color:var(--accent-cyan); margin-top:2px;">
+                            ${targetWinCount} ${targetWinCount > 1 ? 'Winners' : 'Winner'}
                         </div>
                         <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">
-                            ${rc.dataSource === 'numeric' ? '🔢 Numeric Range' : '👥 Name List'} · ${rc.animationStyle}
+                            ${rc.dataSource === 'numeric' ? 'Numeric Range' : 'Name List'} · ${rc.animationStyle}
                         </div>
                     </div>
 
                     <div style="margin-top:12px; padding-top:8px; border-top:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between;">
                         <span style="font-size:10px; color:var(--text-secondary);">
-                            Slot: <b style="color:#fff;">#${i + 1}</b>
+                            Slot: <span style="color:#fff;">#${i + 1}</span>
                         </span>
                         <div style="display:flex; gap:4px;">
-                            <button class="btn-arena" onclick="event.stopPropagation(); ZoneA.duplicateSlot(${i})" title="Duplicate Column" style="padding:2px 6px; font-size:10px;">
+                            <button class="btn-arena" onclick="event.stopPropagation(); ZoneA.duplicateSlot(${i})" style="padding:2px 6px; font-size:10px;">
                                 <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
                             </button>
                             ${totalRounds > 1 ? `
-                            <button class="btn-arena btn-arena-danger" onclick="event.stopPropagation(); ZoneA.deleteSlot(${i})" title="Delete Column" style="padding:2px 6px; font-size:10px;">
+                            <button class="btn-arena btn-arena-danger" onclick="event.stopPropagation(); ZoneA.deleteSlot(${i})" style="padding:2px 6px; font-size:10px;">
                                 <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
                             </button>
                             ` : ''}
@@ -98,19 +98,19 @@ window.ZoneA = {
         }
 
         if (displayedCount === 0) {
-            columnsHtml = `<div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:12px;">No slots created inside "${activeTab}". Click "+ ADD COLUMN" above.</div>`;
+            columnsHtml = `<div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:12px;">No slots created inside "${activeTab}". Click "Add Column" above.</div>`;
         }
 
         el.innerHTML = `
             <div class="arena-panel-header">
                 <div class="arena-panel-title">
                     <svg class="svg-icon highlight" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                    COMPOSITION DECKS MATRIX · <span class="highlight">${totalRounds} COLUMNS LOADED</span>
+                    Composition Matrix · <span class="highlight">${totalRounds} Columns</span>
                 </div>
                 <div style="display:flex; gap:6px;">
                     <button class="btn-arena btn-arena-primary" onclick="ZoneA.addSlot()">
                         <svg class="svg-icon" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg>
-                        ADD COLUMN
+                        Add Column
                     </button>
                 </div>
             </div>

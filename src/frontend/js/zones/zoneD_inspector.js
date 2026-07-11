@@ -1,4 +1,4 @@
-﻿/**
+/**
  * zoneD_inspector.js - Bottom Center: Dashboard / Clip Inspector
  * Resolume Arena 7 tabbed inspector: Round Slot properties, Preset Dropdowns, Winner Re-Draw Table, and Stage FX.
  */
@@ -139,23 +139,20 @@ window.ZoneD = {
                         </div>
                         <div class="inspector-row">
                             <span class="inspector-label">Stage Layout:</span>
-                            <select onchange="ZoneD.updateField('layoutMode', this.value)" style="flex:1; background: #1a1a24; color: #00e5a3; font-weight: bold;">
-                                <option value="grid" selected>🏁 Draw ជាប្រអប់ (Number Boxes Grid)</option>
+                            <select onchange="ZoneD.updateField('layoutMode', this.value)" style="flex:1; background: #1a1a24; color: #00e5a3;">
+                                <option value="grid" selected>Grid Boxes (Multi-Box Stage)</option>
                             </select>
                         </div>
                         <div class="inspector-row">
                             <span class="inspector-label">Animation Mode:</span>
-                            <select onchange="ZoneD.updateField('animationStyle', this.value)" style="flex:1; background: #1a1a24; color: #00e5a3; font-weight: bold;">
-                                <option value="simultaneous" selected>⚡ ចុចម្តង Draw ទាំងអស់គ្រប់ប្រអប់ (Simultaneous All-Box Draw)</option>
+                            <select onchange="ZoneD.updateField('animationStyle', this.value)" style="flex:1; background: #1a1a24; color: #00e5a3;">
+                                <option value="simultaneous" selected>Simultaneous All-Box Draw</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="inspector-section">
-                        <div class="inspector-section-title"><span>⭐ PRESET WINNERS (VIP / RIGGING OVERRIDES)</span></div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
-                            Select specific names/numbers below to guarantee them for Slot 1, Slot 2, etc. Leave empty for random spin.
-                        </div>
+                        <div class="inspector-section-title"><span>⭐ PRESET WINNERS (VIP OVERRIDES)</span></div>
                         ${presetRows}
                     </div>
                 ` : `
@@ -187,8 +184,8 @@ window.ZoneD = {
                             <input type="number" value="${ds.endNumber || 1000}" onchange="ZoneD.updateGlobal('endNumber', this.value)">
                         </div>
                         <div class="inspector-row">
-                            <span class="inspector-label" style="color:var(--accent-cyan); font-weight:bold;">ចំនួនខ្ទង់លេខ (Ex: ៦=000001):</span>
-                            <input type="number" min="0" max="10" value="${ds.numDigits || 0}" onchange="ZoneD.updateGlobal('numDigits', parseInt(this.value)||0)" title="ដាក់លេខ 6 ដើម្បីបាន 000001 ដល់ 000100 (ដាក់ 0 សម្រាប់ស្វ័យប្រវត្តិ)" style="border: 2px solid var(--accent-cyan); font-weight:bold;">
+                            <span class="inspector-label" style="color:var(--accent-cyan);">Digit Padding (e.g. 6=000001):</span>
+                            <input type="number" min="0" max="10" value="${ds.numDigits || 0}" onchange="ZoneD.updateGlobal('numDigits', parseInt(this.value)||0)" style="border: 2px solid var(--accent-cyan);">
                         </div>
                         <div class="inspector-row">
                             <span class="inspector-label">Exclude Numbers:</span>

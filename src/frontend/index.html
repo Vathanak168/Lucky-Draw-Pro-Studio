@@ -7,7 +7,7 @@
     <!-- Google Fonts: Modern Geometric UI & Broadcast Khmer Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=JetBrains+Mono:wght@600;700;800&family=Kantumruy+Pro:wght@400;500;600;700&family=Koulen&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Siemreap&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap" rel="stylesheet">
     
     <!-- Styles -->
     <link rel="stylesheet" href="styles/resolume_arena.css">
@@ -47,7 +47,7 @@
             <div class="modal-header">
                 <span style="display:flex; align-items:center; gap:8px;">
                     <svg class="svg-icon svg-icon-lg" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-                    DRAW REPORT & EXPORTS SUMMARY
+                    Draw Report
                 </span>
                 <button onclick="Studio.closeReport()" class="modal-close">
                     <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -55,16 +55,16 @@
             </div>
             <div id="report-body" class="modal-body"></div>
             <div class="modal-footer">
-                <button class="btn-arena btn-arena-danger" onclick="Studio.clearReport()" style="margin-right:auto;">CLEAR HISTORY</button>
+                <button class="btn-arena btn-arena-danger" onclick="Studio.clearReport()" style="margin-right:auto;">Clear History</button>
                 <button class="btn-arena" onclick="Studio.exportReportToExcel()">
                     <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                    EXPORT EXCEL (.XLS)
+                    Export Excel
                 </button>
                 <button class="btn-arena" onclick="Studio.printReport()">
                     <svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
-                    PRINT
+                    Print
                 </button>
-                <button class="btn-arena" onclick="Studio.closeReport()">CLOSE</button>
+                <button class="btn-arena" onclick="Studio.closeReport()">Close</button>
             </div>
         </div>
     </div>

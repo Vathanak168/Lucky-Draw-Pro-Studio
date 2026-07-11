@@ -10,6 +10,11 @@
   --stage-scale: 0.197; /* dynamically updated by JS ResizeObserver */
 }
 
+.virtual-canvas *, .virtual-canvas-shell * {
+  font-weight: 400 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
 /* Outer viewport boundary that acts as the "Video Player" container */
 .stage-viewport {
   position: relative;
@@ -56,8 +61,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-family: var(--font-main, 'Outfit', 'Plus Jakarta Sans', 'Kantumruy Pro', sans-serif);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -118,8 +122,8 @@
 .virtual-winner-value {
   max-width: 100%;
   overflow: hidden;
-  font-family: var(--font-display, 'Chakra Petch', 'Koulen', 'JetBrains Mono', monospace);
-  font-weight: 900;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
   line-height: 1.05;
   letter-spacing: 0.02em;
   text-align: center;
@@ -131,8 +135,8 @@
   margin-top: 14px;
   max-width: 90%;
   overflow: hidden;
-  font-family: var(--font-main, 'Outfit', 'Kantumruy Pro', sans-serif);
-  font-weight: 700;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
   line-height: 1.2;
   letter-spacing: 0.03em;
   text-align: center;

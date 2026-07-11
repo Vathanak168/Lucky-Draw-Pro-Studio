@@ -111,7 +111,7 @@ window.Studio = {
             let tableHTML = '<table class="winner-table"><thead><tr><th>Column</th><th>Category</th><th>Type</th><th>Winner Name / Number</th></tr></thead><tbody>';
             results.forEach((r, idx) => {
                 if (!r) return;
-                const roundType = r.type === 'list' ? '👥 Name' : '🔢 Number';
+                const roundType = r.type === 'list' ? 'Name' : 'Number';
                 const categoryName = r.category || '<i>Regular Draw</i>';
                 r.winners.forEach((w, i) => {
                     const winnerName = w ? (w.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')) : '<i>N/A</i>';
@@ -120,7 +120,7 @@ window.Studio = {
                             <td>${i === 0 ? `Column #${r.round}` : ''}</td>
                             <td>${i === 0 ? categoryName : ''}</td>
                             <td>${roundType}</td>
-                            <td style="font-weight:700; color:var(--accent-cyan);">${winnerName}</td>
+                            <td style="color:var(--accent-cyan);">${winnerName}</td>
                         </tr>
                     `;
                 });
@@ -169,10 +169,10 @@ window.Studio = {
                     <tr><th colspan="2" style="background-color:#00e5a3; color:#000000; padding:10px; font-size:1.2em;">Resolume Arena 7 Workstation - Draw Report</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td style="padding:8px; border:1px solid #999; font-weight:bold;">Program Name</td><td style="padding:8px; border:1px solid #999;">Lucky Draw Pro Studio v6.0</td></tr>
-                    <tr><td style="padding:8px; border:1px solid #999; font-weight:bold;">Report Date</td><td style="padding:8px; border:1px solid #999;">${reportDate}</td></tr>
-                    <tr><td style="padding:8px; border:1px solid #999; font-weight:bold;">Total Columns Drawn</td><td style="padding:8px; border:1px solid #999;">${results.length}</td></tr>
-                    <tr><td style="padding:8px; border:1px solid #999; font-weight:bold;">Total Winners</td><td style="padding:8px; border:1px solid #999;">${totalWinners}</td></tr>
+                    <tr><td style="padding:8px; border:1px solid #999;">Program Name</td><td style="padding:8px; border:1px solid #999;">Lucky Draw Pro Studio v6.0</td></tr>
+                    <tr><td style="padding:8px; border:1px solid #999;">Report Date</td><td style="padding:8px; border:1px solid #999;">${reportDate}</td></tr>
+                    <tr><td style="padding:8px; border:1px solid #999;">Total Columns Drawn</td><td style="padding:8px; border:1px solid #999;">${results.length}</td></tr>
+                    <tr><td style="padding:8px; border:1px solid #999;">Total Winners</td><td style="padding:8px; border:1px solid #999;">${totalWinners}</td></tr>
                 </tbody>
             </table>
         `;
@@ -192,7 +192,7 @@ window.Studio = {
 
         const template = `
             <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;} table{border-collapse:collapse;} th,td{border:1px solid #999; padding:8px 12px;} th{background-color:#f0f0f0; font-weight:bold; color:#333;}</style></head>
+            <head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif; font-weight:400;} table{border-collapse:collapse;} th,td{border:1px solid #999; padding:8px 12px;} th{background-color:#f0f0f0; color:#333;}</style></head>
             <body>${summaryHTML}${tableHTML}</body>
             </html>
         `;

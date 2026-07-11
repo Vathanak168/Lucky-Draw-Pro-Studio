@@ -1,4 +1,4 @@
-﻿/**
+/**
  * zoneE_browser.js - Bottom Right: Files & Sources / Pool Browser
  * Resolume Arena 7 tabbed pool manager: Search, Add, Import/Export CSV, and Draw Reports tab.
  */
@@ -29,17 +29,17 @@ window.ZoneE = {
             <div class="arena-panel-header">
                 <div class="arena-panel-title">
                     <svg class="svg-icon highlight" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
-                    SOURCES & BROWSER · <span class="highlight">${activeCount} ACTIVE POOL</span>
+                    Sources & Browser · <span class="highlight">${activeCount} Active</span>
                 </div>
             </div>
 
             <!-- Resolume Browser Tabs -->
             <div class="arena-tab-bar">
                 <button class="arena-tab-btn ${this.activeTab === 'pool' ? 'active' : ''}" onclick="ZoneE.setTab('pool')">
-                    PARTICIPANTS POOL (${participants.length})
+                    Participants (${participants.length})
                 </button>
                 <button class="arena-tab-btn ${this.activeTab === 'reports' ? 'active' : ''}" onclick="ZoneE.setTab('reports')">
-                    REPORTS & EXPORTS (${totalWinners})
+                    Reports (${totalWinners})
                 </button>
             </div>
 
@@ -47,25 +47,25 @@ window.ZoneE = {
                 ${this.activeTab === 'pool' ? `
                     <!-- Pool Search & Actions -->
                     <div style="display:flex; gap:6px;">
-                        <input type="text" placeholder="🔍 Search names or ID..." value="${this.searchQuery.replace(/"/g, '&quot;')}" oninput="ZoneE.searchQuery=this.value; ZoneE.renderGrid();" style="flex:1;">
+                        <input type="text" placeholder="Search names or ID..." value="${this.searchQuery.replace(/"/g, '&quot;')}" oninput="ZoneE.searchQuery=this.value; ZoneE.renderGrid();" style="flex:1;">
                     </div>
                     <div style="display:flex; gap:6px;">
                         <input type="text" id="zoneE_addInput" placeholder="Add new name..." onkeydown="if(event.key==='Enter') ZoneE.addParticipant()" style="flex:1;">
-                        <button class="btn-arena btn-arena-primary" onclick="ZoneE.addParticipant()" style="padding:4px 10px; font-size:11px;">+ ADD</button>
+                        <button class="btn-arena btn-arena-primary" onclick="ZoneE.addParticipant()" style="padding:4px 10px; font-size:11px;">Add</button>
                     </div>
 
                     <div style="display:flex; gap:6px; justify-content:space-between; padding-top:4px; border-top:1px solid var(--border-light);">
                         <label class="btn-arena" style="flex:1; cursor:pointer; font-size:10px; padding:4px 6px;">
                             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                            IMPORT CSV
+                            Import CSV
                             <input type="file" accept=".csv" style="display:none;" onchange="ZoneE.handleCsvImport(event)">
                         </label>
-                        <button class="btn-arena" onclick="ZoneE.exportCsv()" title="Export raw pool list" style="font-size:10px; padding:4px 6px;">
+                        <button class="btn-arena" onclick="ZoneE.exportCsv()" style="font-size:10px; padding:4px 6px;">
                             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                             CSV
                         </button>
                         ${participants.length > 0 ? `
-                        <button class="btn-arena btn-arena-danger" onclick="ZoneE.clearAll()" style="font-size:10px; padding:4px 6px;">CLEAR</button>
+                        <button class="btn-arena btn-arena-danger" onclick="ZoneE.clearAll()" style="font-size:10px; padding:4px 6px;">Clear</button>
                         ` : ''}
                     </div>
 
@@ -75,17 +75,17 @@ window.ZoneE = {
                     <!-- Reports & Exports Tab -->
                     <div style="display:flex; flex-direction:column; gap:10px;">
                         <div style="background:var(--bg-surface); padding:10px; border-radius:var(--radius-sm); border:1px solid var(--border-light);">
-                            <div style="font-weight:800; font-size:12px; color:var(--accent-cyan); margin-bottom:4px;">🎯 TOTAL DRAW SUMMARY</div>
-                            <div style="font-size:11px; color:var(--text-secondary);">Completed Columns: <b style="color:#fff;">${results.length}</b> / ${S.totalRounds}</div>
-                            <div style="font-size:11px; color:var(--text-secondary);">Total Winners Drawn: <b style="color:#fff;">${totalWinners}</b></div>
+                            <div style="font-size:12px; color:var(--accent-cyan); margin-bottom:4px;">Draw Summary</div>
+                            <div style="font-size:11px; color:var(--text-secondary);">Completed Columns: <span style="color:#fff;">${results.length}</span> / ${S.totalRounds}</div>
+                            <div style="font-size:11px; color:var(--text-secondary);">Total Winners Drawn: <span style="color:#fff;">${totalWinners}</span></div>
                         </div>
 
                         <div style="display:flex; gap:6px;">
                             <button class="btn-arena btn-arena-primary" onclick="Studio.exportReportToExcel()" style="flex:1;">
                                 <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                                EXPORT EXCEL (.XLS)
+                                Export Excel (.XLS)
                             </button>
-                            <button class="btn-arena" onclick="Studio.showReport()" style="flex:1;">VIEW TABLE</button>
+                            <button class="btn-arena" onclick="Studio.showReport()" style="flex:1;">View Table</button>
                         </div>
 
                         <div style="overflow-y:auto; max-height:420px; border:1px solid var(--border-light); border-radius:var(--radius-sm); background:var(--bg-surface);">
@@ -93,7 +93,7 @@ window.ZoneE = {
                                 <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:11px;">No rounds completed yet.</div>
                             ` : results.map(r => `
                                 <div style="padding:8px 10px; border-bottom:1px solid var(--border-light);">
-                                    <div style="display:flex; justify-content:space-between; font-weight:700; font-size:11px; color:var(--accent-cyan);">
+                                    <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--accent-cyan);">
                                         <span>Column #${r.round} (${r.category})</span>
                                         <span>${r.winners.length} Winners</span>
                                     </div>
