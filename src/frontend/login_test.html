@@ -3,90 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LDP Studio — Gatekeeper & Login Simulator (Standalone Test Bench)</title>
+  <title>LDP Studio — Gatekeeper Simulator</title>
   <style>
     :root {
-      --bg-dark: #0a0a0c;
-      --card-bg: #141418;
-      --card-border: #26262e;
-      --accent-green: #00e5a3;
+      --bg-dark: #0b0b0e;
+      --card-bg: #16161b;
+      --card-border: rgba(255, 255, 255, 0.07);
+      --accent-green: #30d158;
       --accent-blue: #0a84ff;
       --accent-red: #ff453a;
       --accent-orange: #ff9f0a;
       --text-main: #ffffff;
       --text-sub: #8e8e93;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0; padding: 0;
+      font-weight: 400 !important;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    }
     body {
       background-color: var(--bg-dark);
       color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px 20px;
+      padding: 36px 20px;
     }
     .header-banner {
-      max-width: 760px;
+      max-width: 680px;
       width: 100%;
-      background: linear-gradient(135deg, #16161c, #1f1f28);
+      background: #18181f;
       border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 24px 28px;
-      margin-bottom: 28px;
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     }
     .header-title h1 {
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--accent-green);
+      font-size: 18px;
+      letter-spacing: -0.3px;
+      color: #ffffff;
       display: flex;
       align-items: center;
-      gap: 10px;
-    }
-    .header-title p {
-      font-size: 13px;
-      color: var(--text-sub);
-      margin-top: 4px;
+      gap: 8px;
     }
     .badge-test {
-      background: rgba(10, 132, 255, 0.2);
+      background: #13243a;
       color: var(--accent-blue);
       border: 1px solid var(--accent-blue);
-      padding: 6px 14px;
-      border-radius: 30px;
+      padding: 5px 12px;
+      border-radius: 12px;
       font-size: 11px;
-      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
     }
 
     .main-grid {
-      max-width: 760px;
+      max-width: 680px;
       width: 100%;
       display: grid;
       grid-template-columns: 1fr;
-      gap: 20px;
+      gap: 16px;
     }
 
     .test-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 24px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      border-radius: 14px;
+      padding: 22px;
     }
     .card-title {
-      font-size: 14px;
-      font-weight: 700;
+      font-size: 12px;
       color: var(--text-sub);
       text-transform: uppercase;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.5px;
       margin-bottom: 16px;
       display: flex;
       justify-content: space-between;
@@ -97,72 +90,60 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 0;
+      padding: 14px 0;
       border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .info-row:last-child { border-bottom: none; }
     .info-label { color: var(--text-sub); font-size: 14px; }
-    .info-val { font-weight: 700; font-family: ui-monospace, monospace; color: #fff; }
+    .info-val { font-family: ui-monospace, monospace !important; color: #fff; }
     .info-val.mono-orange { color: var(--accent-orange); }
 
-    /* Buttons */
     .btn-send {
       width: 100%;
-      padding: 18px;
-      border-radius: 14px;
+      padding: 16px;
+      border-radius: 12px;
       background: var(--accent-green);
       color: #000;
-      font-size: 16px;
-      font-weight: 800;
+      font-size: 15px;
       border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      box-shadow: 0 6px 20px rgba(0,229,163,0.3);
-      transition: transform 0.15s, box-shadow 0.15s;
+      gap: 8px;
+      transition: background 0.15s;
     }
-    .btn-send:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,229,163,0.45); }
-    .btn-send:active { transform: scale(0.985); }
-    .btn-send:disabled { background: #333; color: #777; cursor: not-allowed; box-shadow: none; transform: none; }
+    .btn-send:hover { background: #38e362; }
+    .btn-send:active { transform: scale(0.99); }
+    .btn-send:disabled { background: #222; color: #666; cursor: not-allowed; }
 
-    /* Status Display Box */
     .status-box {
-      background: #1c1c22;
-      border: 2px dashed #333;
-      border-radius: 16px;
-      padding: 24px;
+      background: #18181f;
+      border: 1px solid #282832;
+      border-radius: 12px;
+      padding: 20px;
       text-align: center;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
     }
-    .status-box.pending { border-color: var(--accent-orange); background: rgba(255,159,10,0.08); }
-    .status-box.approved { border-color: var(--accent-green); background: rgba(0,229,163,0.1); }
-    .status-box.rejected { border-color: var(--accent-red); background: rgba(255,69,58,0.1); }
-    .status-box.blocked { border-color: #ff2a2a; background: rgba(255,42,42,0.18); animation: pulseBlock 1.5s infinite; }
-
-    @keyframes pulseBlock {
-      0% { box-shadow: 0 0 0 0 rgba(255,69,58,0.4); }
-      70% { box-shadow: 0 0 0 15px rgba(255,69,58,0); }
-      100% { box-shadow: 0 0 0 0 rgba(255,69,58,0); }
-    }
+    .status-box.pending { border-color: var(--accent-orange); }
+    .status-box.approved { border-color: var(--accent-green); }
+    .status-box.rejected { border-color: var(--accent-red); }
+    .status-box.blocked { border-color: #ff2a2a; }
 
     .status-badge-lg {
       display: inline-block;
-      padding: 8px 18px;
-      border-radius: 30px;
-      font-size: 15px;
-      font-weight: 800;
-      margin-bottom: 12px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 10px;
     }
-    .badge-pending { background: var(--accent-orange); color: #000; }
-    .badge-approved { background: var(--accent-green); color: #000; }
-    .badge-rejected { background: var(--accent-red); color: #fff; }
-    .badge-blocked { background: #b91c1c; color: #fff; border: 2px solid #fff; }
+    .badge-pending { background: #2a2015; color: var(--accent-orange); border: 1px solid var(--accent-orange); }
+    .badge-approved { background: #15291b; color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .badge-rejected { background: #2f1b1e; color: var(--accent-red); border: 1px solid var(--accent-red); }
+    .badge-blocked { background: #381414; color: #ff5555; border: 1px solid #ff5555; }
 
-    .status-msg { font-size: 15px; color: #d1d1d6; line-height: 1.5; }
+    .status-msg { font-size: 14px; color: #d1d1d6; line-height: 1.5; }
 
-    /* Quick Test Links Card */
     .links-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -171,43 +152,41 @@
     }
     .btn-link {
       padding: 14px;
-      border-radius: 12px;
+      border-radius: 10px;
       text-decoration: none;
-      font-weight: 700;
       font-size: 13px;
       text-align: center;
       display: block;
       transition: background 0.15s;
     }
-    .btn-portal-super { background: linear-gradient(135deg, #ff9f0a, #ff453a); color: #fff; grid-column: span 1; box-shadow: 0 4px 14px rgba(255,69,58,0.3); }
-    .btn-portal-admin { background: #1f1f28; border: 1.5px solid var(--accent-green); color: var(--accent-green); grid-column: span 1; }
+    .btn-portal-super { background: #ff453a; color: #fff; grid-column: span 1; }
+    .btn-portal-admin { background: #18281e; border: 1px solid var(--accent-green); color: var(--accent-green); grid-column: span 1; }
     
-    .btn-action-sm { background: #24242e; color: #fff; border: 1px solid #363644; font-size: 12px; padding: 10px; }
-    .btn-action-sm:hover { background: #2e2e3a; }
+    .btn-action-sm { background: #202028; color: #fff; border: 1px solid #30303e; font-size: 12px; padding: 12px; cursor: pointer; }
+    .btn-action-sm:hover { background: #282834; }
 
     .console-log {
-      background: #08080a;
-      border: 1px solid #1f1f28;
-      border-radius: 14px;
+      background: #0d0d11;
+      border: 1px solid #202028;
+      border-radius: 10px;
       padding: 14px;
-      font-family: ui-monospace, monospace;
+      font-family: ui-monospace, monospace !important;
       font-size: 12px;
       color: #30d158;
-      max-height: 140px;
+      max-height: 130px;
       overflow-y: auto;
-      margin-top: 14px;
+      margin-top: 16px;
     }
-    .log-entry { margin-bottom: 6px; border-bottom: 1px solid #141418; padding-bottom: 4px; }
+    .log-entry { margin-bottom: 6px; border-bottom: 1px solid #16161e; padding-bottom: 4px; }
   </style>
 </head>
 <body>
 
   <div class="header-banner">
     <div class="header-title">
-      <h1>🔒 Gatekeeper Login Simulator</h1>
-      <p>Standalone Test Bench — Decoupled from Main VJ Console (Zero Impact on index.html)</p>
+      <h1>Gatekeeper Simulator</h1>
     </div>
-    <div class="badge-test">⚡ Sandbox Mode</div>
+    <div class="badge-test">Simulator</div>
   </div>
 
   <div class="main-grid">
@@ -223,53 +202,48 @@
         <span class="info-val mono-orange" id="machineIdDisplay">Loading...</span>
       </div>
       <div class="info-row">
-        <span class="info-label">Active Universal Wi-Fi Password</span>
+        <span class="info-label">Active Wi-Fi Password</span>
         <span class="info-val" id="syncPwdDisplay" style="color:var(--accent-blue);">Loading...</span>
       </div>
     </div>
 
-    <!-- Main Action Button -->
     <div class="test-card">
-      <div class="card-title"><span>🔑 Master Password Login OR Remote Gmail Unlock</span></div>
+      <div class="card-title"><span>Security Authorization</span></div>
       <div style="display:flex; gap:10px; margin-bottom:14px;">
-        <input type="password" id="testMasterPwdInput" placeholder="Enter Master Password (default: resolume2026)..." style="flex:1; background:#1c1c22; border:1px solid #333; color:#fff; padding:14px; border-radius:12px; font-size:14px;">
-        <button onclick="testMasterPasswordLogin()" style="background:var(--accent-blue); color:#fff; font-weight:800; border:none; padding:0 24px; border-radius:12px; cursor:pointer;">🔓 LOGIN</button>
+        <input type="password" id="testMasterPwdInput" placeholder="Enter Master Password..." style="flex:1; background:#1c1c22; border:1px solid #333; color:#fff; padding:14px; border-radius:12px; font-size:14px;">
+        <button onclick="testMasterPasswordLogin()" style="background:var(--accent-blue); color:#fff; border:none; padding:0 24px; border-radius:12px; cursor:pointer;">Login</button>
       </div>
 
       <button class="btn-send" id="btnRequestRemote" onclick="sendUnlockRequest()">
-        🚀 SEND REMOTE UNLOCK REQUEST TO GMAIL NOW
+        Request Remote Unlock
       </button>
 
       <div style="margin-top: 20px;" class="status-box" id="statusBox">
         <div id="statusBadgeContainer">
-          <span class="status-badge-lg badge-pending" style="background:#26262e; color:#aaa;">⚪ IDLE / READY TO TEST</span>
+          <span class="status-badge-lg badge-pending" style="background:#26262e; color:#aaa;">IDLE</span>
         </div>
-        <p class="status-msg" id="statusMessage">Click the button above to trigger an unlock request to your Gmail & Google Apps Script Webhook.</p>
+        <p class="status-msg" id="statusMessage">Awaiting action...</p>
       </div>
     </div>
 
-    <!-- Instant Portal & Quick Action Simulation -->
     <div class="test-card">
-      <div class="card-title"><span>🌐 Instant Test Links (Open iOS Portal directly without opening Gmail)</span></div>
-      <p style="font-size: 13px; color: var(--text-sub); line-height: 1.5; margin-bottom: 14px;">
-        Use these direct links to test the iOS Control Portal and see how <b>Super Admin Mode</b> allows adding Admin Gmails, while <b>Admin Mode</b> hides them automatically:
-      </p>
+      <div class="card-title"><span>Direct Gateway Access</span></div>
 
       <div class="links-grid" id="portalLinksGrid">
-        <a href="#" target="_blank" id="linkSuperAdmin" class="btn-link btn-portal-super">👑 OPEN SUPER ADMIN PORTAL (Full Access)</a>
-        <a href="#" target="_blank" id="linkAdmin" class="btn-link btn-portal-admin">📱 OPEN ADMIN MODE PORTAL (Stripped)</a>
+        <a href="#" target="_blank" id="linkSuperAdmin" class="btn-link btn-portal-super">Open Super Admin Portal</a>
+        <a href="#" target="_blank" id="linkAdmin" class="btn-link btn-portal-admin">Open Admin Portal</a>
       </div>
 
-      <div class="card-title" style="margin-top: 24px;"><span>⚡ Quick API Simulation (Test Status Transitions)</span></div>
+      <div class="card-title" style="margin-top: 24px;"><span>API Simulation Controls</span></div>
       <div class="links-grid">
-        <button class="btn-link btn-action-sm" onclick="lockConsoleSession()" style="color:#ff453a; font-weight:800; grid-column: span 2; border: 1.5px solid #ff453a; background:#1f1515;">🔒 LOCK CONSOLE & LOGOUT NOW (End Session)</button>
-        <button class="btn-link btn-action-sm" onclick="triggerRemoteAction('approve')" style="color:var(--accent-green);">✅ Simulate Remote Approve</button>
-        <button class="btn-link btn-action-sm" onclick="triggerRemoteAction('block&duration=900')" style="color:var(--accent-orange);">🚫 Simulate 15m Block</button>
-        <button class="btn-link btn-action-sm" onclick="clearBlockStatus()" style="color:var(--accent-blue); grid-column: span 2;">⚡ Clear Block / Reset Gatekeeper State</button>
+        <button class="btn-link btn-action-sm" onclick="lockConsoleSession()" style="color:#ff453a; grid-column: span 2; border: 1px solid #ff453a; background:#1f1515;">Lock Session</button>
+        <button class="btn-link btn-action-sm" onclick="triggerRemoteAction('approve')" style="color:var(--accent-green);">Simulate Approve</button>
+        <button class="btn-link btn-action-sm" onclick="triggerRemoteAction('block&duration=900')" style="color:var(--accent-orange);">Simulate Block 15m</button>
+        <button class="btn-link btn-action-sm" onclick="clearBlockStatus()" style="color:var(--accent-blue); grid-column: span 2;">Clear Status</button>
       </div>
 
       <div class="console-log" id="consoleLog">
-        <div class="log-entry">⚙️ [System] Sandbox Simulator initialized. Ready for testing.</div>
+        <div class="log-entry">[System] Simulator initialized. Ready.</div>
       </div>
     </div>
   </div>
@@ -285,47 +259,44 @@
       const timeStr = new Date().toLocaleTimeString();
       const entry = document.createElement("div");
       entry.className = "log-entry";
-      entry.innerHTML = `<b>[${timeStr}]</b> ${msg}`;
+      entry.innerHTML = `[${timeStr}] ${msg}`;
       logDiv.prepend(entry);
     }
 
-    // Initialize display & fetch Machine ID from backend
     async function initSimulator() {
       try {
         const res = await fetch(`${API_BASE}/api/auth/status`);
         if (res.ok) {
           const data = await res.json();
           currentMachineId = data.machine_id || "STAGE-CREW-PC-01";
-          document.getElementById("machineIdDisplay").innerText = `🖥️ ${currentMachineId}`;
-          logToConsole(`Fetched Machine ID: ${currentMachineId}`);
+          document.getElementById("machineIdDisplay").innerText = `${currentMachineId}`;
+          logToConsole(`Machine ID: ${currentMachineId}`);
           if (data.unlocked) {
-            updateStatusBox("APPROVED", "ACCESS GRANTED (ALREADY UNLOCKED)", "Console is currently unlocked. Click '🔒 LOCK CONSOLE & LOGOUT NOW' below if you want to lock and test fresh.");
+            updateStatusBox("APPROVED", "UNLOCKED", "Access granted.");
           } else if (data.blocked) {
-            updateStatusBox(`BLOCKED:${data.blocked_remaining || 900}`, "🚫 APPLICATION BLOCKED BY GATEKEEPER", `Lockdown active: ${data.block_reason || ''}. Unlocks in ${Math.round((data.blocked_remaining||900)/60)} mins.`);
+            updateStatusBox(`BLOCKED:${data.blocked_remaining || 900}`, "BLOCKED", `Application blocked. Unlocks in ${Math.round((data.blocked_remaining||900)/60)} mins.`);
           } else {
-            updateStatusBox("IDLE", "🔒 CONSOLE LOCKED / IDLE", "Console is currently locked. Enter Master Password above or request Remote Unlock.");
+            updateStatusBox("IDLE", "LOCKED", "Console locked.");
           }
         }
       } catch (err) {
         currentMachineId = "LOCAL-TEST-MACHINE-v5";
-        document.getElementById("machineIdDisplay").innerText = `🖥️ ${currentMachineId}`;
+        document.getElementById("machineIdDisplay").innerText = `${currentMachineId}`;
       }
 
-      // Update Portal Links
       const superUrl = `${SCRIPT_BASE_URL}?action=portal&machine_id=${encodeURIComponent(currentMachineId)}&token=LDP_SUPER_ADMIN_2026_PRO&role=superadmin`;
       const adminUrl = `${SCRIPT_BASE_URL}?action=portal&machine_id=${encodeURIComponent(currentMachineId)}&token=LDP_SECRET_PASS_2026&role=admin`;
       document.getElementById("linkSuperAdmin").href = superUrl;
       document.getElementById("linkAdmin").href = adminUrl;
 
-      // Start Polling Status & Password Sync
       startPolling();
     }
 
     async function sendUnlockRequest() {
       const btn = document.getElementById("btnRequestRemote");
       btn.disabled = true;
-      btn.innerHTML = "⏳ SENDING TO GMAIL & WEBHOOK...";
-      logToConsole(`Sending unlock request for Machine ID: ${currentMachineId}...`);
+      btn.innerHTML = "Sending...";
+      logToConsole(`Requesting unlock for: ${currentMachineId}`);
 
       try {
         const res = await fetch(`${API_BASE}/api/auth/request-remote`, {
@@ -339,19 +310,19 @@
         const data = await res.json();
         
         if (res.ok && data.status === "SUCCESS") {
-          logToConsole(`✅ Request sent successfully! ${data.message || ''}`);
-          updateStatusBox("PENDING", "🟡 AWAITING ADMIN CONFIRMATION...", "Notification sent to all authorized Admin Gmails! Open your Gmail or click the iOS Portal buttons above to Approve/Block.");
+          logToConsole(`Request sent successfully.`);
+          updateStatusBox("PENDING", "PENDING APPROVAL", "Notification sent to Admin Gmails.");
         } else if (data.status === "BLOCKED" || res.status === 403) {
-          logToConsole(`🚫 Request blocked by Gatekeeper! Remaining: ${data.remaining_seconds || 900}s`);
-          updateStatusBox(`BLOCKED:${data.remaining_seconds || 900}`, "🚫 APPLICATION BLOCKED BY GATEKEEPER", `You have exceeded attempt thresholds or an Admin triggered a lockdown. Block remaining: ${Math.round((data.remaining_seconds||900)/60)} mins.`);
+          logToConsole(`Request blocked (${data.remaining_seconds || 900}s remaining).`);
+          updateStatusBox(`BLOCKED:${data.remaining_seconds || 900}`, "BLOCKED", `Application blocked for ${Math.round((data.remaining_seconds||900)/60)} mins.`);
         } else {
-          logToConsole(`❌ Request failed: ${data.detail || data.message || 'Unknown error'}`);
+          logToConsole(`Request failed: ${data.detail || data.message || 'Unknown error'}`);
         }
       } catch (err) {
-        logToConsole(`❌ Network/API Error: ${err.message}`);
+        logToConsole(`Error: ${err.message}`);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = "🚀 SEND REMOTE UNLOCK REQUEST TO GMAIL NOW";
+        btn.innerHTML = "Request Remote Unlock";
       }
     }
 
@@ -363,18 +334,18 @@
       box.className = "status-box";
       if (status === "APPROVED") {
         box.classList.add("approved");
-        badgeContainer.innerHTML = `<span class="status-badge-lg badge-approved">🟢 ${badgeTitle}</span>`;
+        badgeContainer.innerHTML = `<span class="status-badge-lg badge-approved">${badgeTitle}</span>`;
       } else if (status === "REJECTED") {
         box.classList.add("rejected");
-        badgeContainer.innerHTML = `<span class="status-badge-lg badge-rejected">🔴 ${badgeTitle}</span>`;
+        badgeContainer.innerHTML = `<span class="status-badge-lg badge-rejected">${badgeTitle}</span>`;
       } else if (status && status.toString().indexOf("BLOCKED:") === 0) {
         box.classList.add("blocked");
-        badgeContainer.innerHTML = `<span class="status-badge-lg badge-blocked">🚫 ${badgeTitle}</span>`;
+        badgeContainer.innerHTML = `<span class="status-badge-lg badge-blocked">${badgeTitle}</span>`;
       } else if (status === "PENDING") {
         box.classList.add("pending");
-        badgeContainer.innerHTML = `<span class="status-badge-lg badge-pending">🟡 ${badgeTitle}</span>`;
+        badgeContainer.innerHTML = `<span class="status-badge-lg badge-pending">${badgeTitle}</span>`;
       } else {
-        badgeContainer.innerHTML = `<span class="status-badge-lg badge-pending" style="background:#26262e; color:#aaa;">⚪ IDLE / READY TO TEST</span>`;
+        badgeContainer.innerHTML = `<span class="status-badge-lg badge-pending" style="background:#26262e; color:#aaa;">IDLE</span>`;
       }
       msgEl.innerText = message;
     }
@@ -386,41 +357,40 @@
           const data = await res.json();
           const details = data.details || {};
           if (data.unlocked || details.approved) {
-            const syncPwd = (details.sync && details.sync.message) ? details.sync.message : 'resolume2026';
-            updateStatusBox("APPROVED", "ACCESS APPROVED & UNLOCKED!", `✅ Remote access granted! Status: ${details.message || 'Unlocked'}`);
+            updateStatusBox("APPROVED", "UNLOCKED", `Access granted. Status: ${details.message || 'Unlocked'}`);
           } else if (details.blocked) {
-            updateStatusBox(`BLOCKED:${details.blocked_until ? Math.round(details.blocked_until - Date.now()/1000) : 900}`, `BLOCKED BY ADMIN / GATEKEEPER`, details.message || "Anti-Spam lockdown triggered.");
+            updateStatusBox(`BLOCKED:${details.blocked_until ? Math.round(details.blocked_until - Date.now()/1000) : 900}`, `BLOCKED`, details.message || "Lockdown active.");
           } else if (details.status === "REJECTED") {
-            updateStatusBox("REJECTED", "REQUEST REJECTED", "An Admin denied your unlock request via Gmail.");
+            updateStatusBox("REJECTED", "REJECTED", "Request denied by Admin.");
           }
 
           if (details.sync && details.sync.version) {
-            document.getElementById("syncPwdDisplay").innerText = `🔐 Universal Sync (Version: ${details.sync.version})`;
+            document.getElementById("syncPwdDisplay").innerText = `${details.sync.version}`;
           }
         }
       } catch (err) {}
     }
 
     async function triggerRemoteAction(act) {
-      logToConsole(`Simulating external Webhook action: ${act}...`);
+      logToConsole(`Triggering action: ${act}`);
       try {
         const url = `${SCRIPT_BASE_URL}?action=${act}&machine_id=${encodeURIComponent(currentMachineId)}&token=LDP_SECRET_PASS_2026`;
         await fetch(url, { mode: "no-cors" });
-        logToConsole(`Triggered [${act}] on Cloud. Polling local status in 1 second...`);
+        logToConsole(`Action triggered.`);
         setTimeout(checkRemoteStatus, 1000);
       } catch (err) {
-        logToConsole(`Error triggering action: ${err.message}`);
+        logToConsole(`Error: ${err.message}`);
       }
     }
 
     async function clearBlockStatus() {
-      logToConsole("Clearing block penalties locally and on Cloud...");
+      logToConsole("Clearing block status...");
       try {
         await fetch(`${API_BASE}/api/auth/unblock`, { method: "POST" });
         const url = `${SCRIPT_BASE_URL}?action=unblock&machine_id=${encodeURIComponent(currentMachineId)}&token=LDP_SECRET_PASS_2026`;
         await fetch(url, { mode: "no-cors" });
-        logToConsole("✅ Gatekeeper reset! Ready to test again.");
-        updateStatusBox("IDLE", "IDLE / READY TO TEST", "All blocks cleared. You may send a fresh unlock request now.");
+        logToConsole("Status reset successfully.");
+        updateStatusBox("IDLE", "IDLE", "Blocks cleared.");
       } catch (err) {}
     }
 
@@ -428,10 +398,10 @@
       const pwdInput = document.getElementById("testMasterPwdInput");
       const pwd = pwdInput ? pwdInput.value : "";
       if (!pwd) {
-        logToConsole("⚠️ Please enter a master password to test.");
+        logToConsole("Please enter password.");
         return;
       }
-      logToConsole("Verifying Master Password with Gatekeeper API...");
+      logToConsole("Verifying password...");
       try {
         const res = await fetch(`${API_BASE}/api/auth/login`, {
           method: "POST",
@@ -440,25 +410,25 @@
         });
         const data = await res.json();
         if (res.ok && data.unlocked) {
-          logToConsole("✅ Master Password accepted! Session unlocked.");
-          updateStatusBox("APPROVED", "ACCESS GRANTED (UNLOCKED)", "✅ Console unlocked via Master Password!");
+          logToConsole("Login successful.");
+          updateStatusBox("APPROVED", "UNLOCKED", "Console unlocked via Master Password.");
         } else {
-          logToConsole(`❌ Login failed: ${data.detail || data.message || 'Invalid Password'}`);
-          updateStatusBox("REJECTED", "LOGIN FAILED", `Incorrect Master Password or App Blocked (${data.detail || ''}).`);
+          logToConsole(`Login failed: ${data.detail || data.message || 'Invalid Password'}`);
+          updateStatusBox("REJECTED", "LOGIN FAILED", `Incorrect Password or App Blocked.`);
         }
       } catch (err) {
-        logToConsole(`❌ Error during login: ${err.message}`);
+        logToConsole(`Error: ${err.message}`);
       }
     }
 
     async function lockConsoleSession() {
-      logToConsole("Locking console and clearing session token (/api/auth/logout)...");
+      logToConsole("Locking console...");
       try {
         await fetch(`${API_BASE}/api/auth/logout`, { method: "POST" });
-        logToConsole("🔒 Console session locked completely!");
-        updateStatusBox("IDLE", "🔒 CONSOLE LOCKED / IDLE", "Console has been locked. You must login via Master Password or Remote Request to unlock again.");
+        logToConsole("Console session locked.");
+        updateStatusBox("IDLE", "LOCKED", "Console locked.");
       } catch (err) {
-        logToConsole(`❌ Error locking console: ${err.message}`);
+        logToConsole(`Error: ${err.message}`);
       }
     }
 
