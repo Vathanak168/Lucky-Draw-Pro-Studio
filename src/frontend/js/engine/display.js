@@ -78,33 +78,7 @@ window.Display = {
     },
 
     renderPlaceholder(rc) {
-        this.ensureVirtualStageStructure();
-        const gridEl = document.getElementById('virtualWinnerGrid');
-        if (!gridEl) return;
-
-        const category = rc.category || `Column #${EngineState.currentRound + 1}`;
-        const targetWinners = rc.winnerCount || 1;
-
-        gridEl.style.display = 'flex';
-        gridEl.style.flexDirection = 'column';
-        gridEl.style.alignItems = 'center';
-        gridEl.style.justifyContent = 'center';
-        gridEl.style.gap = '20px';
-
-        gridEl.innerHTML = `
-            <div style="background: rgba(20,20,24,0.95); border: 4px solid var(--accent-cyan); border-radius: 32px; padding: 60px 100px; text-align: center; box-shadow: 0 0 60px rgba(0,229,163,0.3);">
-                <div style="font-size: 32px; font-weight: 800; color: var(--accent-cyan); letter-spacing: 6px; text-transform: uppercase; margin-bottom: 16px;">
-                    ✨ READY FOR LAUNCH ✨
-                </div>
-                <div style="font-size: 72px; font-weight: 900; color: #fff; line-height: 1.1; margin-bottom: 24px; font-family: var(--font-main, 'Outfit', 'Kantumruy Pro', sans-serif);">
-                    ${category}
-                </div>
-                <div style="font-size: 36px; color: #ccc; font-family: var(--font-main, 'Outfit', 'Kantumruy Pro', sans-serif);">
-                    Target: <b style="color:#fff;">${targetWinners} ${targetWinners > 1 ? 'Winners' : 'Winner'}</b> · Press Spacebar
-                </div>
-            </div>
-        `;
-        this.syncToProjectorMirror();
+        this.resetDisplayForNewRound();
     },
 
     resetDisplayForNewRound() {

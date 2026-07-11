@@ -32,19 +32,7 @@ window.ZoneC = {
 
         // Check if drawArea already exists in DOM so we preserve active animation nodes during non-disruptive renders
         const existingDrawArea = document.getElementById('drawArea');
-        const existingDrawAreaHTML = existingDrawArea ? existingDrawArea.innerHTML : `
-            <div style="text-align:center;">
-                <div style="font-size:11px; color:var(--accent-cyan); letter-spacing:3px; text-transform:uppercase; margin-bottom:8px;">
-                    Ready for Launch
-                </div>
-                <div style="font-size:20px; color:#fff;">
-                    ${category}
-                </div>
-                <div style="font-size:13px; color:var(--text-secondary); margin-top:4px;">
-                    Target: ${targetWinners} ${targetWinners > 1 ? 'Winners' : 'Winner'}
-                </div>
-            </div>
-        `;
+        const existingDrawAreaHTML = existingDrawArea ? existingDrawArea.innerHTML : '';
 
         el.innerHTML = `
             <div class="dual-monitors-container">
@@ -97,6 +85,15 @@ window.ZoneC = {
             </div>
         `;
         this.applyBackground();
+
+        if (window.Display) {
+            const roundResult = S.roundResults[S.currentRound];
+            if (roundResult && roundResult.winners && roundResult.winners.length > 0) {
+                Display.showWinnersInstantly(roundResult.winners);
+            } else {
+                Display.resetDisplayForNewRound();
+            }
+        }
     },
 
     zoomManual(delta) {
