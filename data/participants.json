@@ -1,0 +1,102 @@
+[
+  {
+    "id": "P-1001",
+    "name": "Sok Dara",
+    "ticket_num": "TCK-801",
+    "department": "IT Dept",
+    "category": "VIP",
+    "status": "active",
+    "won_slot_id": null,
+    "won_prize_name": null
+  },
+  {
+    "id": "P-1002",
+    "name": "Channary Veth",
+    "ticket_num": "TCK-802",
+    "department": "Marketing",
+    "category": "VIP",
+    "status": "active",
+    "won_slot_id": null,
+    "won_prize_name": null
+  },
+  {
+    "id": "P-1003",
+    "name": "Bora Keth",
+    "ticket_num": "TCK-803",
+    "department": "Sales",
+    "category": "Regular",
+    "status": "active",
+    "won_slot_id": null,
+    "won_prize_name": null
+  },
+  {
+    "id": "P-1004",
+    "name": "Serey Rith",
+    "ticket_num": "TCK-804",
+    "department": "Finance",
+    "category": "Regular",
+    "status": "active",
+    "won_slot_id": null,
+    "won_prize_name": null
+  },
+  {
+    "id": "P-1005",
+    "name": "Phalla Meas",
+    "ticket_num": "TCK-805",
+    "department": "Operations",
+    "category": "VIP",
+    "status": "won",
+    "won_slot_id": "SLOT-1",
+    "won_prize_name": "iPad Pro M4 (256GB)"
+  },
+  {
+    "id": "P-1006",
+    "name": "Vichea Sorn",
+    "ticket_num": "TCK-806",
+    "department": "IT Dept",
+    "category": "Regular",
+    "status": "active",
+    "won_slot_id": null,
+    "won_prize_name": null
+  },
+  {
+    "id": "P-1007",
+    "name": "Kagna Ly",
+    "ticket_num": "TCK-807",
+    "department": "HR Dept",
+    "category": "Regular",
+    "status": "active",
+    "won_slot_id": null,
+    "won_prize_name": null
+  },
+  {
+    "id": "P-1008",
+    "name": "Visal Roth",
+    "ticket_num": "TCK-808",
+    "department": "Logistics",
+    "category": "VIP",
+    "status": "won",
+    "won_slot_id": "SLOT-1",
+    "won_prize_name": "iPad Pro M4 (256GB)"
+  },
+  {
+    "id": "P-1009",
+    "name": "Sophea Ouk",
+    "ticket_num": "TCK-809",
+    "department": "Design",
+    "category": "Regular",
+    "status": "active",
+    "won_slot_id": null,
+    "won_prize_name": null
+  },
+  {
+    "id": "P-1010",
+    "name": "Moni Pich",
+    "ticket_num": "TCK-810",
+    "department": "Executive",
+    "category": "Grand",
+    "status": "active",
+    "won_slot_id": null,
+    "won_prize_name": null
+  }
+]

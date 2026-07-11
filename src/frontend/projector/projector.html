@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Draw Projector Stage (1920x1080 Virtual Canvas)</title>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../styles/virtual_stage.css">
+    
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        html, body {
+            margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #000;
+        }
+        #stageOutputScreen {
+            width: 100vw; height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <!-- The outer viewport window mirroring the 16:9 Video Player bounds -->
+    <div id="stageOutputScreen" class="stage-viewport">
+        <!-- Fixed 1920x1080 virtual stage shell transformed via ResizeObserver -->
+        <div class="virtual-canvas-shell">
+            <div id="virtualCanvas" class="virtual-canvas">
+                <div class="virtual-stage-bg" id="virtualStageBg"></div>
+                <div class="virtual-winner-grid" id="virtualWinnerGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/engine/virtual_scaler.js"></script>
+    <script src="projector.js"></script>
+</body>
+</html>

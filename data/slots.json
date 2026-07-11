@@ -1,0 +1,131 @@
+{
+  "is_rigging_locked": true,
+  "slots": [
+    {
+      "id": "SLOT-1",
+      "title": "ROUND #1 - GRAND PRIZE",
+      "prize_name": "iPad Pro M4 (256GB)",
+      "quantity": 1,
+      "category_filter": "VIP",
+      "status": "completed",
+      "winners": [
+        {
+          "id": "P-1001",
+          "name": "Sok Dara",
+          "ticket_num": "TCK-801",
+          "department": "IT Dept",
+          "category": "VIP",
+          "status": "active",
+          "won_slot_id": null,
+          "won_prize_name": null
+        },
+        {
+          "id": "P-1005",
+          "name": "Phalla Meas",
+          "ticket_num": "TCK-805",
+          "department": "Operations",
+          "category": "VIP",
+          "status": "won",
+          "won_slot_id": "SLOT-1",
+          "won_prize_name": "iPad Pro M4 (256GB)"
+        },
+        {
+          "id": "P-1008",
+          "name": "Visal Roth",
+          "ticket_num": "TCK-808",
+          "department": "Logistics",
+          "category": "VIP",
+          "status": "won",
+          "won_slot_id": "SLOT-1",
+          "won_prize_name": "iPad Pro M4 (256GB)"
+        }
+      ],
+      "preset_winner_ids": [],
+      "animation_style": "wheel_spin"
+    },
+    {
+      "id": "SLOT-2",
+      "title": "ROUND #2 - 1ST RUNNER UP",
+      "prize_name": "iPhone 16 Pro Max",
+      "quantity": 2,
+      "category_filter": "All",
+      "status": "completed",
+      "winners": [
+        {
+          "id": "P-1010",
+          "name": "Moni Pich",
+          "ticket_num": "TCK-810",
+          "department": "Executive",
+          "category": "Grand",
+          "status": "active",
+          "won_slot_id": null,
+          "won_prize_name": null
+        },
+        {
+          "id": "P-1009",
+          "name": "Sophea Ouk",
+          "ticket_num": "TCK-809",
+          "department": "Design",
+          "category": "Regular",
+          "status": "active",
+          "won_slot_id": null,
+          "won_prize_name": null
+        }
+      ],
+      "preset_winner_ids": [],
+      "animation_style": "slot_machine"
+    },
+    {
+      "id": "SLOT-3",
+      "title": "ROUND #3 - SPECIAL BONUS",
+      "prize_name": "Cash Voucher $500",
+      "quantity": 5,
+      "category_filter": "Regular",
+      "status": "ready",
+      "winners": [
+        {
+          "id": "P-1006",
+          "name": "Vichea Sorn",
+          "ticket_num": "TCK-806",
+          "department": "IT Dept",
+          "category": "Regular",
+          "status": "active",
+          "won_slot_id": null,
+          "won_prize_name": null
+        },
+        {
+          "id": "P-1004",
+          "name": "Serey Rith",
+          "ticket_num": "TCK-804",
+          "department": "Finance",
+          "category": "Regular",
+          "status": "active",
+          "won_slot_id": null,
+          "won_prize_name": null
+        },
+        {
+          "id": "P-1007",
+          "name": "Kagna Ly",
+          "ticket_num": "TCK-807",
+          "department": "HR Dept",
+          "category": "Regular",
+          "status": "active",
+          "won_slot_id": null,
+          "won_prize_name": null
+        },
+        {
+          "id": "P-1003",
+          "name": "Bora Keth",
+          "ticket_num": "TCK-803",
+          "department": "Sales",
+          "category": "Regular",
+          "status": "active",
+          "won_slot_id": null,
+          "won_prize_name": null
+        }
+      ],
+      "preset_winner_ids": [],
+      "animation_style": "digital_pulse"
+    }
+  ]
+}

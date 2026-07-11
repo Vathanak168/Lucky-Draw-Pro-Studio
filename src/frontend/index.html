@@ -1,0 +1,89 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resolume Arena 7 - Lucky Draw Pro Studio</title>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles/resolume_arena.css">
+    <link rel="stylesheet" href="styles/virtual_stage.css">
+    
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <!-- Hidden Storage for EngineState persistence -->
+    <textarea id="customList" style="display:none;">[]</textarea>
+
+    <!-- Master Workstation Grid (Top Deck Matrix -> Middle Transport -> Bottom Panels) -->
+    <div class="arena-workstation">
+        <!-- 1. Top Half: Deck Matrix Grid (#zoneA_deckMatrix) -->
+        <div id="zoneA_deckMatrix" class="arena-top-grid"></div>
+
+        <!-- 2. Middle Strip: Master Transport Bar (#zoneB_transportBar) -->
+        <div id="zoneB_transportBar" class="arena-transport-bar"></div>
+
+        <!-- 3. Bottom Grid: 3 Columns (Monitors | Dashboard Inspector | Pool Browser) -->
+        <div class="arena-bottom-grid">
+            <!-- Bottom Left: Dual Monitors (#zoneC_dualMonitors) -->
+            <div id="zoneC_dualMonitors" class="arena-panel arena-panel-left" style="width:380px;"></div>
+
+            <!-- Bottom Center: Dashboard / Clip Inspector (#zoneD_dashboardInspector) -->
+            <div id="zoneD_dashboardInspector" class="arena-panel" style="flex:1;"></div>
+
+            <!-- Bottom Right: Files & Sources / Pool Browser (#zoneE_poolBrowser) -->
+            <div id="zoneE_poolBrowser" class="arena-panel arena-panel-right" style="width:380px;"></div>
+        </div>
+    </div>
+
+    <!-- Report & Export Modal -->
+    <div id="reportModal" class="modal-overlay" style="display:none;">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <span style="display:flex; align-items:center; gap:8px;">
+                    <svg class="svg-icon svg-icon-lg" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                    DRAW REPORT & EXPORTS SUMMARY
+                </span>
+                <button onclick="Studio.closeReport()" class="modal-close">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div id="report-body" class="modal-body"></div>
+            <div class="modal-footer">
+                <button class="btn-arena btn-arena-danger" onclick="Studio.clearReport()" style="margin-right:auto;">CLEAR HISTORY</button>
+                <button class="btn-arena" onclick="Studio.exportReportToExcel()">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    EXPORT EXCEL (.XLS)
+                </button>
+                <button class="btn-arena" onclick="Studio.printReport()">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+                    PRINT
+                </button>
+                <button class="btn-arena" onclick="Studio.closeReport()">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Engine Scripts -->
+    <script src="js/engine/state.js"></script>
+    <script src="js/engine/virtual_scaler.js"></script>
+    <script src="js/engine/animations.js"></script>
+    <script src="js/engine/display.js"></script>
+    <script src="js/engine/draw.js"></script>
+    
+    <!-- 5 Resolume Zone Controllers -->
+    <script src="js/zones/zoneA_deck.js"></script>
+    <script src="js/zones/zoneB_transport.js"></script>
+    <script src="js/zones/zoneC_monitors.js"></script>
+    <script src="js/zones/zoneD_inspector.js"></script>
+    <script src="js/zones/zoneE_browser.js"></script>
+    
+    <!-- Master Orchestrator -->
+    <script src="js/studio.js"></script>
+</body>
+</html>

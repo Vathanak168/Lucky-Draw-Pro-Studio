@@ -1,0 +1,97 @@
+/* src/frontend/styles/resolume.css */
+:root {
+    /* Resolume Arena Dark Workstation Theme */
+    --bg-main: #161616;
+    --bg-surface: #1e1e1e;
+    --bg-elevated: #262626;
+    --bg-input: #121212;
+    --border-color: #0d0d0d;
+    --border-light: #333333;
+    --accent-cyan: #00e5a3;
+    --accent-hover: #1fd599;
+    --accent-blue: #00b4d8;
+    --danger-color: #ef4444;
+    --danger-hover: #ff3b30;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --text-primary: #ffffff;
+    --text-secondary: #aaaaaa;
+    --text-muted: #666666;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 15px rgba(0, 229, 163, 0.3);
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 10px;
+    --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-main); }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
+
+/* Buttons & Inputs */
+button {
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border-light);
+    background-color: var(--bg-elevated);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+button:hover { background-color: #383838; border-color: var(--text-secondary); }
+button:active { transform: scale(0.98); }
+button.btn-primary { background-color: var(--accent-cyan); color: #000000; border-color: var(--accent-cyan); font-weight: 700; }
+button.btn-primary:hover { background-color: var(--accent-hover); box-shadow: var(--shadow-glow); }
+button.btn-danger { background-color: #3f1515; color: #ff8080; border-color: #632020; }
+button.btn-danger:hover { background-color: var(--danger-color); color: #ffffff; }
+button.btn-success { background-color: #113a29; color: var(--accent-cyan); border-color: #1c5e42; }
+button.btn-success:hover { background-color: var(--success-color); color: #ffffff; }
+
+input[type="text"], input[type="password"], input[type="number"], select, textarea {
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 13px;
+    width: 100%;
+    user-select: text;
+}
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 2px rgba(0, 229, 163, 0.15);
+}
