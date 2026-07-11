@@ -366,19 +366,21 @@
 
     async function checkRemoteStatus() {
       try {
-        const res = await fetch("/api/auth/remote-status");
+        const res = await fetch("/api/auth/check-remote");
         if (res.ok) {
           const data = await res.json();
-          if (data.approved) {
-            updateStatusBox("APPROVED", "ACCESS APPROVED & UNLOCKED!", `✅ Remote access granted! Master Password via Wi-Fi: [ ${data.global_password || 'resolume2026'} ]`);
-          } else if (data.blocked) {
-            updateStatusBox(`BLOCKED:${data.remaining_seconds || 900}`, `BLOCKED FOR ${Math.round((data.remaining_seconds||900)/60)} MINUTES`, data.message || "Anti-Spam lockdown triggered.");
-          } else if (data.status === "REJECTED") {
+          const details = data.details || {};
+          if (data.unlocked || details.approved) {
+            const syncPwd = (details.sync && details.sync.message) ? details.sync.message : 'resolume2026';
+            updateStatusBox("APPROVED", "ACCESS APPROVED & UNLOCKED!", `✅ Remote access granted! Status: ${details.message || 'Unlocked'}`);
+          } else if (details.blocked) {
+            updateStatusBox(`BLOCKED:${details.blocked_until ? Math.round(details.blocked_until - Date.now()/1000) : 900}`, `BLOCKED BY ADMIN / GATEKEEPER`, details.message || "Anti-Spam lockdown triggered.");
+          } else if (details.status === "REJECTED") {
             updateStatusBox("REJECTED", "REQUEST REJECTED", "An Admin denied your unlock request via Gmail.");
           }
 
-          if (data.global_password) {
-            document.getElementById("syncPwdDisplay").innerText = `🔐 ${data.global_password} (Version: ${data.password_version || 0})`;
+          if (details.sync && details.sync.version) {
+            document.getElementById("syncPwdDisplay").innerText = `🔐 Universal Sync (Version: ${details.sync.version})`;
           }
         }
       } catch (err) {}

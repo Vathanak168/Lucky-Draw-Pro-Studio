@@ -60,75 +60,73 @@ function doPost(e) {
         timestamp: timestamp
       }));
 
-      // ២. បង្កើត Link Approve, Reject, Block និង Unified Portal សម្រាប់ចុចក្នុង Gmail
       const scriptUrl = ScriptApp.getService().getUrl();
-      const approveUrl = `${scriptUrl}?action=approve&machine_id=${encodeURIComponent(machineId)}&token=${ADMIN_SECRET_TOKEN}&role=admin`;
-      const rejectUrl = `${scriptUrl}?action=reject&machine_id=${encodeURIComponent(machineId)}&token=${ADMIN_SECRET_TOKEN}&role=admin`;
-      const block15Url = `${scriptUrl}?action=block&duration=900&machine_id=${encodeURIComponent(machineId)}&token=${ADMIN_SECRET_TOKEN}&role=admin`;
-      const block60Url = `${scriptUrl}?action=block&duration=3600&machine_id=${encodeURIComponent(machineId)}&token=${ADMIN_SECRET_TOKEN}&role=admin`;
-      const adminPortalUrl = `${scriptUrl}?action=portal&machine_id=${encodeURIComponent(machineId)}&token=${ADMIN_SECRET_TOKEN}&role=admin`;
-      const superAdminPortalUrl = `${scriptUrl}?action=portal&machine_id=${encodeURIComponent(machineId)}&token=${SUPER_ADMIN_SECRET_TOKEN}&role=superadmin`;
-
-      // ៣. ផ្ញើ Email ចូល Gmail របស់អ្នកភ្លាមៗ!
       const emailSubject = `🚨 [REMOTE UNLOCK] Stage Crew: ${clientName} (${machineId})`;
-      const emailHtml = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; max-width: 520px; background-color: #000000; color: #ffffff; padding: 32px 24px; border-radius: 20px; border: 1px solid #2c2c2e; margin: 0 auto;">
-          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2c2c2e; padding-bottom: 18px; margin-bottom: 24px;">
-            <div>
-              <h2 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">⚙️ LDP Studio</h2>
-              <p style="color: #8e8e93; font-size: 13px; margin: 4px 0 0;">Access Control Center</p>
-            </div>
-            <span style="background-color: #1c1c1e; color: #0a84ff; border: 1px solid #0a84ff; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px; text-transform: uppercase;">iOS Portal</span>
-          </div>
-          
-          <p style="color: #d1d1d6; font-size: 15px; line-height: 1.5; margin-bottom: 20px;">
-            បុគ្គលិកកំពុងស្នើសុំបើកសោរកម្មវិធី <b>Lucky Draw Pro Studio (v5.0.0)</b> លើកុំព្យូទ័រ៖
-          </p>
-          
-          <div style="background-color: #1c1c1e; border-radius: 16px; padding: 18px; margin: 20px 0; border: 1px solid #2c2c2e;">
-            <div style="font-size: 12px; font-weight: 600; color: #8e8e93; text-transform: uppercase; margin-bottom: 4px;">ឈ្មោះបុគ្គលិក / ទីតាំង</div>
-            <div style="font-size: 17px; font-weight: 700; color: #ffffff; margin-bottom: 14px;">👤 ${clientName}</div>
-            <div style="font-size: 12px; font-weight: 600; color: #8e8e93; text-transform: uppercase; margin-bottom: 4px;">Hardware Machine Binding ID</div>
-            <div style="font-size: 15px; font-family: ui-monospace, monospace; font-weight: 700; color: #ff9f0a;">🖥️ ${machineId}</div>
-          </div>
-
-          <div style="margin: 28px 0 16px;">
-            <div style="font-size: 12px; font-weight: 600; color: #8e8e93; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">🌐 iOS Unified Management Screen</div>
-            <a href="${adminPortalUrl}" style="background-color: #1c1c1e; color: #30d158; border: 1.5px solid #30d158; font-weight: 700; text-decoration: none; padding: 16px; border-radius: 14px; font-size: 15px; text-align: center; display: block; margin-bottom: 12px;">
-              📱 OPEN iOS CONTROL PORTAL (ADMIN MODE)
-            </a>
-            <a href="${superAdminPortalUrl}" style="background: linear-gradient(135deg, #ff9f0a, #ff453a); color: #ffffff; font-weight: 700; text-decoration: none; padding: 16px; border-radius: 14px; font-size: 15px; text-align: center; display: block; box-shadow: 0 6px 20px rgba(255,69,58,0.25);">
-              👑 OPEN iOS CONTROL PORTAL (SUPER ADMIN)
-            </a>
-          </div>
-
-          <div style="background-color: #1c1c1e; border-radius: 16px; padding: 18px; margin-top: 24px; border: 1px solid #2c2c2e; text-align: center;">
-            <div style="font-size: 12px; font-weight: 600; color: #8e8e93; text-transform: uppercase; margin-bottom: 14px;">⚡ Quick Instant Actions</div>
-            <a href="${approveUrl}" style="background-color: #30d158; color: #000000; font-weight: 700; text-decoration: none; padding: 12px 20px; border-radius: 12px; font-size: 14px; display: inline-block; margin: 4px;">
-              🔓 Grant Unlock
-            </a>
-            <a href="${rejectUrl}" style="background-color: #2c2c2e; color: #ff453a; font-weight: 600; text-decoration: none; padding: 12px 20px; border-radius: 12px; font-size: 14px; display: inline-block; margin: 4px;">
-              ❌ Reject
-            </a>
-            <a href="${block15Url}" style="background-color: #2c2c2e; color: #ff9f0a; font-weight: 600; text-decoration: none; padding: 12px 20px; border-radius: 12px; font-size: 14px; display: inline-block; margin: 4px;">
-              🚫 Block 15m
-            </a>
-          </div>
-
-          <div style="border-top: 1px solid #2c2c2e; margin-top: 28px; padding-top: 16px; font-size: 11px; color: #636366; text-align: center; line-height: 1.5;">
-            Lucky Draw Pro Studio v5.0.0 • Apple iOS Design System<br>
-            Note: Admin Mode automatically conceals all Super Admin capabilities.
-          </div>
-        </div>
-      `;
 
       const allAdmins = getAllAuthorizedEmails(props);
       allAdmins.forEach(email => {
         try {
+          const isSuper = (email.trim().toLowerCase() === ADMIN_GMAIL_ADDRESS.trim().toLowerCase());
+          const targetRole = isSuper ? "superadmin" : "admin";
+          const targetToken = isSuper ? SUPER_ADMIN_SECRET_TOKEN : ADMIN_SECRET_TOKEN;
+
+          const approveUrl = `${scriptUrl}?action=approve&machine_id=${encodeURIComponent(machineId)}&token=${targetToken}&role=${targetRole}`;
+          const rejectUrl = `${scriptUrl}?action=reject&machine_id=${encodeURIComponent(machineId)}&token=${targetToken}&role=${targetRole}`;
+          const block15Url = `${scriptUrl}?action=block&duration=900&machine_id=${encodeURIComponent(machineId)}&token=${targetToken}&role=${targetRole}`;
+          const portalUrl = `${scriptUrl}?action=portal&machine_id=${encodeURIComponent(machineId)}&token=${targetToken}&role=${targetRole}`;
+
+          const customEmailHtml = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; max-width: 520px; background-color: #000000; color: #ffffff; padding: 32px 24px; border-radius: 20px; border: 1px solid #2c2c2e; margin: 0 auto;">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2c2c2e; padding-bottom: 18px; margin-bottom: 24px;">
+                <div>
+                  <h2 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">⚙️ LDP Studio</h2>
+                  <p style="color: #8e8e93; font-size: 13px; margin: 4px 0 0;">Access Control Center</p>
+                </div>
+                <span style="background-color: #1c1c1e; color: ${isSuper ? '#00e5a3' : '#0a84ff'}; border: 1px solid ${isSuper ? '#00e5a3' : '#0a84ff'}; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px; text-transform: uppercase;">${isSuper ? '👑 Super Admin' : '🛡️ Admin Portal'}</span>
+              </div>
+              
+              <p style="color: #d1d1d6; font-size: 15px; line-height: 1.5; margin-bottom: 20px;">
+                បុគ្គលិកកំពុងស្នើសុំបើកសោរកម្មវិធី <b>Lucky Draw Pro Studio (v5.0.0)</b> លើកុំព្យូទ័រ៖
+              </p>
+              
+              <div style="background-color: #1c1c1e; border-radius: 16px; padding: 18px; margin: 20px 0; border: 1px solid #2c2c2e;">
+                <div style="font-size: 12px; font-weight: 600; color: #8e8e93; text-transform: uppercase; margin-bottom: 4px;">ឈ្មោះបុគ្គលិក / ទីតាំង</div>
+                <div style="font-size: 17px; font-weight: 700; color: #ffffff; margin-bottom: 14px;">👤 ${clientName}</div>
+                <div style="font-size: 12px; font-weight: 600; color: #8e8e93; text-transform: uppercase; margin-bottom: 4px;">Hardware Machine Binding ID</div>
+                <div style="font-size: 15px; font-family: ui-monospace, monospace; font-weight: 700; color: #ff9f0a;">🖥️ ${machineId}</div>
+              </div>
+
+              <div style="margin: 28px 0 16px;">
+                <div style="font-size: 12px; font-weight: 600; color: #8e8e93; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">🌐 iOS Unified Management Screen</div>
+                <a href="${portalUrl}" style="background: ${isSuper ? 'linear-gradient(135deg, #ff9f0a, #ff453a)' : '#1c1c1e'}; color: ${isSuper ? '#ffffff' : '#30d158'}; border: ${isSuper ? 'none' : '1.5px solid #30d158'}; font-weight: 700; text-decoration: none; padding: 16px; border-radius: 14px; font-size: 15px; text-align: center; display: block; box-shadow: ${isSuper ? '0 6px 20px rgba(255,69,58,0.25)' : 'none'};">
+                  ${isSuper ? '👑 OPEN iOS CONTROL PORTAL (SUPER ADMIN MODE)' : '📱 OPEN iOS CONTROL PORTAL (ADMIN MODE)'}
+                </a>
+              </div>
+
+              <div style="background-color: #1c1c1e; border-radius: 16px; padding: 18px; margin-top: 24px; border: 1px solid #2c2c2e; text-align: center;">
+                <div style="font-size: 12px; font-weight: 600; color: #8e8e93; text-transform: uppercase; margin-bottom: 14px;">⚡ Quick Instant Actions (${isSuper ? 'Super Admin' : 'Admin'})</div>
+                <a href="${approveUrl}" style="background-color: #30d158; color: #000000; font-weight: 700; text-decoration: none; padding: 12px 20px; border-radius: 12px; font-size: 14px; display: inline-block; margin: 4px;">
+                  🔓 Grant Unlock
+                </a>
+                <a href="${rejectUrl}" style="background-color: #2c2c2e; color: #ff453a; font-weight: 600; text-decoration: none; padding: 12px 20px; border-radius: 12px; font-size: 14px; display: inline-block; margin: 4px;">
+                  ❌ Reject
+                </a>
+                <a href="${block15Url}" style="background-color: #2c2c2e; color: #ff9f0a; font-weight: 600; text-decoration: none; padding: 12px 20px; border-radius: 12px; font-size: 14px; display: inline-block; margin: 4px;">
+                  🚫 Block 15m
+                </a>
+              </div>
+
+              <div style="border-top: 1px solid #2c2c2e; margin-top: 28px; padding-top: 16px; font-size: 11px; color: #636366; text-align: center; line-height: 1.5;">
+                Lucky Draw Pro Studio v5.0.0 • Apple iOS Design System<br>
+                Note: ${isSuper ? 'Super Admin Mode — Worldwide Master Password & Multi-Admin enabled.' : 'Admin Mode automatically conceals all Super Admin capabilities.'}
+              </div>
+            </div>
+          `;
+
           MailApp.sendEmail({
             to: email,
             subject: emailSubject,
-            htmlBody: emailHtml
+            htmlBody: customEmailHtml
           });
         } catch (mailErr) {}
       });
@@ -634,6 +632,8 @@ function renderIOSPortal(e, props, statusOverride, toastMessage) {
 </html>
   `;
 
-  return ContentService.createTextOutput(htmlContent).setMimeType(ContentService.MimeType.HTML);
+  return HtmlService.createHtmlOutput(htmlContent)
+    .setTitle("LDP Studio — iOS Gateway Portal")
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
