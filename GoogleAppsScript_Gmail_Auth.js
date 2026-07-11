@@ -52,13 +52,14 @@ function doPost(e) {
     const props = PropertiesService.getScriptProperties();
 
     if (action === "request") {
-      // ១. កត់ត្រាសំណើចូល Properties Store
+      // ១. កត់ត្រាសំណើចូល Properties Store និង Reset status ទៅជា PENDING
       props.setProperty(`REQ_${machineId}`, JSON.stringify({
         machine_id: machineId,
         client_name: clientName,
         status: "PENDING",
         timestamp: timestamp
       }));
+      props.setProperty(`STATUS_${machineId}`, "PENDING");
 
       const scriptUrl = ScriptApp.getService().getUrl();
       const emailSubject = `🚨 [REMOTE UNLOCK] Stage Crew: ${clientName} (${machineId})`;

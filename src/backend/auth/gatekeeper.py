@@ -218,6 +218,14 @@ class GatekeeperService:
         if blocked:
             return {"status": "ERROR", "blocked": True, "message": f"🚨 APP BLOCKED: {reason}. Time remaining: {int(remaining)}s"}
 
+        # Reset local unlocked state when starting a fresh remote request
+        self.is_unlocked = False
+        if os.path.exists(AUTH_TOKEN_FILE):
+            try:
+                os.remove(AUTH_TOKEN_FILE)
+            except Exception:
+                pass
+
         self.remote_request_count += 1
         if self.remote_request_count > MAX_REMOTE_REQUESTS:
             block_info = self.block_app(DEFAULT_BLOCK_DURATION_SECONDS, f"Exceeded request limit ({MAX_REMOTE_REQUESTS} requests). Blocked to prevent spamming Admin Gmail.")
