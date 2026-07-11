@@ -47,11 +47,12 @@ window.Display = {
 
         let html = '';
         winners.forEach((w, i) => {
-            const isPlaceholder = !w || w.name === '???';
+            const isPlaceholder = !w || w.name === '???' || w.name === '' || w.type === 'dummy';
+            const displayText = (w && w.name !== '???' && w.type !== 'dummy') ? w.name : '';
             html += `
                 <div class="virtual-winner-card ${isPlaceholder ? '' : 'completed'}" id="item-${i}" style="min-height:${layout.cardHeight}px; width:${layout.cardWidth}px;">
                     <span class="virtual-winner-value" style="font-size:${layout.fontSize}px; font-family:var(--font-display, 'Chakra Petch', 'Koulen', 'JetBrains Mono', monospace); font-weight:900;">
-                        ${w ? w.name : '???'}
+                        ${displayText}
                     </span>
                 </div>
             `;
@@ -85,7 +86,7 @@ window.Display = {
         const S = EngineState;
         const rc = S.roundConfigs[S.currentRound] || S.getDefaultRoundConfig(S.currentRound);
         const count = rc.winnerCount || 1;
-        const placeholders = Array.from({ length: count }, (_, i) => ({ id: `dummy_${i}`, name: '???', type: 'dummy' }));
+        const placeholders = Array.from({ length: count }, (_, i) => ({ id: `dummy_${i}`, name: '', type: 'dummy' }));
         this.renderGridMode(placeholders, rc);
     },
 

@@ -154,10 +154,12 @@ class StageProjectorSync {
 
         let html = '';
         winners.forEach((w, idx) => {
+            const isPlaceholder = !w || w.name === '???' || w.name === '' || w.type === 'dummy';
+            const displayText = (w && w.name !== '???' && w.type !== 'dummy') ? w.name : '';
             html += `
-                <div class="virtual-winner-card completed has-glow" style="min-height:${layout.cardHeight}px; width:${layout.cardWidth}px;">
+                <div class="virtual-winner-card ${isPlaceholder ? '' : 'completed has-glow'}" style="min-height:${layout.cardHeight}px; width:${layout.cardWidth}px;">
                     <span class="virtual-winner-value" style="font-size:${layout.fontSize}px; font-family:var(--font-mono, 'JetBrains Mono', monospace); font-weight:900;">
-                        ${w ? w.name : '???'}
+                        ${displayText}
                     </span>
                 </div>
             `;
