@@ -1,4 +1,4 @@
-﻿/* styles/resolume_arena.css - Resolume Arena 7 Workstation Aesthetics */
+/* styles/resolume_arena.css - Resolume Arena 7 Workstation Aesthetics */
 
 :root {
     /* Resolume Arena 7 Exact Dark Palette */
@@ -24,8 +24,9 @@
     --text-primary: #f3f4f6;
     --text-secondary: #9ca3af;
     --text-muted: #6b7280;
-    --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --font-main: 'Outfit', 'Plus Jakarta Sans', 'Kantumruy Pro', 'Siemreap', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'Chakra Petch', 'JetBrains Mono', 'Kantumruy Pro', monospace;
+    --font-display: 'Chakra Petch', 'Koulen', 'Outfit', 'Plus Jakarta Sans', sans-serif;
     
     /* Geometry & Effects */
     --radius-xs: 3px;
@@ -55,6 +56,8 @@ body {
     flex-direction: column;
     font-size: 13px;
     letter-spacing: -0.1px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Scrollbars */

@@ -46,7 +46,7 @@ window.Display = {
             const isPlaceholder = !w || w.name === '???';
             html += `
                 <div class="virtual-winner-card ${isPlaceholder ? '' : 'completed'}" id="item-${i}" style="min-height:${layout.cardHeight}px; width:${layout.cardWidth}px;">
-                    <span class="virtual-winner-value" style="font-size:${layout.fontSize}px; font-family:var(--font-mono, 'JetBrains Mono', monospace); font-weight:900;">
+                    <span class="virtual-winner-value" style="font-size:${layout.fontSize}px; font-family:var(--font-display, 'Chakra Petch', 'Koulen', 'JetBrains Mono', monospace); font-weight:900;">
                         ${w ? w.name : '???'}
                     </span>
                 </div>
@@ -92,10 +92,10 @@ window.Display = {
                 <div style="font-size: 32px; font-weight: 800; color: var(--accent-cyan); letter-spacing: 6px; text-transform: uppercase; margin-bottom: 16px;">
                     ✨ READY FOR LAUNCH ✨
                 </div>
-                <div style="font-size: 72px; font-weight: 900; color: #fff; line-height: 1.1; margin-bottom: 24px;">
+                <div style="font-size: 72px; font-weight: 900; color: #fff; line-height: 1.1; margin-bottom: 24px; font-family: var(--font-main, 'Outfit', 'Kantumruy Pro', sans-serif);">
                     ${category}
                 </div>
-                <div style="font-size: 36px; color: #ccc; font-family: var(--font-mono);">
+                <div style="font-size: 36px; color: #ccc; font-family: var(--font-main, 'Outfit', 'Kantumruy Pro', sans-serif);">
                     Target: <b style="color:#fff;">${targetWinners} ${targetWinners > 1 ? 'Winners' : 'Winner'}</b> · Press Spacebar
                 </div>
             </div>
