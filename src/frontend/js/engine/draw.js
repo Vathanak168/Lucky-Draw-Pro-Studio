@@ -93,7 +93,7 @@ window.Draw = {
         if (S.isDrawing || S.drawCompletedThisRound) return;
 
         if (!this.ensurePoolPrepared()) {
-            alert('Please add participants in the Pool Browser (bottom right) or configure Numeric Range before launching!');
+            alert('Please add names or set number range first!');
             return;
         }
 

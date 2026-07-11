@@ -108,16 +108,16 @@ window.Studio = {
         if (results.length === 0 || !results.some(r => r)) {
             body.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:24px;">No draw results yet. Launch a column draw to generate a live report.</p>';
         } else {
-            let tableHTML = '<table class="winner-table"><thead><tr><th>Column</th><th>Category</th><th>Type</th><th>Winner Name / Number</th></tr></thead><tbody>';
+            let tableHTML = '<table class="winner-table"><thead><tr><th>Col</th><th>Category</th><th>Type</th><th>Winner</th></tr></thead><tbody>';
             results.forEach((r, idx) => {
                 if (!r) return;
                 const roundType = r.type === 'list' ? 'Name' : 'Number';
-                const categoryName = r.category || '<i>Regular Draw</i>';
+                const categoryName = r.category || '<i>Draw</i>';
                 r.winners.forEach((w, i) => {
                     const winnerName = w ? (w.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')) : '<i>N/A</i>';
                     tableHTML += `
                         <tr>
-                            <td>${i === 0 ? `Column #${r.round}` : ''}</td>
+                            <td>${i === 0 ? `Col #${r.round}` : ''}</td>
                             <td>${i === 0 ? categoryName : ''}</td>
                             <td>${roundType}</td>
                             <td style="color:var(--accent-cyan);">${winnerName}</td>

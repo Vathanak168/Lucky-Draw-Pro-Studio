@@ -24,15 +24,15 @@ window.ZoneB = {
                 <div style="display:flex; align-items:center; gap:8px; background:var(--bg-panel); padding:4px 10px; border-radius:var(--radius-sm); border:1px solid var(--border-light);">
                     <svg class="svg-icon" style="color:var(--accent-cyan);" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase;">Speed:</span>
-                    <select onchange="ZoneB.setSpeed(this.value)" style="width:110px; padding:2px 6px; font-size:11px; background:var(--bg-elevated); border:1px solid #3c3c3c; color:#fff;">
-                        <option value="fast" ${currentSpeed === 'fast' ? 'selected' : ''}>Fast (1s)</option>
-                        <option value="normal" ${currentSpeed === 'normal' ? 'selected' : ''}>Normal (3s)</option>
-                        <option value="suspense" ${currentSpeed === 'suspense' ? 'selected' : ''}>Suspense (6s)</option>
+                    <select onchange="ZoneB.setSpeed(this.value)" style="width:90px; padding:2px 6px; font-size:11px; background:var(--bg-elevated); border:1px solid #3c3c3c; color:#fff;">
+                        <option value="fast" ${currentSpeed === 'fast' ? 'selected' : ''}>Fast</option>
+                        <option value="normal" ${currentSpeed === 'normal' ? 'selected' : ''}>Normal</option>
+                        <option value="suspense" ${currentSpeed === 'suspense' ? 'selected' : ''}>Slow</option>
                     </select>
                 </div>
 
                 <div style="display:flex; align-items:center; gap:6px;">
-                    <span style="font-size:11px; color:var(--text-secondary);">Active Column:</span>
+                    <span style="font-size:11px; color:var(--text-secondary);">Col:</span>
                     <span style="font-family:var(--font-mono); color:#fff; background:#111; padding:3px 8px; border-radius:3px; border:1px solid #333;">
                         #${S.currentRound + 1} · ${currentCategory}
                     </span>
@@ -44,12 +44,12 @@ window.ZoneB = {
                 ${isDrawing ? `
                     <button class="btn-arena" style="padding:8px 24px; font-size:13px; background:var(--accent-blue); color:#fff; border-color:var(--accent-blue);" disabled>
                         <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M10 15V9l5 3-5 3z"/></svg>
-                        Drawing...
+                        Spinning...
                     </button>
                 ` : !hasWinners ? `
                     <button class="btn-arena btn-arena-primary" onclick="Draw.startDraw()" style="padding:8px 30px; font-size:13px; letter-spacing:1px; box-shadow:var(--shadow-glow);">
                         <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        Start Draw
+                        Spin
                     </button>
                 ` : `
                     <button class="btn-arena btn-arena-primary" onclick="Display.nextRound()" style="padding:8px 24px; font-size:13px;">
@@ -71,7 +71,7 @@ window.ZoneB = {
                 </button>
                 <button class="btn-arena" onclick="Studio.showReport()">
                     <svg class="svg-icon" style="color:var(--accent-cyan);" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    Reports
+                    History
                 </button>
             </div>
         `;

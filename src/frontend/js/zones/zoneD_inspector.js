@@ -31,7 +31,7 @@ window.ZoneD = {
 
         for (let i = 0; i < winnerCount; i++) {
             const currentVal = (rc.presets && rc.presets[i]) ? rc.presets[i] : '';
-            let dropdownOptions = `<option value="">-- Random Draw --</option>`;
+            let dropdownOptions = `<option value="">-- Random --</option>`;
             if (rc.dataSource === 'list') {
                 currentPoolList.forEach(p => {
                     const sel = (p.name === currentVal) ? 'selected' : '';
@@ -41,13 +41,13 @@ window.ZoneD = {
 
             presetRows += `
                 <div class="inspector-row">
-                    <span class="inspector-label" style="font-size:10px; color:var(--text-secondary);">Slot #${i + 1} Override:</span>
+                    <span class="inspector-label" style="font-size:10px; color:var(--text-secondary);">#${i + 1}:</span>
                     ${rc.dataSource === 'list' && currentPoolList.length > 0 && currentPoolList.length <= 500 ? `
                         <select onchange="ZoneD.updatePreset(${i}, this.value)" style="flex:1; font-size:11px; padding:4px;">
                             ${dropdownOptions}
                         </select>
                     ` : `
-                        <input type="text" placeholder="${rc.dataSource === 'numeric' ? 'Enter VIP Number...' : 'Type exact name...'}" value="${currentVal.replace(/"/g, '&quot;')}" onchange="ZoneD.updatePreset(${i}, this.value)" style="flex:1; font-size:11px; padding:4px;">
+                        <input type="text" placeholder="${rc.dataSource === 'numeric' ? 'Number...' : 'Name...'}" value="${currentVal.replace(/"/g, '&quot;')}" onchange="ZoneD.updatePreset(${i}, this.value)" style="flex:1; font-size:11px; padding:4px;">
                     `}
                 </div>
             `;
@@ -66,7 +66,7 @@ window.ZoneD = {
                         <td style="text-align:right; width:110px;">
                             <button class="btn-arena" onclick="Draw.replaceWinnerAt(${S.currentRound}, ${idx})" title="Replace this winner with a new spin" style="padding:2px 8px; font-size:10px;">
                                 <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                                RE-DRAW
+                                Re-Spin
                             </button>
                         </td>
                     </tr>
@@ -75,10 +75,10 @@ window.ZoneD = {
             winnerTableHtml = `
                 <div class="inspector-section" style="border-color:var(--accent-cyan); background:rgba(0,229,163,0.03);">
                     <div class="inspector-section-title">
-                        <span style="color:var(--accent-cyan);">🎯 DRAWN WINNERS FOR THIS COLUMN (${winners.length})</span>
+                        <span style="color:var(--accent-cyan);">Winners (${winners.length})</span>
                     </div>
                     <table class="winner-table">
-                        <thead><tr><th>Slot</th><th>Winner Name / Number</th><th style="text-align:right;">Granular Control</th></tr></thead>
+                        <thead><tr><th>#</th><th>Winner</th><th style="text-align:right;">Action</th></tr></thead>
                         <tbody>${rowsHtml}</tbody>
                     </table>
                 </div>
@@ -89,17 +89,17 @@ window.ZoneD = {
             <div class="arena-panel-header">
                 <div class="arena-panel-title">
                     <svg class="svg-icon highlight" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-                    DASHBOARD INSPECTOR · <span class="highlight">COLUMN #${S.currentRound + 1} PROPERTIES</span>
+                    Inspector · <span class="highlight">Col #${S.currentRound + 1}</span>
                 </div>
             </div>
 
             <!-- Dashboard Tabs -->
             <div class="arena-tab-bar">
                 <button class="arena-tab-btn ${this.activeTab === 'round' ? 'active' : ''}" onclick="ZoneD.setTab('round')">
-                    ROUND SLOT PROPERTIES
+                    Deck Settings
                 </button>
                 <button class="arena-tab-btn ${this.activeTab === 'fx' ? 'active' : ''}" onclick="ZoneD.setTab('fx')">
-                    STAGE FX & DASHBOARD RULES
+                    Effects & Rules
                 </button>
             </div>
 
@@ -109,9 +109,9 @@ window.ZoneD = {
                     ${winnerTableHtml}
 
                     <div class="inspector-section">
-                        <div class="inspector-section-title"><span>📝 COLUMN IDENTIFICATION</span></div>
+                        <div class="inspector-section-title"><span>Deck Name</span></div>
                         <div class="inspector-row">
-                            <span class="inspector-label">Category Deck:</span>
+                            <span class="inspector-label">Name:</span>
                             <select onchange="ZoneD.updateField('category', this.value)" style="flex:1;">
                                 ${S.prizeCategories.map(cat => `<option value="${cat.replace(/"/g, '&quot;')}" ${rc.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
                             </select>
@@ -119,16 +119,16 @@ window.ZoneD = {
                     </div>
 
                     <div class="inspector-section">
-                        <div class="inspector-section-title"><span>🎯 DRAW CONFIGURATION KNOBS</span></div>
+                        <div class="inspector-section-title"><span>Draw Settings</span></div>
                         <div class="inspector-row">
-                            <span class="inspector-label">Data Source:</span>
+                            <span class="inspector-label">Source:</span>
                             <select onchange="ZoneD.updateField('dataSource', this.value)" style="flex:1;">
                                 <option value="list" ${rc.dataSource === 'list' ? 'selected' : ''}>Name</option>
                                 <option value="numeric" ${rc.dataSource === 'numeric' ? 'selected' : ''}>Number</option>
                             </select>
                         </div>
                         <div class="inspector-row">
-                            <span class="inspector-label">Winner Count:</span>
+                            <span class="inspector-label">Winners:</span>
                             <div style="display:flex; gap:6px; flex:1;">
                                 <input type="number" min="1" max="100" value="${rc.winnerCount || 1}" onchange="ZoneD.updateField('winnerCount', parseInt(this.value)||1)" style="flex:1;">
                                 <button class="btn-arena" onclick="ZoneD.updateField('winnerCount', 1)" style="padding:2px 8px;">1</button>
@@ -138,33 +138,33 @@ window.ZoneD = {
                             </div>
                         </div>
                         <div class="inspector-row">
-                            <span class="inspector-label">Stage Layout:</span>
+                            <span class="inspector-label">Layout:</span>
                             <select onchange="ZoneD.updateField('layoutMode', this.value)" style="flex:1; background: #1a1a24; color: #00e5a3;">
-                                <option value="grid" selected>Grid Boxes (Multi-Box Stage)</option>
+                                <option value="grid" selected>Grid Boxes</option>
                             </select>
                         </div>
                         <div class="inspector-row">
-                            <span class="inspector-label">Animation Mode:</span>
+                            <span class="inspector-label">Effect:</span>
                             <select onchange="ZoneD.updateField('animationStyle', this.value)" style="flex:1; background: #1a1a24; color: #00e5a3;">
-                                <option value="simultaneous" selected>Simultaneous All-Box Draw</option>
+                                <option value="simultaneous" selected>Simultaneous</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="inspector-section">
-                        <div class="inspector-section-title"><span>⭐ PRESET WINNERS (VIP OVERRIDES)</span></div>
+                        <div class="inspector-section-title"><span>VIP Overrides</span></div>
                         ${presetRows}
                     </div>
                 ` : `
                     <!-- Stage FX & Rules Tab -->
                     <div class="inspector-section">
-                        <div class="inspector-section-title"><span>✨ NEON GLOW & STAGE AESTHETICS</span></div>
+                        <div class="inspector-section-title"><span>Glow Effect</span></div>
                         <div class="inspector-row">
-                            <span class="inspector-label">Enable Neon Glow:</span>
+                            <span class="inspector-label">Enable Glow:</span>
                             <input type="checkbox" ${ds.winnerGlowEnabled ? 'checked' : ''} onchange="ZoneD.updateGlobal('winnerGlowEnabled', this.checked)">
                         </div>
                         <div class="inspector-row">
-                            <span class="inspector-label">Winner Glow Color:</span>
+                            <span class="inspector-label">Color:</span>
                             <input type="color" value="${ds.winnerGlowColor || '#00e5a3'}" onchange="ZoneD.updateGlobal('winnerGlowColor', this.value)" style="height:28px; width:60px; padding:0; cursor:pointer;">
                         </div>
                         <div class="inspector-row">
@@ -174,45 +174,45 @@ window.ZoneD = {
                     </div>
 
                     <div class="inspector-section">
-                        <div class="inspector-section-title"><span>Number Configuration</span></div>
+                        <div class="inspector-section-title"><span>Number Range</span></div>
                         <div class="inspector-row">
-                            <span class="inspector-label">Start Number:</span>
+                            <span class="inspector-label">Start:</span>
                             <input type="number" value="${ds.startNumber || 1}" onchange="ZoneD.updateGlobal('startNumber', this.value)">
                         </div>
                         <div class="inspector-row">
-                            <span class="inspector-label">End Number:</span>
+                            <span class="inspector-label">End:</span>
                             <input type="number" value="${ds.endNumber || 1000}" onchange="ZoneD.updateGlobal('endNumber', this.value)">
                         </div>
                         <div class="inspector-row">
-                            <span class="inspector-label" style="color:var(--accent-cyan);">Digit Padding (e.g. 6=000001):</span>
+                            <span class="inspector-label" style="color:var(--accent-cyan);">Digits:</span>
                             <input type="number" min="0" max="10" value="${ds.numDigits || 0}" onchange="ZoneD.updateGlobal('numDigits', parseInt(this.value)||0)" style="border: 2px solid var(--accent-cyan);">
                         </div>
                         <div class="inspector-row">
-                            <span class="inspector-label">Exclude Numbers:</span>
+                            <span class="inspector-label">Exclude:</span>
                             <input type="text" placeholder="e.g. 13, 44, 101" value="${ds.excludeList || ''}" onchange="ZoneD.updateGlobal('excludeList', this.value)">
                         </div>
                     </div>
 
                     <div class="inspector-section">
-                        <div class="inspector-section-title"><span>🖼️ STAGE WALLPAPER & VIDEO BACKGROUND</span></div>
+                        <div class="inspector-section-title"><span>Background</span></div>
                         <div class="inspector-row">
-                            <span class="inspector-label">Custom Image:</span>
+                            <span class="inspector-label">Image:</span>
                             <label class="btn-arena" style="flex:1; cursor:pointer;">
                                 <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                                UPLOAD IMAGE
+                                Upload Image
                                 <input type="file" accept="image/*" style="display:none;" onchange="ZoneD.handleBgImageUpload(event)">
                             </label>
                         </div>
                         <div class="inspector-row">
-                            <span class="inspector-label">Looping Video:</span>
+                            <span class="inspector-label">Video:</span>
                             <label class="btn-arena" style="flex:1; cursor:pointer;">
                                 <svg class="svg-icon" viewBox="0 0 24 24"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2" ry="2"/></svg>
-                                UPLOAD MP4/WEBM
+                                Upload Video
                                 <input type="file" accept="video/mp4,video/webm" style="display:none;" onchange="ZoneD.handleBgVideoUpload(event)">
                             </label>
                         </div>
                         ${S.settings.bgImage !== 'none' || S.settings.bgVideo ? `
-                            <button class="btn-arena btn-arena-danger" onclick="ZoneD.clearBackground()" style="width:100%; margin-top:8px;">RESET BACKGROUND TO ARENA DARK</button>
+                            <button class="btn-arena btn-arena-danger" onclick="ZoneD.clearBackground()" style="width:100%; margin-top:8px;">Reset Background</button>
                         ` : ''}
                     </div>
                 `}

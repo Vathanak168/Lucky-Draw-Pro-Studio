@@ -41,7 +41,7 @@ window.ZoneC = {
                     <div class="arena-panel-header">
                         <div class="arena-panel-title">
                             <svg class="svg-icon highlight" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                            Output Monitor · <span class="highlight">Stage Live</span>
+                            Mini Screen · <span class="highlight">Live</span>
                         </div>
                         <div style="display:flex; gap:4px;">
                             <button class="btn-arena" onclick="ZoneC.zoomManual(2)" style="padding:1px 6px; font-size:10px;">A+</button>
@@ -58,26 +58,26 @@ window.ZoneC = {
                     <div class="arena-panel-header">
                         <div class="arena-panel-title">
                             <svg class="svg-icon" style="color:var(--accent-blue);" viewBox="0 0 24 24"><path d="M2 12h20M2 12l4-4m-4 4 4 4"/></svg>
-                            Preview Monitor · <span style="color:var(--accent-blue);">Column Stats</span>
+                            Column Info
                         </div>
                     </div>
                     <div style="padding:12px; font-size:11px; display:flex; flex-direction:column; justify-content:center; gap:8px; background:var(--bg-panel); flex:1;">
                         <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-light); padding-bottom:6px;">
-                            <span style="color:var(--text-secondary);">Target Column:</span>
-                            <span style="color:#fff;">Column #${S.currentRound + 1} (${category})</span>
+                            <span style="color:var(--text-secondary);">Col:</span>
+                            <span style="color:#fff;">#${S.currentRound + 1} (${category})</span>
                         </div>
                         <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-light); padding-bottom:6px;">
-                            <span style="color:var(--text-secondary);">Pool Source:</span>
+                            <span style="color:var(--text-secondary);">Source:</span>
                             <span style="color:var(--accent-cyan);">
                                 ${dataSource === 'numeric' ? 'Number' : 'Name'} (${activePoolCount} active)
                             </span>
                         </div>
                         <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-light); padding-bottom:6px;">
-                            <span style="color:var(--text-secondary);">Winner Odds:</span>
+                            <span style="color:var(--text-secondary);">Odds:</span>
                             <span style="font-family:var(--font-mono); color:var(--warning-color);">${oddsText}</span>
                         </div>
                         <div style="display:flex; justify-content:space-between;">
-                            <span style="color:var(--text-secondary);">Animation Mode:</span>
+                            <span style="color:var(--text-secondary);">Effect:</span>
                             <span style="color:#ccc; text-transform:uppercase;">${rc.animationStyle} (${S.displaySettings.drawSpeed || 'normal'})</span>
                         </div>
                     </div>

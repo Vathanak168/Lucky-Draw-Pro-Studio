@@ -19,7 +19,7 @@ window.ZoneA = {
 
         // Deck Category Tabs HTML
         let tabsHtml = `
-            <button class="deck-tab-btn ${activeTab === 'All' ? 'active' : ''}" onclick="ZoneA.selectCategoryTab('All')">ALL DECKS (${totalRounds})</button>
+            <button class="deck-tab-btn ${activeTab === 'All' ? 'active' : ''}" onclick="ZoneA.selectCategoryTab('All')">All (${totalRounds})</button>
         `;
         S.prizeCategories.forEach(cat => {
             const count = roundConfigs.filter(rc => rc.category === cat).length;
@@ -30,8 +30,8 @@ window.ZoneA = {
             `;
         });
         tabsHtml += `
-            <button class="deck-tab-btn" onclick="ZoneD.setTab('round'); ZoneD.addCategoryPrompt();" title="Create New Category Deck" style="border:1px dashed var(--border-light); color:var(--accent-cyan);">
-                + ADD DECK
+            <button class="deck-tab-btn" onclick="ZoneD.setTab('round'); ZoneD.addCategoryPrompt();" title="Create New Deck" style="border:1px dashed var(--border-light); color:var(--accent-cyan);">
+                + Add
             </button>
         `;
 
@@ -41,7 +41,7 @@ window.ZoneA = {
 
         for (let i = 0; i < totalRounds; i++) {
             const rc = roundConfigs[i] || S.getDefaultRoundConfig(i);
-            const category = rc.category || 'Regular Draw';
+            const category = rc.category || 'Draw';
 
             if (activeTab !== "All" && category !== activeTab) continue;
             displayedCount++;
@@ -55,7 +55,7 @@ window.ZoneA = {
 
             let statusPill = `<span style="color:var(--success-color); background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:3px; font-size:9px;">READY</span>`;
             if (isDrawing) {
-                statusPill = `<span style="color:var(--accent-blue); background:rgba(0,180,216,0.2); padding:2px 6px; border-radius:3px; font-size:9px;">DRAWING...</span>`;
+                statusPill = `<span style="color:var(--accent-blue); background:rgba(0,180,216,0.2); padding:2px 6px; border-radius:3px; font-size:9px;">SPINNING...</span>`;
             } else if (isCompleted) {
                 statusPill = `<span style="color:var(--warning-color); background:rgba(245,158,11,0.2); padding:2px 6px; border-radius:3px; font-size:9px;">DONE (${winCount})</span>`;
             }
@@ -64,7 +64,7 @@ window.ZoneA = {
                 <div class="arena-column-slot ${isActive ? 'active' : ''} ${isDrawing ? 'drawing' : ''}" onclick="ZoneA.selectSlot(${i})">
                     <div>
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-                            <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-secondary);">COLUMN ${i + 1}</span>
+                            <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-secondary);">COL #${i + 1}</span>
                             ${statusPill}
                         </div>
                         <div style="font-size:13px; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
