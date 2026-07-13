@@ -4,10 +4,21 @@ class GatekeeperUI {
         this.overlay = null;
         this.pollingInterval = null;
         this.syncInterval = null;
+        this.blockCountdown = null;
     }
 
     async init() {
         this.overlay = document.getElementById("gatekeeperOverlay");
+        if (!this.overlay) return;
+        if (!window.StudioAPI) {
+            this.lockConsole();
+            const alertBox = document.getElementById("ownerAlertBox");
+            if (alertBox) {
+                alertBox.className = "status-alert error";
+                alertBox.textContent = "Authentication service failed to load.";
+            }
+            return;
+        }
         this.setupSuperAdminWifiSync();
         await this.checkInitialStatus();
     }
@@ -50,6 +61,13 @@ class GatekeeperUI {
     async handleMasterLogin() {
         const pwdInput = document.getElementById("masterPwdInput");
         const alertBox = document.getElementById("ownerAlertBox");
+
+        if (!pwdInput.value) {
+            alertBox.className = "status-alert error";
+            alertBox.textContent = "Enter the master password.";
+            pwdInput.focus();
+            return;
+        }
         
         try {
             alertBox.className = "status-alert info";
@@ -83,6 +101,13 @@ class GatekeeperUI {
                 alertBox.className = "status-alert error";
                 alertBox.textContent = res.message;
                 this.showBlockedLockdown(900, res.message);
+                return;
+            }
+
+            if (res.status === "SENT_SIMULATION" || res.status === "ERROR") {
+                alertBox.className = res.status === "ERROR" ? "status-alert error" : "status-alert info";
+                alertBox.textContent = res.message || "Remote approval is not configured.";
+                reqBtn.disabled = false;
                 return;
             }
             
@@ -126,6 +151,7 @@ class GatekeeperUI {
         if (this.blockCountdown) clearInterval(this.blockCountdown);
         if (this.overlay) {
             this.overlay.classList.add("hidden");
+            this.overlay.setAttribute("aria-hidden", "true");
         }
         if (window.VJConsole && window.VJConsole.init) {
             window.VJConsole.init();
@@ -135,6 +161,7 @@ class GatekeeperUI {
     lockConsole() {
         if (this.overlay) {
             this.overlay.classList.remove("hidden");
+            this.overlay.setAttribute("aria-hidden", "false");
         }
     }
 

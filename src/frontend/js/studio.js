@@ -3,7 +3,7 @@
  * Connects all 5 Resolume Arena 7 zones to EngineState and DOM.
  */
 
-window.AudioSynth = {
+window.AudioSynth = window.AudioSynth || {
     playTick() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();

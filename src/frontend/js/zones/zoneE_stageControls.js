@@ -249,7 +249,7 @@ window.ZoneEStageControls = {
             <div style="background:rgba(255,170,0,0.06); border:1px solid rgba(255,170,0,0.3); border-radius:4px; padding:10px; display:flex; flex-direction:column; gap:8px;">
                 <div style="font-size:11px; font-weight:700; color:#ffaa00; display:flex; align-items:center; justify-content:space-between;">
                     <span>⚡ Per-Round Audio Rules</span>
-                    <button onclick="if(window.ZoneD) { ZoneD.setTab('inspector'); ZoneD.render(); }" class="btn-arena" style="padding:3px 8px; font-size:10px; font-weight:700; border-color:#ffaa00; color:#ffaa00; cursor:pointer;">Go to Effects & Rules →</button>
+                    <button onclick="if(window.ZoneD) { ZoneD.setTab('fx'); }" class="btn-arena" style="padding:3px 8px; font-size:10px; font-weight:700; border-color:#ffaa00; color:#ffaa00; cursor:pointer;">Go to Effects & Rules →</button>
                 </div>
                 <div style="font-size:10px; color:var(--text-secondary); line-height:1.4;">
                     Per user rule, auto-audio toggles are moved to <b>Effects & Rules (Zone D)</b> using iOS toggle switches (OFF by default) so you can easily configure distinct sound effects per round/column!

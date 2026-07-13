@@ -7,7 +7,11 @@ from src.backend.core.models import (
     DrawSlot, SlotCreate, PresetAssignRequest, SecretLockToggleRequest, TriggerDrawRequest
 )
 from src.backend.core.pool_service import pool_service
-from src.backend.core.slots_service import slots_service
+from src.backend.core.slots_service import (
+    SlotDrawCompleteError,
+    SlotNotFoundError,
+    slots_service,
+)
 from src.backend.core.projects_service import projects_service
 
 router = APIRouter(prefix="/api/core", tags=["Core VJ Console Engine"])
@@ -82,7 +86,12 @@ def trigger_slot_draw(req: TriggerDrawRequest):
     Executes a draw for the target slot.
     Returns the winner (preset first if any, or random).
     """
-    winner = slots_service.execute_slot_draw(req.slot_id)
+    try:
+        winner = slots_service.execute_slot_draw(req.slot_id)
+    except SlotNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except SlotDrawCompleteError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     if not winner:
         raise HTTPException(status_code=400, detail="No active candidates available for this category/slot!")
     slot = slots_service.get_slot_by_id(req.slot_id)

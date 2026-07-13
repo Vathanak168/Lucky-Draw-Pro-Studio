@@ -235,7 +235,7 @@ window.ZoneD = {
                     <div class="inspector-section" style="border-left: 3px solid #00c3ff; background: rgba(0, 195, 255, 0.03);">
                         <div class="inspector-section-title" style="display:flex; justify-content:space-between; align-items:center;">
                             <span style="color:#00c3ff;">Telegram Bot Rules (Col #${S.currentRound + 1})</span>
-                            <span onclick="if(window.ZoneE) { ZoneE.setTab('pool'); ZoneEStageControls.activeTab = 'telegram'; ZoneE.render(); }" style="font-size:9px; color:#ffaa00; cursor:pointer; text-decoration:underline;">Configure Bot →</span>
+                            <span onclick="if(window.ZoneE && window.ZoneEStageControls) { ZoneE.setTab('pool'); ZoneEStageControls.setSubTab('telegram'); }" style="font-size:9px; color:#ffaa00; cursor:pointer; text-decoration:underline;">Configure Bot →</span>
                         </div>
                         
                         <div class="inspector-row" style="justify-content: flex-start; gap: 12px;">

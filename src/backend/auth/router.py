@@ -46,11 +46,11 @@ def login_master_password(req: LoginRequest):
         raise HTTPException(status_code=429, detail=f"🚨 APP BLOCKED: {reason}. Time remaining: {int(remaining)}s")
     try:
         success = gatekeeper.verify_master_password(req.password)
-        if not success:
-            raise HTTPException(status_code=401, detail="Invalid Master Password")
-        return {"unlocked": True, "message": "Access Granted"}
-    except Exception as e:
-        raise HTTPException(status_code=429, detail=str(e))
+    except Exception as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
+    if not success:
+        raise HTTPException(status_code=401, detail="Invalid Master Password")
+    return {"unlocked": True, "message": "Access Granted"}
 
 @router.post("/request-remote")
 def request_remote_gmail_unlock(req: RemoteUnlockRequest):
