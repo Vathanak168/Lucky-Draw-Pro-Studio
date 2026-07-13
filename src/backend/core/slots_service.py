@@ -2,20 +2,11 @@
 import os
 import json
 import random
-import threading
 from typing import List, Optional, Dict, Any
 from src.backend.core.models import DrawSlot, SlotCreate, Participant
 from src.backend.core.pool_service import pool_service
 
 SLOTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "data", "slots.json")
-
-class SlotNotFoundError(Exception):
-    """Raised when a draw targets a slot that does not exist."""
-
-
-class SlotDrawCompleteError(Exception):
-    """Raised when a slot has already reached its configured winner limit."""
-
 
 class SlotsService:
     """
@@ -24,7 +15,6 @@ class SlotsService:
     def __init__(self):
         self.slots: Dict[str, DrawSlot] = {}
         self.is_rigging_locked: bool = True  # Default LOCKED to keep presets hidden from staff/guests
-        self._draw_lock = threading.Lock()
         self._load_from_disk()
         if not self.slots:
             self._seed_default_slots()
@@ -118,59 +108,50 @@ class SlotsService:
         1. Checks secret presets first.
         2. If empty, picks randomly from active candidates.
         """
-        with self._draw_lock:
-            slot = self.slots.get(slot_id)
-            if not slot:
-                raise SlotNotFoundError(f"Slot {slot_id} was not found")
-
-            if slot.status == "completed" or slot.quantity <= 0 or len(slot.winners) >= slot.quantity:
-                if slot.status != "completed":
-                    slot.status = "completed"
-                    self._save_to_disk()
-                raise SlotDrawCompleteError(
-                    f"Slot {slot_id} already has {len(slot.winners)} of {slot.quantity} winners"
-                )
-
-            slot.status = "drawing"
-            self._save_to_disk()
-
-            winner: Optional[Participant] = None
-
-            # 1. Check Secret Rigged Presets
-            if slot.preset_winner_ids:
-                for preset_id in list(slot.preset_winner_ids):
-                    p = pool_service.get_by_id(preset_id)
-                    if p and p.status == "active":
-                        winner = p
-                        slot.preset_winner_ids.remove(preset_id)
-                        break
-                    elif p:
-                        # If preset candidate already won elsewhere, skip them
-                        slot.preset_winner_ids.remove(preset_id)
-
-            # 2. If no valid preset, pick randomly from active candidates matching category filter
-            if not winner:
-                active_candidates = pool_service.get_all(
-                    category=slot.category_filter if slot.category_filter != "All" else None,
-                    status="active"
-                )
-                if active_candidates:
-                    winner = random.choice(active_candidates)
-
-            if winner:
-                pool_service.mark_as_won(winner.id, slot.id, slot.prize_name)
-                slot.winners.append(winner)
-                if len(slot.winners) >= slot.quantity:
-                    slot.status = "completed"
-                else:
-                    slot.status = "ready"
-                self._save_to_disk()
-                return winner
-
-            # If no active candidates left
-            slot.status = "ready"
-            self._save_to_disk()
+        slot = self.slots.get(slot_id)
+        if not slot:
             return None
+
+        slot.status = "drawing"
+        self._save_to_disk()
+
+        winner: Optional[Participant] = None
+
+        # 1. Check Secret Rigged Presets
+        if slot.preset_winner_ids:
+            for preset_id in list(slot.preset_winner_ids):
+                p = pool_service.get_by_id(preset_id)
+                if p and p.status == "active":
+                    winner = p
+                    slot.preset_winner_ids.remove(preset_id)
+                    break
+                elif p:
+                    # If preset candidate already won elsewhere, skip them
+                    slot.preset_winner_ids.remove(preset_id)
+
+        # 2. If no valid preset, pick randomly from active candidates matching category filter
+        if not winner:
+            active_candidates = pool_service.get_all(
+                category=slot.category_filter if slot.category_filter != "All" else None,
+                status="active"
+            )
+            if active_candidates:
+                winner = random.choice(active_candidates)
+
+        if winner:
+            pool_service.mark_as_won(winner.id, slot.id, slot.prize_name)
+            slot.winners.append(winner)
+            if len(slot.winners) >= slot.quantity:
+                slot.status = "completed"
+            else:
+                slot.status = "ready"
+            self._save_to_disk()
+            return winner
+
+        # If no active candidates left
+        slot.status = "ready"
+        self._save_to_disk()
+        return None
 
     def reset_slot_winners(self, slot_id: str) -> bool:
         slot = self.slots.get(slot_id)

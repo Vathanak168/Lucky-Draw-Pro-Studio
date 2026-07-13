@@ -12,7 +12,6 @@
     <!-- Styles -->
     <link rel="stylesheet" href="styles/resolume_arena.css?v=6.0.1">
     <link rel="stylesheet" href="styles/virtual_stage.css?v=6.0.1">
-    <link rel="stylesheet" href="styles/gatekeeper.css?v=6.0.2">
     
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
@@ -20,37 +19,6 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-    <!-- Authentication gate shown until the local backend unlocks this machine. -->
-    <div id="gatekeeperOverlay" class="gatekeeper-overlay" role="dialog" aria-modal="true" aria-labelledby="gatekeeperTitle">
-        <div class="gatekeeper-card">
-            <div class="gatekeeper-header">
-                <div id="gatekeeperTitle" class="gatekeeper-title">Lucky Draw Pro Studio</div>
-                <div class="gatekeeper-subtitle">Secure console access</div>
-            </div>
-
-            <div id="machineIdDisplay" class="machine-id-badge">MACHINE ID: Loading...</div>
-
-            <div class="auth-tab-buttons" role="tablist" aria-label="Authentication method">
-                <button id="tabBtnOwner" class="auth-tab-btn active" type="button" onclick="Gatekeeper.switchTab('owner')">Owner Password</button>
-                <button id="tabBtnStaff" class="auth-tab-btn" type="button" onclick="Gatekeeper.switchTab('staff')">Remote Approval</button>
-            </div>
-
-            <div id="panelOwner" class="auth-panel active">
-                <label class="gatekeeper-field-label" for="masterPwdInput">Master password</label>
-                <input id="masterPwdInput" class="gatekeeper-input" type="password" autocomplete="current-password" onkeydown="if (event.key === 'Enter') Gatekeeper.handleMasterLogin()">
-                <div id="ownerAlertBox" class="status-alert" aria-live="polite"></div>
-                <button class="gatekeeper-action" type="button" onclick="Gatekeeper.handleMasterLogin()">Unlock Console</button>
-            </div>
-
-            <div id="panelStaff" class="auth-panel">
-                <label class="gatekeeper-field-label" for="staffNameInput">Operator or device name</label>
-                <input id="staffNameInput" class="gatekeeper-input" type="text" value="Event Crew Laptop" autocomplete="name">
-                <div id="staffAlertBox" class="status-alert" aria-live="polite"></div>
-                <button id="reqRemoteBtn" class="gatekeeper-action" type="button" onclick="Gatekeeper.handleRemoteRequest()">Request Remote Approval</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Hidden Storage for EngineState persistence -->
     <textarea id="customList" style="display:none;">[]</textarea>
 
@@ -427,10 +395,6 @@
         </div>
     </div>
 
-    <!-- Backend bridge and shared runtime services -->
-    <script src="js/api.js?v=6.0.2"></script>
-    <script src="js/core/audioSynth.js?v=6.0.2"></script>
-
     <!-- Engine Scripts -->
     <script src="js/engine/state.js?v=6.0.1"></script>
     <script src="js/engine/virtual_scaler.js?v=6.0.1"></script>
@@ -450,6 +414,5 @@
     
     <!-- Master Orchestrator -->
     <script src="js/studio.js?v=6.0.1"></script>
-    <script src="js/auth/gatekeeper.js?v=6.0.2"></script>
 </body>
 </html>
