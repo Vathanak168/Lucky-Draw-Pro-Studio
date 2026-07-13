@@ -4,6 +4,7 @@
  */
 window.ZoneD = {
     activeTab: 'round', // 'round' or 'fx'
+    vipOverrideExpanded: false,
 
     init() {
         this.render();
@@ -11,6 +12,11 @@ window.ZoneD = {
 
     setTab(tabName) {
         this.activeTab = tabName;
+        this.render();
+    },
+
+    toggleVipOverride() {
+        this.vipOverrideExpanded = !this.vipOverrideExpanded;
         this.render();
     },
 
@@ -32,22 +38,23 @@ window.ZoneD = {
         for (let i = 0; i < winnerCount; i++) {
             const currentVal = (rc.presets && rc.presets[i]) ? rc.presets[i] : '';
             let dropdownOptions = `<option value="">-- Random --</option>`;
-            if (rc.dataSource === 'list') {
+            if (rc.dataSource === 'list' || rc.dataSource === 'id') {
                 currentPoolList.forEach(p => {
-                    const sel = (p.name === currentVal) ? 'selected' : '';
-                    dropdownOptions += `<option value="${p.name.replace(/"/g, '&quot;')}" ${sel}>${p.name}</option>`;
+                    const displayVal = (rc.dataSource === 'id') ? (p.id || p.ticket || p.name) : p.name;
+                    const sel = (displayVal === currentVal) ? 'selected' : '';
+                    dropdownOptions += `<option value="${displayVal.replace(/"/g, '&quot;')}" ${sel}>${displayVal} ${rc.dataSource === 'id' && p.name ? `(${p.name})` : ''}</option>`;
                 });
             }
 
             presetRows += `
                 <div class="inspector-row">
                     <span class="inspector-label" style="font-size:10px; color:var(--text-secondary);">#${i + 1}:</span>
-                    ${rc.dataSource === 'list' && currentPoolList.length > 0 && currentPoolList.length <= 500 ? `
+                    ${(rc.dataSource === 'list' || rc.dataSource === 'id') && currentPoolList.length > 0 && currentPoolList.length <= 500 ? `
                         <select onchange="ZoneD.updatePreset(${i}, this.value)" style="flex:1; font-size:11px; padding:4px;">
                             ${dropdownOptions}
                         </select>
                     ` : `
-                        <input type="text" placeholder="${rc.dataSource === 'numeric' ? 'Number...' : 'Name...'}" value="${currentVal.replace(/"/g, '&quot;')}" onchange="ZoneD.updatePreset(${i}, this.value)" style="flex:1; font-size:11px; padding:4px;">
+                        <input type="text" placeholder="${rc.dataSource === 'numeric' ? 'Number...' : (rc.dataSource === 'id' ? 'ID / Ticket...' : 'Name...')}" value="${currentVal.replace(/"/g, '&quot;')}" onchange="ZoneD.updatePreset(${i}, this.value)" style="flex:1; font-size:11px; padding:4px;">
                     `}
                 </div>
             `;
@@ -101,20 +108,34 @@ window.ZoneD = {
                 <button class="arena-tab-btn ${this.activeTab === 'fx' ? 'active' : ''}" onclick="ZoneD.setTab('fx')">
                     Effects & Rules
                 </button>
+                <button class="arena-tab-btn ${this.activeTab === 'pool' ? 'active' : ''}" onclick="ZoneD.setTab('pool')" style="color:var(--accent-cyan); font-weight:800; display:flex; align-items:center; gap:6px;">
+                    <svg class="svg-icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Participants & Excel Pool
+                </button>
             </div>
 
             <!-- Inspector Body -->
-            <div class="inspector-body">
-                ${this.activeTab === 'round' ? `
+            <div class="inspector-body" style="${this.activeTab === 'pool' ? 'padding:0; overflow:hidden;' : ''}">
+                ${this.activeTab === 'pool' ? `
+                    <div id="zoneD_pool_container" style="height:100%; display:flex; flex-direction:column;"></div>
+                ` : this.activeTab === 'round' ? `
                     ${winnerTableHtml}
 
-                    <div class="inspector-section">
-                        <div class="inspector-section-title"><span>Deck Name</span></div>
-                        <div class="inspector-row">
-                            <span class="inspector-label">Name:</span>
-                            <select onchange="ZoneD.updateField('category', this.value)" style="flex:1;">
+                    <div class="inspector-section" style="border:1px solid var(--accent-cyan); background:rgba(0, 229, 163, 0.05);">
+                        <div class="inspector-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="color:var(--accent-cyan); font-size:11px; font-weight:800;">🏷️ DECK CATEGORY</span>
+                            <button class="btn-arena" onclick="ZoneA.manageCategoriesPrompt()" style="padding:1px 6px; font-size:9px; border-color:var(--border-light); color:#ddd;">
+                                ⚙️ Manage Decks
+                            </button>
+                        </div>
+                        <div class="inspector-row" style="margin-top:6px;">
+                            <span class="inspector-label" style="font-weight:700; color:#fff;">Category:</span>
+                            <select onchange="ZoneD.updateField('category', this.value)" style="flex:1; font-weight:700; color:var(--accent-cyan); background:var(--bg-elevated); padding:6px; border:1px solid var(--accent-cyan);">
                                 ${S.prizeCategories.map(cat => `<option value="${cat.replace(/"/g, '&quot;')}" ${rc.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
                             </select>
+                            <button class="btn-arena" onclick="ZoneD.addCategoryPrompt()" title="Create New Category Deck" style="padding:4px 8px; font-size:12px; font-weight:800; color:var(--accent-cyan);">
+                                +
+                            </button>
                         </div>
                     </div>
 
@@ -123,8 +144,9 @@ window.ZoneD = {
                         <div class="inspector-row">
                             <span class="inspector-label">Source:</span>
                             <select onchange="ZoneD.updateField('dataSource', this.value)" style="flex:1;">
-                                <option value="list" ${rc.dataSource === 'list' ? 'selected' : ''}>Name</option>
                                 <option value="numeric" ${rc.dataSource === 'numeric' ? 'selected' : ''}>Number</option>
+                                <option value="list" ${rc.dataSource === 'list' ? 'selected' : ''}>Name</option>
+                                <option value="id" ${rc.dataSource === 'id' ? 'selected' : ''}>ID / Ticket #</option>
                             </select>
                         </div>
                         <div class="inspector-row">
@@ -151,25 +173,102 @@ window.ZoneD = {
                         </div>
                     </div>
 
-                    <div class="inspector-section">
-                        <div class="inspector-section-title"><span>VIP Overrides</span></div>
-                        ${presetRows}
+                    <div class="inspector-section" style="border: 1px dashed ${this.vipOverrideExpanded ? 'var(--warning-color)' : '#444'}; background: ${this.vipOverrideExpanded ? 'rgba(245, 158, 11, 0.04)' : 'transparent'};">
+                        <div class="inspector-section-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:${this.vipOverrideExpanded ? '10px' : '0'};">
+                            <span style="color:${this.vipOverrideExpanded ? 'var(--warning-color)' : '#888'}; font-weight:800; font-size:11px;">
+                                👑 VIP OVERRIDES (FIXED WINNERS)
+                            </span>
+                            <button class="btn-arena" onclick="ZoneD.toggleVipOverride()" style="padding:4px 10px; font-size:10px; border-color:${this.vipOverrideExpanded ? 'var(--warning-color)' : '#555'}; color:${this.vipOverrideExpanded ? 'var(--warning-color)' : '#bbb'}; font-weight:700; cursor:pointer;">
+                                ${this.vipOverrideExpanded ? '🔓 Hide Overrides' : '🔒 Unlock Overrides'}
+                            </button>
+                        </div>
+                        ${this.vipOverrideExpanded ? `
+                            <div style="margin-top:4px; font-size:11px; color:#aaa; margin-bottom:12px; line-height:1.4; padding:6px 8px; background:rgba(0,0,0,0.4); border-radius:4px; border-left:2px solid var(--warning-color);">
+                                ⚠️ <b>Special Mode:</b> Guaranteed winner exact match. If left empty, that slot will draw randomly.
+                            </div>
+                            ${presetRows}
+                        ` : ''}
                     </div>
                 ` : `
                     <!-- Stage FX & Rules Tab -->
+                    <div class="inspector-section" style="border-left: 3px solid var(--accent-cyan); background: rgba(0, 229, 163, 0.03);">
+                        <div class="inspector-section-title"><span style="color:var(--accent-cyan);">Draw Rules</span></div>
+                        <div class="inspector-row" style="justify-content: flex-start; gap: 16px;">
+                            <span class="inspector-label" style="width:auto; color:#fff; font-weight:700;">Allow Duplicates (Repeat):</span>
+                            <label class="ios-toggle-label" title="When turned on, the same winner can be picked multiple times across draws">
+                                <input type="checkbox" class="ios-toggle-input" ${ds.allowDuplicates ? 'checked' : ''} onchange="ZoneD.updateGlobal('allowDuplicates', this.checked)">
+                                <span class="ios-toggle-switch"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="inspector-section" style="border-left: 3px solid #ffaa00; background: rgba(255, 170, 0, 0.03);">
+                        <div class="inspector-section-title"><span style="color:#ffaa00;">Stage Audio Rules (Col #${S.currentRound + 1})</span></div>
+                        
+                        <div class="inspector-row" style="justify-content: flex-start; gap: 12px;">
+                            <span class="inspector-label" style="width:auto; color:#fff;">Spin Start Audio:</span>
+                            <label class="ios-toggle-label" title="Auto play sound when spin starts for this column (Default: OFF)">
+                                <input type="checkbox" class="ios-toggle-input" ${rc.audioSpinStart ? 'checked' : ''} onchange="ZoneD.updateRoundConfig('audioSpinStart', this.checked)">
+                                <span class="ios-toggle-switch"></span>
+                            </label>
+                            <select onchange="ZoneD.updateRoundConfig('soundSpinStart', this.value)" style="background:#101018; border:1px solid var(--border-light); color:#fff; font-size:11px; border-radius:4px; padding:3px 6px; flex:1;">
+                                <option value="drumroll" ${(rc.soundSpinStart || 'drumroll') === 'drumroll' ? 'selected' : ''}>🥁 Drumroll</option>
+                                <option value="heartbeat" ${(rc.soundSpinStart) === 'heartbeat' ? 'selected' : ''}>💓 Heartbeat</option>
+                                <option value="applause" ${(rc.soundSpinStart) === 'applause' ? 'selected' : ''}>👏 Applause</option>
+                            </select>
+                        </div>
+
+                        <div class="inspector-row" style="justify-content: flex-start; gap: 12px;">
+                            <span class="inspector-label" style="width:auto; color:#fff;">Win Reveal Audio:</span>
+                            <label class="ios-toggle-label" title="Auto play sound when winner is revealed for this column (Default: OFF)">
+                                <input type="checkbox" class="ios-toggle-input" ${rc.audioSpinStop ? 'checked' : ''} onchange="ZoneD.updateRoundConfig('audioSpinStop', this.checked)">
+                                <span class="ios-toggle-switch"></span>
+                            </label>
+                            <select onchange="ZoneD.updateRoundConfig('soundSpinStop', this.value)" style="background:#101018; border:1px solid var(--border-light); color:#fff; font-size:11px; border-radius:4px; padding:3px 6px; flex:1;">
+                                <option value="victory" ${(rc.soundSpinStop || 'victory') === 'victory' ? 'selected' : ''}>🎺 Victory Horn</option>
+                                <option value="applause" ${(rc.soundSpinStop) === 'applause' ? 'selected' : ''}>👏 Applause</option>
+                                <option value="drumroll" ${(rc.soundSpinStop) === 'drumroll' ? 'selected' : ''}>🥁 Drumroll</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="inspector-section" style="border-left: 3px solid #00c3ff; background: rgba(0, 195, 255, 0.03);">
+                        <div class="inspector-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="color:#00c3ff;">Telegram Bot Rules (Col #${S.currentRound + 1})</span>
+                            <span onclick="if(window.ZoneE) { ZoneE.setTab('pool'); ZoneEStageControls.activeTab = 'telegram'; ZoneE.render(); }" style="font-size:9px; color:#ffaa00; cursor:pointer; text-decoration:underline;">Configure Bot →</span>
+                        </div>
+                        
+                        <div class="inspector-row" style="justify-content: flex-start; gap: 12px;">
+                            <span class="inspector-label" style="width:auto; color:#fff;">Auto Send to Group:</span>
+                            <label class="ios-toggle-label" title="Auto send announcement to Telegram Group when draw finishes (Default: OFF)">
+                                <input type="checkbox" class="ios-toggle-input" ${rc.telegramAutoGroup ? 'checked' : ''} onchange="ZoneD.updateRoundConfig('telegramAutoGroup', this.checked)">
+                                <span class="ios-toggle-switch"></span>
+                            </label>
+                            <span style="font-size:9px; color:var(--text-secondary); flex:1;">Sends announcement instantly to Group</span>
+                        </div>
+
+                        <div class="inspector-row" style="justify-content: flex-start; gap: 12px;">
+                            <span class="inspector-label" style="width:auto; color:#fff;">Auto DM Winner:</span>
+                            <label class="ios-toggle-label" title="Auto send direct DM/Chat to winner when draw finishes (Default: OFF)">
+                                <input type="checkbox" class="ios-toggle-input" ${rc.telegramAutoDirect ? 'checked' : ''} onchange="ZoneD.updateRoundConfig('telegramAutoDirect', this.checked)">
+                                <span class="ios-toggle-switch"></span>
+                            </label>
+                            <span style="font-size:9px; color:var(--text-secondary); flex:1;">Sends private DM to winner ID</span>
+                        </div>
+                    </div>
+
                     <div class="inspector-section">
                         <div class="inspector-section-title"><span>Glow Effect</span></div>
-                        <div class="inspector-row">
-                            <span class="inspector-label">Enable Glow:</span>
-                            <input type="checkbox" ${ds.winnerGlowEnabled ? 'checked' : ''} onchange="ZoneD.updateGlobal('winnerGlowEnabled', this.checked)">
+                        <div class="inspector-row" style="justify-content: flex-start; gap: 16px;">
+                            <span class="inspector-label" style="width:auto;">Enable Glow:</span>
+                            <label class="ios-toggle-label">
+                                <input type="checkbox" class="ios-toggle-input" ${ds.winnerGlowEnabled ? 'checked' : ''} onchange="ZoneD.updateGlobal('winnerGlowEnabled', this.checked)">
+                                <span class="ios-toggle-switch"></span>
+                            </label>
                         </div>
-                        <div class="inspector-row">
-                            <span class="inspector-label">Color:</span>
-                            <input type="color" value="${ds.winnerGlowColor || '#00e5a3'}" onchange="ZoneD.updateGlobal('winnerGlowColor', this.value)" style="height:28px; width:60px; padding:0; cursor:pointer;">
-                        </div>
-                        <div class="inspector-row">
-                            <span class="inspector-label">Allow Duplicates:</span>
-                            <input type="checkbox" ${ds.allowDuplicates ? 'checked' : ''} onchange="ZoneD.updateGlobal('allowDuplicates', this.checked)">
+                        <div class="inspector-row" style="justify-content: flex-start; gap: 16px;">
+                            <span class="inspector-label" style="width:auto;">Color:</span>
+                            <input type="color" value="${ds.winnerGlowColor || '#00e5a3'}" onchange="ZoneD.updateGlobal('winnerGlowColor', this.value)" style="height:26px; width:64px; padding:0; cursor:pointer; border-radius:13px; border:1px solid var(--border-light); background:var(--bg-elevated);">
                         </div>
                     </div>
 
@@ -184,8 +283,8 @@ window.ZoneD = {
                             <input type="number" value="${ds.endNumber || 1000}" onchange="ZoneD.updateGlobal('endNumber', this.value)">
                         </div>
                         <div class="inspector-row">
-                            <span class="inspector-label" style="color:var(--accent-cyan);">Digits:</span>
-                            <input type="number" min="0" max="10" value="${ds.numDigits || 0}" onchange="ZoneD.updateGlobal('numDigits', parseInt(this.value)||0)" style="border: 2px solid var(--accent-cyan);">
+                            <span class="inspector-label" style="color:var(--accent-cyan); width:145px;" title="Sets leading zeros padding. E.g. setting 3 turns number 1 into 001">Leading Zeros (Padding):</span>
+                            <input type="number" min="0" max="10" placeholder="0 = normal (e.g. 1)" value="${ds.numDigits || 0}" onchange="ZoneD.updateGlobal('numDigits', parseInt(this.value)||0)" style="flex:1; border: 1px solid var(--accent-cyan); color:var(--accent-cyan); font-weight:700;">
                         </div>
                         <div class="inspector-row">
                             <span class="inspector-label">Exclude:</span>
@@ -218,13 +317,27 @@ window.ZoneD = {
                 `}
             </div>
         `;
+
+        if (this.activeTab === 'pool' && window.ZoneDPoolManager) {
+            ZoneDPoolManager.render(document.getElementById('zoneD_pool_container'));
+        }
     },
 
     updateField(field, value) {
         const S = EngineState;
         if (!S.roundConfigs[S.currentRound]) S.roundConfigs[S.currentRound] = S.getDefaultRoundConfig(S.currentRound);
         S.roundConfigs[S.currentRound][field] = value;
+        if (field === 'category') {
+            const themeObj = S.getCategoryThemeObj(value);
+            if (themeObj && themeObj.defaultPool) {
+                S.roundConfigs[S.currentRound].dataSource = themeObj.defaultPool;
+            }
+        }
         S.syncSettingsFromConfigs();
+        if (field === 'category' || field === 'dataSource') {
+            Draw.initializePoolsSilently();
+            if (window.Display) Display.resetDisplayForNewRound();
+        }
         S.autoSaveAllSettings();
 
         if (window.ZoneA) ZoneA.render();
@@ -262,14 +375,7 @@ window.ZoneD = {
     },
 
     addCategoryPrompt() {
-        const name = prompt("Enter new Category Deck name (e.g. ⭐ VIP Rounds, 🏆 Grand Prizes):");
-        if (name && name.trim()) {
-            if (!EngineState.prizeCategories.includes(name.trim())) {
-                EngineState.prizeCategories.push(name.trim());
-                EngineState.autoSaveAllSettings();
-                if (window.ZoneA) ZoneA.selectCategoryTab(name.trim());
-            }
-        }
+        if (window.Studio) Studio.openCategoryManager();
     },
 
     handleBgImageUpload(event) {

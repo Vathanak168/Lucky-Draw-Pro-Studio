@@ -23,15 +23,18 @@ window.ZoneA = {
         `;
         S.prizeCategories.forEach(cat => {
             const count = roundConfigs.filter(rc => rc.category === cat).length;
+            const badgeColor = S.getCategoryColor(cat);
+            const isEmptyStyle = count === 0 ? 'opacity:0.45; filter:grayscale(0.5);' : '';
             tabsHtml += `
-                <button class="deck-tab-btn ${activeTab === cat ? 'active' : ''}" onclick="ZoneA.selectCategoryTab('${cat.replace(/'/g, "\\'")}')">
+                <button class="deck-tab-btn ${activeTab === cat ? 'active' : ''}" onclick="ZoneA.selectCategoryTab('${cat.replace(/'/g, "\\'")}')" style="display:inline-flex; align-items:center; gap:6px; ${isEmptyStyle}">
+                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${badgeColor}; box-shadow:0 0 6px ${badgeColor};"></span>
                     ${cat.toUpperCase()} (${count})
                 </button>
             `;
         });
         tabsHtml += `
-            <button class="deck-tab-btn" onclick="ZoneD.setTab('round'); ZoneD.addCategoryPrompt();" title="Create New Deck" style="border:1px dashed var(--border-light); color:var(--accent-cyan);">
-                + Add
+            <button class="deck-tab-btn" onclick="Studio.openCategoryManager()" title="Manage Categories & Decks" style="border:1px dashed var(--accent-cyan); color:var(--accent-cyan); font-weight:800; display:inline-flex; align-items:center; gap:4px;">
+                ⚙️ Manage Decks
             </button>
         `;
 
@@ -61,14 +64,24 @@ window.ZoneA = {
             }
 
             columnsHtml += `
-                <div class="arena-column-slot ${isActive ? 'active' : ''} ${isDrawing ? 'drawing' : ''}" onclick="ZoneA.selectSlot(${i})">
+                <div class="arena-column-slot ${isActive ? 'active' : ''} ${isDrawing ? 'drawing' : ''}" 
+                     draggable="true"
+                     ondragstart="ZoneA.onDragStart(event, ${i})"
+                     ondragover="ZoneA.onDragOver(event)"
+                     ondragleave="ZoneA.onDragLeave(event)"
+                     ondrop="ZoneA.onDrop(event, ${i})"
+                     onclick="ZoneA.selectSlot(${i})"
+                     title="Click to select · Drag to reorder column position">
                     <div>
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-                            <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-secondary);">COL #${i + 1}</span>
+                            <span style="display:flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:10px; color:var(--text-secondary);">
+                                <span style="cursor:grab; opacity:0.6;">⠿</span> COL #${i + 1}
+                            </span>
                             ${statusPill}
                         </div>
-                        <div style="font-size:13px; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            ${category}
+                        <div style="font-size:13px; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:5px;">
+                            <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:${S.getCategoryColor(category)}; flex-shrink:0;"></span>
+                            <span>${category}</span>
                         </div>
                         <div style="font-size:11px; color:var(--accent-cyan); margin-top:2px;">
                             ${targetWinCount} ${targetWinCount > 1 ? 'Winners' : 'Winner'}
@@ -122,12 +135,23 @@ window.ZoneA = {
     selectCategoryTab(tab) {
         EngineState.activeCategoryTab = tab;
         EngineState.autoSaveAllSettings();
+        
+        // Auto-sync selection: if clicking a specific Category, automatically select the first Column inside that Category
+        if (tab !== 'All') {
+            const firstIdx = EngineState.roundConfigs.findIndex(rc => rc.category === tab);
+            if (firstIdx !== -1) {
+                this.selectSlot(firstIdx);
+                return;
+            }
+        }
+        
         this.render();
     },
 
     selectSlot(index) {
         if (EngineState.isDrawing) return;
         EngineState.currentRound = index;
+        Draw.initializePoolsSilently();
 
         // Reset stage output or reveal instant winners if already drawn
         const roundResult = EngineState.roundResults[index];
@@ -149,6 +173,10 @@ window.ZoneA = {
         S.ensureRoundConfigs(S.totalRounds);
         if (S.activeCategoryTab && S.activeCategoryTab !== "All") {
             S.roundConfigs[S.totalRounds - 1].category = S.activeCategoryTab;
+            const themeObj = S.getCategoryThemeObj(S.activeCategoryTab);
+            if (themeObj && themeObj.defaultPool) {
+                S.roundConfigs[S.totalRounds - 1].dataSource = themeObj.defaultPool;
+            }
         }
         S.syncSettingsFromConfigs();
         S.autoSaveAllSettings();
@@ -184,5 +212,61 @@ window.ZoneA = {
         S.syncSettingsFromConfigs();
         S.autoSaveAllSettings();
         this.selectSlot(index + 1);
+    },
+
+    // ---- Drag and Drop Column Reordering (Point 8) ----
+    draggedIndex: null,
+
+    onDragStart(event, index) {
+        if (EngineState.isDrawing) {
+            event.preventDefault();
+            return;
+        }
+        this.draggedIndex = index;
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', index);
+        const slotEl = event.currentTarget;
+        setTimeout(() => { if (slotEl) slotEl.classList.add('dragging'); }, 0);
+    },
+
+    onDragOver(event) {
+        if (this.draggedIndex === null || EngineState.isDrawing) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        const slotEl = event.currentTarget;
+        if (slotEl && !slotEl.classList.contains('drag-over')) {
+            slotEl.classList.add('drag-over');
+        }
+    },
+
+    onDragLeave(event) {
+        const slotEl = event.currentTarget;
+        if (slotEl) slotEl.classList.remove('drag-over');
+    },
+
+    onDrop(event, targetIndex) {
+        event.preventDefault();
+        const slotEl = event.currentTarget;
+        if (slotEl) slotEl.classList.remove('drag-over');
+
+        const fromIndex = this.draggedIndex;
+        this.draggedIndex = null;
+        if (fromIndex === null || fromIndex === targetIndex || EngineState.isDrawing) {
+            this.render();
+            return;
+        }
+
+        const success = EngineState.reorderRoundSlots(fromIndex, targetIndex);
+        if (success) {
+            this.render();
+            if (window.ZoneB) ZoneB.render();
+            if (window.ZoneC) ZoneC.render();
+            if (window.ZoneD) ZoneD.render();
+        }
+    },
+
+    // ---- Category Decks Manager ----
+    manageCategoriesPrompt() {
+        if (window.Studio) Studio.openCategoryManager();
     }
 };

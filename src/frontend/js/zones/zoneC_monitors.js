@@ -23,6 +23,8 @@ window.ZoneC = {
         let activePoolCount = 0;
         if (dataSource === 'list') {
             activePoolCount = S.drawListPool.length || S.getParticipantList().filter(p => !p.hidden).length;
+        } else if (dataSource === 'id') {
+            activePoolCount = (S.drawIdPool && S.drawIdPool.length > 0) ? S.drawIdPool.length : S.getParticipantList().filter(p => !p.hidden && (p.id || p.ticket || p.name)).length;
         } else {
             const startNum = parseInt(S.displaySettings.startNumber) || 1;
             const endNum = parseInt(S.displaySettings.endNumber) || 1000;
@@ -48,8 +50,11 @@ window.ZoneC = {
                             <button class="btn-arena" onclick="ZoneC.zoomManual(-2)" style="padding:1px 6px; font-size:10px;">A−</button>
                         </div>
                     </div>
-                    <div class="monitor-screen" id="stageOutputScreen">
+                    <div class="monitor-screen" id="stageOutputScreen" style="position:relative;">
                         <div id="drawArea" class="draw-area">${existingDrawAreaHTML}</div>
+                        <div style="position:absolute; bottom:6px; right:8px; font-size:9px; font-family:var(--font-mono); color:var(--text-muted); opacity:0.65; pointer-events:none; letter-spacing:0.5px; text-transform:uppercase; z-index:10;">
+                            [ LIVE PROJECTOR PREVIEW · ${rc.layoutStyle || 'Grid Boxes'} ]
+                        </div>
                     </div>
                 </div>
 
@@ -69,7 +74,7 @@ window.ZoneC = {
                         <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-light); padding-bottom:6px;">
                             <span style="color:var(--text-secondary);">Source:</span>
                             <span style="color:var(--accent-cyan);">
-                                ${dataSource === 'numeric' ? 'Number' : 'Name'} (${activePoolCount} active)
+                                ${dataSource === 'numeric' ? 'Number' : (dataSource === 'id' ? 'ID / Ticket #' : 'Name')} (${activePoolCount} active)
                             </span>
                         </div>
                         <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-light); padding-bottom:6px;">

@@ -69,9 +69,12 @@ window.VirtualStageFitter = {
         } else if (N === 4) {
             // ៤ ប្រអប់៖ ២ លើ + ២ ក្រោម (2x2 Grid)
             columns = 2; gap = 36; cardWidth = 800; cardHeight = 280; fontSize = 118;
-        } else if (N === 5 || N === 6) {
-            // ៥ - ៦ ប្រអប់៖ ៣ ប្រអប់ក្នុង ១ ជួរ (3x2 Grid / 3+2 Centered)
-            columns = 3; gap = 32; cardWidth = 580; cardHeight = 270; fontSize = 115;
+        } else if (N === 5) {
+            // ៥ ប្រអប់៖ ៣ លើ + ២ ក្រោម (3+2 Centered Grid)
+            columns = 3; gap = 28; cardWidth = 560; cardHeight = 260; fontSize = 72;
+        } else if (N === 6) {
+            // ៦ ប្រអប់៖ ៣ ប្រអប់ក្នុង ១ ជួរ (3x2 Grid)
+            columns = 3; gap = 32; cardWidth = 560; cardHeight = 260; fontSize = 72;
         } else if (N === 7 || N === 8) {
             // ៧ - ៨ ប្រអប់៖ ៤ ប្រអប់ក្នុង ១ ជួរ (4x2 Grid / 4+3 Centered)
             columns = 4; gap = 24; cardWidth = 430; cardHeight = 240; fontSize = 105;

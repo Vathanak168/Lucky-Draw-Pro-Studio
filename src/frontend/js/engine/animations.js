@@ -26,9 +26,12 @@ window.Animations = {
         }
     },
 
-    runTextShuffleAnimation(displayEl, winner, duration) {
+    runTextShuffleAnimation(displayEl, winner, duration, roundIdx) {
         const S = EngineState;
-        const currentPool = (S.settings.roundDataSources[S.currentRound] === 'list') ? S.drawListPool : S.drawNumericPool;
+        const targetRound = (typeof roundIdx === 'number') ? roundIdx : S.currentRound;
+        const rc = (S.roundConfigs && S.roundConfigs[targetRound]) ? S.roundConfigs[targetRound] : {};
+        const currentDataSource = rc.dataSource || S.settings.roundDataSources[targetRound] || 'numeric';
+        const currentPool = (currentDataSource === 'list') ? S.drawListPool : ((currentDataSource === 'id') ? (S.drawIdPool || S.masterIdPool || []) : S.drawNumericPool);
         if (!currentPool || currentPool.length === 0) {
             displayEl.innerHTML = winner.name;
             this.adjustFontSizeToFit(displayEl);
@@ -64,9 +67,11 @@ window.Animations = {
         }, duration);
     },
 
-    getAnimationDuration() {
+    getAnimationDuration(roundIdx) {
         const S = EngineState;
-        const selectedDuration = S.settings.roundDurations[S.currentRound];
+        const targetRound = (typeof roundIdx === 'number') ? roundIdx : S.currentRound;
+        const rc = (S.roundConfigs && S.roundConfigs[targetRound]) ? S.roundConfigs[targetRound] : null;
+        const selectedDuration = rc ? rc.duration : (S.settings.roundDurations[targetRound] || S.settings.roundDurations[S.currentRound]);
         if (selectedDuration && selectedDuration !== 'default') return parseInt(selectedDuration);
 
         const speed = S.displaySettings.drawSpeed || 'normal';
@@ -77,7 +82,7 @@ window.Animations = {
 
     animateDraw(winners, onComplete) {
         const S = EngineState;
-        const DURATION = this.getAnimationDuration();
+        const DURATION = this.getAnimationDuration(S.currentRound);
 
         S.AnimationManager.clearAll();
         S.shuffleIntervals.forEach(clearInterval);
@@ -94,22 +99,28 @@ window.Animations = {
         const self = this;
 
         // ចុចម្តង Draw ទាំងអស់គ្រប់ប្រអប់ (Simultaneous All-Box Draw with 0ms start delay across all boxes)
-        winners.forEach((winner, i) => self.runAnimationForBox(i, winner, DURATION));
+        winners.forEach((winner, i) => self.runAnimationForBox(i, winner, DURATION, S.currentRound));
 
         S.AnimationManager.addTimeout(setTimeout(() => {
             if (onComplete) onComplete(winners);
         }, DURATION + 400));
     },
 
-    runAnimationForBox(index, winnerObject, duration) {
+    runAnimationForBox(index, winnerObject, duration, roundIdx, onComplete) {
         const S = EngineState;
         const itemElement = document.getElementById(`item-${index}`);
-        if (!itemElement || !winnerObject) return;
+        if (!itemElement || !winnerObject) {
+            if (onComplete) onComplete();
+            return;
+        }
 
         const isVirtualCard = itemElement.classList.contains('virtual-winner-card');
         const isBox = itemElement.classList.contains('number-box');
         const displayElement = isVirtualCard ? (itemElement.querySelector('.virtual-winner-value') || itemElement) : (isBox ? itemElement.querySelector('.number-display') : itemElement);
-        if (!displayElement) return;
+        if (!displayElement) {
+            if (onComplete) onComplete();
+            return;
+        }
 
         displayElement.innerHTML = '';
         displayElement.style.opacity = 1;
@@ -122,8 +133,8 @@ window.Animations = {
         }
         this.adjustFontSizeToFit(displayElement);
 
-        // Always execute Simultaneous Text Shuffle
-        this.runTextShuffleAnimation(displayElement, winnerObject, duration);
+        // Always execute Simultaneous Text Shuffle strictly using Column settings
+        this.runTextShuffleAnimation(displayElement, winnerObject, duration, roundIdx);
 
         setTimeout(() => {
             if (document.body.contains(displayElement)) {
@@ -139,6 +150,7 @@ window.Animations = {
                 }
                 if (window.Display) Display.syncToProjectorMirror();
             }
+            if (onComplete) onComplete();
         }, duration);
     }
 };

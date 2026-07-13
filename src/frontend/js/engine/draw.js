@@ -26,6 +26,18 @@ window.Draw = {
             S.masterListPool.forEach(p => { validIdentifiers.add(p.name); validIdentifiers.add(p.id.substring(2)); });
         }
 
+        S.masterIdPool = [];
+        if (S.settings.roundDataSources.includes('id')) {
+            S.masterIdPool = S.getParticipantList()
+                .map((p, i) => ({ ...p, originalIndex: i + 1 }))
+                .filter(p => !p.hidden && (p.id || p.ticket || p.name))
+                .map(p => {
+                    const idStr = (p.id || p.ticket || p.name).toString().trim();
+                    return { id: `i_${p.originalIndex.toString()}`, name: idStr, type: 'id', originalParticipant: p };
+                });
+            S.masterIdPool.forEach(p => { validIdentifiers.add(p.name); validIdentifiers.add(p.id.substring(2)); });
+        }
+
         // Always build numeric pool according to startNumber, endNumber, and numDigits
         const ds = S.displaySettings;
         const startNum = parseInt(ds.startNumber) || 1;
@@ -47,6 +59,7 @@ window.Draw = {
 
         S.drawListPool = [...S.masterListPool];
         S.drawNumericPool = [...S.masterNumericPool];
+        S.drawIdPool = [...(S.masterIdPool || [])];
     },
 
     selectWinnerIdsForRound(currentPool, currentMasterPool) {
@@ -61,18 +74,27 @@ window.Draw = {
 
         for (let i = 0; i < winnerCountForThisRound; i++) {
             const presetValue = presetValuesForRound[i];
-            if (presetValue) {
+            if (presetValue && presetValue.toString().trim() !== '') {
+                const cleanPreset = presetValue.toString().trim();
                 const currentDataSource = S.settings.roundDataSources[S.currentRound];
                 let foundWinner = null;
-                if (currentDataSource === 'list') {
-                    foundWinner = currentMasterPool.find(p => p.name === presetValue || p.id === `l_${presetValue}`);
+                if (currentDataSource === 'list' || currentDataSource === 'id') {
+                    foundWinner = currentMasterPool.find(p => p.name.trim().toLowerCase() === cleanPreset.toLowerCase() || p.id === (currentDataSource === 'list' ? `l_${cleanPreset}` : `i_${cleanPreset}`));
                 } else {
-                    foundWinner = currentMasterPool.find(p => p.name === presetValue);
+                    foundWinner = currentMasterPool.find(p => p.name === cleanPreset || (parseInt(p.name, 10) === parseInt(cleanPreset, 10) && !isNaN(parseInt(cleanPreset, 10))));
                 }
-                if (foundWinner && presetPool.some(p => p.id === foundWinner.id)) {
-                    finalWinnerIds[i] = foundWinner.id;
-                    presetPool = presetPool.filter(p => p.id !== foundWinner.id);
+                if (!foundWinner) {
+                    foundWinner = {
+                        id: (currentDataSource === 'list' ? 'l_vip_' : (currentDataSource === 'id' ? 'i_vip_' : 'n_vip_')) + cleanPreset + '_' + i,
+                        name: cleanPreset,
+                        type: currentDataSource
+                    };
+                    if (currentDataSource === 'list') S.masterListPool.push(foundWinner);
+                    else if (currentDataSource === 'id') S.masterIdPool.push(foundWinner);
+                    else S.masterNumericPool.push(foundWinner);
                 }
+                finalWinnerIds[i] = foundWinner.id;
+                presetPool = presetPool.filter(p => p.id !== foundWinner.id);
             }
         }
 
@@ -90,16 +112,28 @@ window.Draw = {
 
     startDraw() {
         const S = EngineState;
-        if (S.isDrawing || S.drawCompletedThisRound) return;
+        // Auto-heal stuck isDrawing state if no active intervals/animations exist
+        if (S.isDrawing && (!S.AnimationManager || (S.AnimationManager.intervals && S.AnimationManager.intervals.size === 0))) {
+            S.isDrawing = false;
+            try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
+        }
+        if (S.isDrawing) return;
+
+        // If round was already drawn and user triggers startDraw again, reset completed state to allow fresh spin for this column
+        if (S.drawCompletedThisRound) {
+            S.drawCompletedThisRound = false;
+        }
 
         if (!this.ensurePoolPrepared()) {
             alert('Please add names or set number range first!');
             return;
         }
 
-        const currentDataSource = S.settings.roundDataSources[S.currentRound];
-        let currentPool = (currentDataSource === 'list') ? S.drawListPool : S.drawNumericPool;
-        let currentMasterPool = (currentDataSource === 'list') ? S.masterListPool : S.masterNumericPool;
+        const rcCurrent = S.roundConfigs[S.currentRound] || S.getDefaultRoundConfig(S.currentRound);
+        S.syncSettingsFromConfigs();
+        const currentDataSource = rcCurrent.dataSource || S.settings.roundDataSources[S.currentRound] || 'numeric';
+        let currentPool = (currentDataSource === 'list') ? S.drawListPool : ((currentDataSource === 'id') ? S.drawIdPool : S.drawNumericPool);
+        let currentMasterPool = (currentDataSource === 'list') ? S.masterListPool : ((currentDataSource === 'id') ? S.masterIdPool : S.masterNumericPool);
 
         if (!currentPool || currentPool.length === 0) {
             alert('No participants available in the pool for this round!');
@@ -108,7 +142,7 @@ window.Draw = {
 
         const currentPresetValues = new Set((S.presetWinners[S.currentRound] || []).filter(val => val !== null));
         const availableForRandom = currentPool.filter(p => {
-            if (currentDataSource === 'list') {
+            if (currentDataSource === 'list' || currentDataSource === 'id') {
                 return !currentPresetValues.has(p.name) && !currentPresetValues.has(p.id.substring(2));
             } else {
                 return !currentPresetValues.has(p.name);
@@ -122,6 +156,10 @@ window.Draw = {
         }
 
         S.isDrawing = true;
+        const isStartEnabled = (rcCurrent.audioSpinStart !== undefined) ? rcCurrent.audioSpinStart : (S.audioSettings && S.audioSettings.autoSpinStart);
+        if (window.AudioSynth && isStartEnabled) {
+            AudioSynth.playSound(rcCurrent.soundSpinStart || 'drumroll');
+        }
         if (window.ZoneB) ZoneB.render();
 
         // Sync to projector
@@ -130,17 +168,18 @@ window.Draw = {
 
         const roundWinnerIds = this.selectWinnerIdsForRound(currentPool, currentMasterPool);
         const roundWinnerObjects = roundWinnerIds.map(id =>
-            [...S.masterListPool, ...S.masterNumericPool].find(p => p.id === id) || { id: id, name: 'N/A', type: 'unknown' }
+            [...S.masterListPool, ...S.masterNumericPool, ...(S.masterIdPool || [])].find(p => p.id === id) || { id: id, name: 'N/A', type: 'unknown' }
         );
 
         S.allWinners.push(...roundWinnerObjects.filter(Boolean));
 
         if (!S.settings.allowDuplicates) {
-            const winnerIds = new Set(roundWinnerIds.filter(Boolean));
             if (currentDataSource === 'list') {
-                S.drawListPool = S.drawListPool.filter(p => !winnerIds.has(p.id));
+                S.drawListPool = S.drawListPool.filter(p => !roundWinnerIds.includes(p.id));
+            } else if (currentDataSource === 'id') {
+                if (S.drawIdPool) S.drawIdPool = S.drawIdPool.filter(p => !roundWinnerIds.includes(p.id));
             } else {
-                S.drawNumericPool = S.drawNumericPool.filter(p => !winnerIds.has(p.id));
+                S.drawNumericPool = S.drawNumericPool.filter(p => !roundWinnerIds.includes(p.id));
             }
         }
 
@@ -159,9 +198,13 @@ window.Draw = {
         }
 
         // Audio tick during animation
-        if (window.AudioSynth) {
+        if (window.AudioSynth && isStartEnabled) {
             const tickInterval = setInterval(() => {
-                if (!S.isDrawing) { clearInterval(tickInterval); return; }
+                if (!S.isDrawing) {
+                    clearInterval(tickInterval);
+                    if (S.AnimationManager && S.AnimationManager.intervals) S.AnimationManager.intervals.delete(tickInterval);
+                    return;
+                }
                 AudioSynth.playTick();
             }, 120);
             S.AnimationManager.addInterval(tickInterval);
@@ -182,10 +225,13 @@ window.Draw = {
         const roundResult = S.roundResults[roundIdx];
         if (!roundResult || !roundResult.winners || !roundResult.winners[winnerIdx]) return;
 
+        const rc = S.roundConfigs[roundIdx] || S.getDefaultRoundConfig(roundIdx);
+        S.syncSettingsFromConfigs();
+
         const oldWinner = roundResult.winners[winnerIdx];
-        const currentDataSource = roundResult.type || S.settings.roundDataSources[roundIdx];
-        let currentPool = (currentDataSource === 'list') ? S.drawListPool : S.drawNumericPool;
-        let currentMasterPool = (currentDataSource === 'list') ? S.masterListPool : S.masterNumericPool;
+        const currentDataSource = rc.dataSource || roundResult.type || S.settings.roundDataSources[roundIdx] || 'numeric';
+        let currentPool = (currentDataSource === 'list') ? S.drawListPool : ((currentDataSource === 'id') ? S.drawIdPool : S.drawNumericPool);
+        let currentMasterPool = (currentDataSource === 'list') ? S.masterListPool : ((currentDataSource === 'id') ? S.masterIdPool : S.masterNumericPool);
 
         if (!currentPool || currentPool.length === 0) {
             alert("No more participants available in the pool to replace this winner!");
@@ -196,6 +242,7 @@ window.Draw = {
             const masterObj = currentMasterPool.find(p => p.id === oldWinner.id);
             if (masterObj) {
                 if (currentDataSource === 'list') S.drawListPool.push(masterObj);
+                else if (currentDataSource === 'id' && S.drawIdPool) S.drawIdPool.push(masterObj);
                 else S.drawNumericPool.push(masterObj);
             }
             const allIdx = S.allWinners.findIndex(w => w.id === oldWinner.id);
@@ -208,28 +255,60 @@ window.Draw = {
 
         S.allWinners.push(newWinner);
         roundResult.winners[winnerIdx] = newWinner;
+        roundResult.type = currentDataSource;
+        roundResult.category = rc.category || S.settings.roundCategories[roundIdx] || 'Regular Draw';
         S.saveDrawState();
 
-        if (roundIdx === S.currentRound) {
-            const itemEl = document.getElementById(`item-${winnerIdx}`);
-            if (itemEl) {
-                const valueEl = itemEl.querySelector('.virtual-winner-value') || itemEl.querySelector('.winner-item') || itemEl;
-                if (valueEl) {
-                    valueEl.innerHTML = newWinner.name;
-                    if (!itemEl.classList.contains('virtual-winner-card')) {
-                        Animations.adjustFontSizeToFit(valueEl);
-                    }
+        const isStartEnabled = (rc.audioSpinStart !== undefined) ? rc.audioSpinStart : (S.audioSettings && S.audioSettings.autoSpinStart);
+        const isStopEnabled = (rc.audioSpinStop !== undefined) ? rc.audioSpinStop : (S.audioSettings && S.audioSettings.autoSpinStop);
+
+        const onFinishRedraw = () => {
+            if (window.AudioSynth && isStopEnabled) {
+                AudioSynth.playSound(rc.soundSpinStop || 'victory');
+            }
+            if (window.ZoneETelegramBot && newWinner) {
+                const category = roundResult.category;
+                if (rc.telegramAutoGroup) {
+                    ZoneETelegramBot.executeAutoRoundBroadcast([newWinner], category);
+                }
+                if (rc.telegramAutoDirect) {
+                    ZoneETelegramBot.executeAutoDirectMessages([newWinner], category);
                 }
             }
-            if (window.Display) Display.syncToProjectorMirror();
+        };
+
+        if (roundIdx === S.currentRound) {
+            if (S.settings.animationEnabled && window.Animations && typeof Animations.runAnimationForBox === 'function') {
+                if (window.AudioSynth && isStartEnabled) {
+                    AudioSynth.playSound(rc.soundSpinStart || 'drumroll');
+                }
+                const duration = Animations.getAnimationDuration(roundIdx);
+                Animations.runAnimationForBox(winnerIdx, newWinner, duration, roundIdx, () => {
+                    onFinishRedraw();
+                });
+            } else {
+                const itemEl = document.getElementById(`item-${winnerIdx}`);
+                if (itemEl) {
+                    const valueEl = itemEl.querySelector('.virtual-winner-value') || itemEl.querySelector('.winner-item') || itemEl;
+                    if (valueEl) {
+                        valueEl.innerHTML = newWinner.name;
+                        if (!itemEl.classList.contains('virtual-winner-card')) {
+                            Animations.adjustFontSizeToFit(valueEl);
+                        }
+                    }
+                }
+                if (window.Display) Display.syncToProjectorMirror();
+                onFinishRedraw();
+            }
+        } else {
+            onFinishRedraw();
         }
 
         if (window.ZoneA) ZoneA.render();
         if (window.ZoneB) ZoneB.render();
         if (window.ZoneC) ZoneC.render();
         if (window.ZoneD) ZoneD.render();
-
-        if (window.AudioSynth) AudioSynth.playFanfare();
+        if (window.ZoneE) ZoneE.render();
     },
 
     initializeDisplayMode(forceNewDraw) {
@@ -239,13 +318,18 @@ window.Draw = {
             const tempDrawState = S.restoreDrawStateData();
             if (tempDrawState) {
                 S.syncSettingsFromConfigs();
+                if (!S.drawListPool || S.drawListPool.length === 0 || !S.drawNumericPool || S.drawNumericPool.length === 0) {
+                    this.initializePoolsSilently();
+                }
                 if (window.ZoneA) ZoneA.render();
                 if (window.ZoneB) ZoneB.render();
                 if (window.ZoneD) ZoneD.render();
                 if (window.ZoneE) ZoneE.render();
-                if (S.drawCompletedThisRound && S.roundResults[S.currentRound]) {
+                if (S.roundResults && S.roundResults[S.currentRound] && S.roundResults[S.currentRound].winners) {
+                    S.drawCompletedThisRound = true;
                     Display.showWinnersInstantly(S.roundResults[S.currentRound].winners);
                 } else {
+                    S.drawCompletedThisRound = false;
                     Display.resetDisplayForNewRound();
                 }
                 return;

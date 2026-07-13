@@ -10,11 +10,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap" rel="stylesheet">
     
     <!-- Styles -->
-    <link rel="stylesheet" href="styles/resolume_arena.css">
-    <link rel="stylesheet" href="styles/virtual_stage.css">
+    <link rel="stylesheet" href="styles/resolume_arena.css?v=6.0.1">
+    <link rel="stylesheet" href="styles/virtual_stage.css?v=6.0.1">
     
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <!-- SheetJS (XLS / XLSX / CSV Universal Support) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <!-- Hidden Storage for EngineState persistence -->
@@ -69,21 +71,348 @@
         </div>
     </div>
 
+    <!-- Microsoft Word Backstage File Manager Modal -->
+    <div id="projectModal" class="modal-overlay" style="display:none;">
+        <div class="word-backstage-modal">
+            <!-- Left Navigation Sidebar -->
+            <div class="word-backstage-sidebar">
+                <div class="sidebar-brand">
+                    <svg class="svg-icon svg-icon-lg" style="color:var(--accent-cyan);" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    <span>WORD BACKSTAGE</span>
+                </div>
+                <button class="word-tab-btn active" id="wordTabBtn_recent" onclick="Studio.switchWordTab('recent')">
+                    <span>🏠</span> Home / Recent
+                </button>
+                <button class="word-tab-btn" id="wordTabBtn_new" onclick="Studio.switchWordTab('new')">
+                    <span>✨</span> New Project
+                </button>
+                <button class="word-tab-btn" id="wordTabBtn_open" onclick="Studio.switchWordTab('open')">
+                    <span>📂</span> Open (.ldp/.json)
+                </button>
+                <button class="word-tab-btn" id="wordTabBtn_saveAs" onclick="Studio.switchWordTab('saveAs')">
+                    <span>💾</span> Save As / Export
+                </button>
+                <div style="margin-top:auto; padding-top:16px; border-top:1px solid rgba(255,255,255,0.1); display:flex; flex-direction:column; gap:6px;">
+                    <button class="word-tab-btn" onclick="Studio.quickSaveProject()" style="color:var(--accent-cyan);">
+                        <span>💾</span> Quick Save (Ctrl+S)
+                    </button>
+                    <button class="word-tab-btn" onclick="Studio.closeProjectManager()">
+                        <span>⬅️</span> Back to Studio
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Content Area -->
+            <div class="word-backstage-content" id="wordBackstageContentArea">
+                <!-- Dynamically rendered by Studio.renderWordBackstageTab() -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 2-Column Prize Category Manager Modal (No Icons, WordPress/Pro Layout) -->
+    <div id="categoryManagerModal" class="modal-overlay" style="display:none;">
+        <div class="modal-card" style="width:920px; max-width:96vw; background:#161616; border:1px solid var(--accent-cyan); box-shadow:0 20px 60px rgba(0,0,0,0.8);">
+            <div class="modal-header" style="background:#1f1f1f; border-bottom:1px solid #333; padding:16px 24px;">
+                <span style="display:flex; align-items:center; gap:8px; font-size:16px; font-weight:800; color:#fff;">
+                    <svg class="svg-icon svg-icon-lg" style="color:var(--accent-cyan);" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                    Categories Management
+                </span>
+                <button onclick="Studio.closeCategoryManager()" class="modal-close" style="color:#fff; font-size:22px;">&times;</button>
+            </div>
+            <div class="modal-body" style="display:grid; grid-template-columns:340px 1fr; gap:28px; padding:24px; max-height:76vh; overflow-y:auto;">
+                <!-- Left Column: Add / Edit Form -->
+                <div style="background:#1a1a1a; border:1px solid #2d2d2d; border-radius:var(--radius-md); padding:20px; display:flex; flex-direction:column; gap:16px; height:fit-content;">
+                    <div id="catFormHeaderTitle" style="font-size:15px; font-weight:800; color:var(--accent-cyan); border-bottom:1px solid #333; padding-bottom:10px;">
+                        Add New Category
+                    </div>
+                    <input type="hidden" id="catEditOriginalName" value="">
+
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label style="font-size:12px; font-weight:700; color:#ddd;">Category Name <span style="color:var(--danger-color);">*</span></label>
+                        <input type="text" id="catFormNameInput" style="padding:10px 12px; background:#111; border:1px solid #444; color:#fff; border-radius:var(--radius-sm); font-size:13px;">
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <label style="font-size:12px; font-weight:700; color:#ddd;">Color</label>
+                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <label class="cat-color-pill" style="cursor:pointer; display:flex; align-items:center; gap:6px; background:#222; padding:6px 10px; border-radius:20px; border:1px solid #444; font-size:11px; color:#fff;">
+                                <input type="radio" name="catFormColor" value="gold" checked style="accent-color:#f59e0b;"> <span style="width:12px; height:12px; border-radius:50%; background:#f59e0b; display:inline-block;"></span> Gold
+                            </label>
+                            <label class="cat-color-pill" style="cursor:pointer; display:flex; align-items:center; gap:6px; background:#222; padding:6px 10px; border-radius:20px; border:1px solid #444; font-size:11px; color:#fff;">
+                                <input type="radio" name="catFormColor" value="purple" style="accent-color:#a855f7;"> <span style="width:12px; height:12px; border-radius:50%; background:#a855f7; display:inline-block;"></span> Purple
+                            </label>
+                            <label class="cat-color-pill" style="cursor:pointer; display:flex; align-items:center; gap:6px; background:#222; padding:6px 10px; border-radius:20px; border:1px solid #444; font-size:11px; color:#fff;">
+                                <input type="radio" name="catFormColor" value="cyan" style="accent-color:#06b6d4;"> <span style="width:12px; height:12px; border-radius:50%; background:#06b6d4; display:inline-block;"></span> Cyan
+                            </label>
+                            <label class="cat-color-pill" style="cursor:pointer; display:flex; align-items:center; gap:6px; background:#222; padding:6px 10px; border-radius:20px; border:1px solid #444; font-size:11px; color:#fff;">
+                                <input type="radio" name="catFormColor" value="green" style="accent-color:#10b981;"> <span style="width:12px; height:12px; border-radius:50%; background:#10b981; display:inline-block;"></span> Green
+                            </label>
+                            <label class="cat-color-pill" style="cursor:pointer; display:flex; align-items:center; gap:6px; background:#222; padding:6px 10px; border-radius:20px; border:1px solid #444; font-size:11px; color:#fff;">
+                                <input type="radio" name="catFormColor" value="orange" style="accent-color:#f97316;"> <span style="width:12px; height:12px; border-radius:50%; background:#f97316; display:inline-block;"></span> Orange
+                            </label>
+                            <label class="cat-color-pill" style="cursor:pointer; display:flex; align-items:center; gap:6px; background:#222; padding:6px 10px; border-radius:20px; border:1px solid #444; font-size:11px; color:#fff;">
+                                <input type="radio" name="catFormColor" value="red" style="accent-color:#ef4444;"> <span style="width:12px; height:12px; border-radius:50%; background:#ef4444; display:inline-block;"></span> Red
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label style="font-size:12px; font-weight:700; color:#ddd;">Pool</label>
+                        <select id="catFormPoolSelect" style="padding:10px 12px; background:#111; border:1px solid #444; color:#fff; border-radius:var(--radius-sm); font-size:13px;">
+                            <option value="numeric">Numeric Range (1 - 500)</option>
+                            <option value="list">Master Participant List (Full Name)</option>
+                            <option value="id">ID / Ticket # (Master List ID Only)</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button id="catFormSubmitBtn" class="btn-arena btn-arena-primary" onclick="Studio.saveCategoryFromForm()" style="flex:1; padding:12px; font-size:13px; font-weight:800; box-shadow:0 0 15px rgba(0, 229, 163, 0.2);">
+                            Add Category
+                        </button>
+                        <button id="catFormResetBtn" class="btn-arena" onclick="Studio.resetCategoryForm()" style="display:none; padding:12px; font-size:12px;">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Existing Categories List/Table -->
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:10px;">
+                        <div style="font-size:15px; font-weight:800; color:#fff;">
+                            Total Categories (<span id="catManagerTotalCount">0</span>)
+                        </div>
+                        <div style="font-size:11px; color:#aaa;">
+                            
+                        </div>
+                    </div>
+
+                    <!-- Table Container -->
+                    <div id="categoryManagerTableContainer" style="background:#111; border:1px solid #282828; border-radius:var(--radius-md); overflow:hidden;">
+                        <!-- Dynamically populated by Studio.renderCategoryManagerTable() -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#1a1a1a; border-top:1px solid #333; padding:14px 24px; display:flex; justify-content:flex-end;">
+                <button class="btn-arena" onclick="Studio.closeCategoryManager()" style="padding:8px 20px; font-weight:700;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Participant Name & Ticket Master Table Dashboard Modal -->
+    <div id="participantManagerModal" class="modal-overlay" style="display:none; z-index:9999;">
+        <div class="modal-card" style="max-width:1050px; width:95%; max-height:90vh; display:flex; flex-direction:column; background:#141414; border:1px solid #333; box-shadow:0 0 50px rgba(0,0,0,0.8);">
+            <!-- Header Bar -->
+            <div class="modal-header" style="background:#1a1a1a; border-bottom:1px solid #282828; padding:16px 24px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <svg class="svg-icon svg-icon-lg" style="color:var(--accent-cyan);" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <div>
+                        <div style="font-size:16px; font-weight:800; color:#fff;">Participants Master Dashboard</div>
+                        <div style="font-size:11px; color:#aaa;">Manage ID/Tickets, Full Names, Departments and eligibility statuses.</div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <label class="btn-arena btn-arena-primary" style="cursor:pointer; padding:8px 14px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px;">
+                        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                        Import Excel/CSV
+                        <input type="file" accept=".xls,.xlsx,.csv" style="display:none;" onchange="Studio.handleMasterExcelImport(event)">
+                    </label>
+                    <button class="btn-arena" onclick="Studio.openTemplateOptionsModal()" style="padding:8px 14px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; background:#222; border-color:#444;">
+                        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                        Download Template
+                    </button>
+                    <button onclick="Studio.closeParticipantManager()" class="modal-close" style="color:#fff; font-size:24px; margin-left:8px;">&times;</button>
+                </div>
+            </div>
+
+            <!-- Toolbar / Filters / Add Bar -->
+            <div style="padding:14px 24px; background:#181818; border-bottom:1px solid #282828; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; gap:8px; align-items:center; flex:1; min-width:300px;">
+                    <div style="position:relative; flex:1; max-width:340px;">
+                        <input type="text" id="partMgrSearchInput" placeholder="Filter by ID, Name or Department..." oninput="Studio.renderParticipantManagerTable()" style="width:100%; padding:8px 12px 8px 34px; background:#111; border:1px solid #383838; border-radius:var(--radius-sm); color:#fff; font-size:12px;">
+                        <svg class="svg-icon" style="position:absolute; left:10px; top:10px; color:#666;" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    </div>
+                    <div class="arena-tab-bar" style="border-bottom:none; margin-bottom:0; background:#111; padding:2px; border-radius:4px; border:1px solid #333;">
+                        <button class="arena-tab-btn active" id="partTabAll" onclick="Studio.setPartFilterTab('all')" style="padding:4px 10px; font-size:11px;">Total (<span id="partCountAll">0</span>)</button>
+                        <button class="arena-tab-btn" id="partTabEligible" onclick="Studio.setPartFilterTab('eligible')" style="padding:4px 10px; font-size:11px; color:var(--accent-green);">Eligible (<span id="partCountEligible">0</span>)</button>
+                        <button class="arena-tab-btn" id="partTabWinners" onclick="Studio.setPartFilterTab('winners')" style="padding:4px 10px; font-size:11px; color:#f59e0b;">Winners (<span id="partCountWinners">0</span>)</button>
+                        <button class="arena-tab-btn" id="partTabDisabled" onclick="Studio.setPartFilterTab('disabled')" style="padding:4px 10px; font-size:11px; color:#888;">Disabled (<span id="partCountDisabled">0</span>)</button>
+                    </div>
+                </div>
+
+                <!-- Quick Add Form -->
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <input type="text" id="partQuickIdInput" placeholder="ID / Ticket #" style="width:110px; padding:7px 10px; background:#111; border:1px solid #383838; border-radius:var(--radius-sm); color:#fff; font-size:12px;">
+                    <input type="text" id="partQuickNameInput" placeholder="Full Name *" onkeydown="if(event.key==='Enter') Studio.addQuickParticipant()" style="width:160px; padding:7px 10px; background:#111; border:1px solid #383838; border-radius:var(--radius-sm); color:#fff; font-size:12px;">
+                    <input type="text" id="partQuickDeptInput" placeholder="Department / Note" onkeydown="if(event.key==='Enter') Studio.addQuickParticipant()" style="width:140px; padding:7px 10px; background:#111; border:1px solid #383838; border-radius:var(--radius-sm); color:#fff; font-size:12px;">
+                    <button class="btn-arena btn-arena-primary" onclick="Studio.addQuickParticipant()" style="padding:7px 14px; font-size:12px; font-weight:700;">+ Add</button>
+                </div>
+            </div>
+
+            <!-- Batch Actions Bar (When items checked) -->
+            <div id="partMgrBatchBar" style="display:none; padding:8px 24px; background:rgba(6, 182, 212, 0.1); border-bottom:1px solid #222; justify-content:space-between; align-items:center;">
+                <span style="font-size:12px; font-weight:700; color:var(--accent-cyan);">
+                    <span id="partMgrSelectedCount">0</span> participant(s) selected
+                </span>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-arena" onclick="Studio.batchToggleParticipants(true)" style="padding:4px 12px; font-size:11px;">Enable Selected</button>
+                    <button class="btn-arena" onclick="Studio.batchToggleParticipants(false)" style="padding:4px 12px; font-size:11px;">Disable Selected</button>
+                    <button class="btn-arena btn-arena-danger" onclick="Studio.batchDeleteParticipants()" style="padding:4px 12px; font-size:11px;">Delete Selected</button>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div style="flex:1; overflow-y:auto; padding:16px 24px;">
+                <div id="partMgrTableContainer" style="background:#111; border:1px solid #282828; border-radius:var(--radius-md); overflow:hidden;">
+                    <!-- Dynamically populated table -->
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer" style="background:#1a1a1a; border-top:1px solid #282828; padding:14px 24px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:11px; color:#888;">
+                    💡 <b>Tip:</b> If drawing by ID, the stage will only display the alphanumeric ID (`Ticket #`), completely hiding the full name.
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-arena btn-arena-danger" onclick="Studio.clearAllParticipantsConfirm()" style="padding:8px 16px; font-size:12px;">Clear All Data</button>
+                    <button class="btn-arena" onclick="Studio.closeParticipantManager()" style="padding:8px 20px; font-weight:700;">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Excel Template Options Modal -->
+    <div id="templateOptionsModal" class="modal-overlay" style="display:none; z-index:10000;">
+        <div class="modal-card" style="max-width:480px; background:#181818; border:1px solid #383838;">
+            <div class="modal-header" style="background:#1f1f1f; border-bottom:1px solid #333; padding:16px 20px;">
+                <span style="font-size:15px; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px;">
+                    <svg class="svg-icon" style="color:var(--accent-cyan);" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                    Download Excel / CSV Template Options
+                </span>
+                <button onclick="Studio.closeTemplateOptionsModal()" class="modal-close" style="color:#fff;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+                <div style="font-size:12px; color:#ccc; line-height:1.4;">
+                    Select which fields you want included in the template. Turn off optional columns (`Phone`, `Department`, etc.) if your guests do not need to fill them in.
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:10px; background:#111; padding:14px; border-radius:var(--radius-sm); border:1px solid #2a2a2a;">
+                    <label style="display:flex; align-items:center; gap:10px; font-size:13px; color:#fff; cursor:pointer;">
+                        <input type="checkbox" id="tplIncId" checked style="accent-color:var(--accent-cyan); width:16px; height:16px;">
+                        <b>Include ID / Ticket # Column (`ID_Ticket`)</b>
+                        <span style="font-size:11px; color:var(--accent-cyan); margin-left:auto;">Recommended for ID Draw</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:10px; font-size:13px; color:#fff; cursor:not-allowed; opacity:0.8;">
+                        <input type="checkbox" id="tplIncName" checked disabled style="accent-color:var(--accent-cyan); width:16px; height:16px;">
+                        <b>Include Full Name (`Full_Name`)</b>
+                        <span style="font-size:11px; color:#888; margin-left:auto;">Required</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:10px; font-size:13px; color:#fff; cursor:pointer;">
+                        <input type="checkbox" id="tplIncDept" checked style="accent-color:var(--accent-cyan); width:16px; height:16px;">
+                        <b>Include Department / Company (`Department_Company`)</b>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:10px; font-size:13px; color:#fff; cursor:pointer;">
+                        <input type="checkbox" id="tplIncPhone" checked style="accent-color:var(--accent-cyan); width:16px; height:16px;">
+                        <b>Include Phone Number (`Phone_Number`)</b>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:10px; font-size:13px; color:#fff; cursor:pointer;">
+                        <input type="checkbox" id="tplIncElig" style="accent-color:var(--accent-cyan); width:16px; height:16px;">
+                        <b>Include Category Eligibility (`Category_Eligibility`)</b>
+                    </label>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+                    <span style="font-size:12px; font-weight:700; color:#ddd;">File Format:</span>
+                    <div style="display:flex; gap:12px;">
+                        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#fff; cursor:pointer;">
+                            <input type="radio" name="tplFormat" value="xlsx" checked style="accent-color:var(--accent-cyan);"> Excel (`.xlsx`)
+                        </label>
+                        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#fff; cursor:pointer;">
+                            <input type="radio" name="tplFormat" value="csv" style="accent-color:var(--accent-cyan);"> CSV (`.csv`)
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:#1f1f1f; border-top:1px solid #333; padding:14px 20px; display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn-arena" onclick="Studio.closeTemplateOptionsModal()" style="padding:8px 16px;">Cancel</button>
+                <button class="btn-arena btn-arena-primary" onclick="Studio.generateAndDownloadTemplate()" style="padding:8px 20px; font-weight:800;">Download Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Help Modal -->
+    <div id="hotkeysModal" class="modal-overlay" style="display:none;">
+        <div class="modal-card" style="max-width:540px;">
+            <div class="modal-header">
+                <span style="display:flex; align-items:center; gap:8px;">
+                    <svg class="svg-icon svg-icon-lg" style="color:var(--warning-color);" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/></svg>
+                    Keyboard Shortcuts & Hotkeys
+                </span>
+                <button onclick="Studio.closeHotkeysHelp()" class="modal-close">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="modal-body" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:12px;">
+                <div style="display:flex; justify-content:space-between; padding:8px; background:var(--bg-elevated); border-radius:4px;">
+                    <span>Spin / Next Round</span>
+                    <span style="font-family:var(--font-mono); color:var(--accent-cyan); font-weight:700;">Space / Enter</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px; background:var(--bg-elevated); border-radius:4px;">
+                    <span>Previous Slot</span>
+                    <span style="font-family:var(--font-mono); color:var(--accent-cyan); font-weight:700;">⬅️ Left Arrow</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px; background:var(--bg-elevated); border-radius:4px;">
+                    <span>Next Slot</span>
+                    <span style="font-family:var(--font-mono); color:var(--accent-cyan); font-weight:700;">➡️ Right Arrow</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px; background:var(--bg-elevated); border-radius:4px;">
+                    <span>Re-Spin Column</span>
+                    <span style="font-family:var(--font-mono); color:var(--warning-color); font-weight:700;">Key R</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px; background:var(--bg-elevated); border-radius:4px;">
+                    <span>Toggle Speed</span>
+                    <span style="font-family:var(--font-mono); color:var(--accent-blue); font-weight:700;">Key S</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px; background:var(--bg-elevated); border-radius:4px;">
+                    <span>Open Projector</span>
+                    <span style="font-family:var(--font-mono); color:#fff; font-weight:700;">Key P</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px; background:var(--bg-elevated); border-radius:4px;">
+                    <span>Open History</span>
+                    <span style="font-family:var(--font-mono); color:#fff; font-weight:700;">Key H</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px; background:var(--bg-elevated); border-radius:4px;">
+                    <span>Project Manager</span>
+                    <span style="font-family:var(--font-mono); color:#fff; font-weight:700;">Key O</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-arena btn-arena-primary" onclick="Studio.closeHotkeysHelp()">Got It</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Engine Scripts -->
-    <script src="js/engine/state.js"></script>
-    <script src="js/engine/virtual_scaler.js"></script>
-    <script src="js/engine/animations.js"></script>
-    <script src="js/engine/display.js"></script>
-    <script src="js/engine/draw.js"></script>
+    <script src="js/engine/state.js?v=6.0.1"></script>
+    <script src="js/engine/virtual_scaler.js?v=6.0.1"></script>
+    <script src="js/engine/animations.js?v=6.0.1"></script>
+    <script src="js/engine/display.js?v=6.0.1"></script>
+    <script src="js/engine/draw.js?v=6.0.1"></script>
     
     <!-- 5 Resolume Zone Controllers -->
-    <script src="js/zones/zoneA_deck.js"></script>
-    <script src="js/zones/zoneB_transport.js"></script>
-    <script src="js/zones/zoneC_monitors.js"></script>
-    <script src="js/zones/zoneD_inspector.js"></script>
-    <script src="js/zones/zoneE_browser.js"></script>
+    <script src="js/zones/zoneA_deck.js?v=6.0.1"></script>
+    <script src="js/zones/zoneB_transport.js?v=6.0.1"></script>
+    <script src="js/zones/zoneC_monitors.js?v=6.0.1"></script>
+    <script src="js/zones/zoneD_poolManager.js?v=6.0.1"></script>
+    <script src="js/zones/zoneD_inspector.js?v=6.0.1"></script>
+    <script src="js/zones/zoneE_stageControls.js?v=6.0.1"></script>
+    <script src="js/zones/zoneE_telegramBot.js?v=6.0.1"></script>
+    <script src="js/zones/zoneE_browser.js?v=6.0.1"></script>
     
     <!-- Master Orchestrator -->
-    <script src="js/studio.js"></script>
+    <script src="js/studio.js?v=6.0.1"></script>
 </body>
 </html>

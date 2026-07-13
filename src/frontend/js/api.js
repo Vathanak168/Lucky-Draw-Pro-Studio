@@ -47,6 +47,39 @@ class StudioAPI {
             return { synced: false, offline: true };
         }
     }
+
+    static async getSavedProjectsFromDisk() {
+        try {
+            const res = await fetch(`${API_BASE}/core/projects/list`);
+            return await res.json();
+        } catch (e) {
+            return null;
+        }
+    }
+
+    static async saveProjectToDisk(snapshot) {
+        try {
+            const res = await fetch(`${API_BASE}/core/projects/save`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(snapshot)
+            });
+            return await res.json();
+        } catch (e) {
+            return null;
+        }
+    }
+
+    static async deleteProjectFromDisk(projectId) {
+        try {
+            const res = await fetch(`${API_BASE}/core/projects/delete/${encodeURIComponent(projectId)}`, {
+                method: "DELETE"
+            });
+            return await res.json();
+        } catch (e) {
+            return null;
+        }
+    }
 }
 
 window.StudioAPI = StudioAPI;

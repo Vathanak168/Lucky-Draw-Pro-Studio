@@ -1,0 +1,142 @@
+{
+  "appName": "LuckyDrawProStudio",
+  "version": "6.0",
+  "exportedAt": "2026-07-13T18:45:00.000Z",
+  "projectName": "🎉 Gala Party Night 2026",
+  "id": "gala_party_night_2026",
+  "name": "🎉 Gala Party Night 2026",
+  "updatedAt": "13/7/2026, 6:45:00 PM",
+  "totalRounds": 4,
+  "prizeCategories": [
+    "Grand Prize - Rolex Datejust",
+    "1st Prize - iPhone 16 Pro Max",
+    "2nd Prize - MacBook Air M3",
+    "3rd Prize - Gold Coin 1 Damlung"
+  ],
+  "categoryThemes": {
+    "Grand Prize - Rolex Datejust": {
+      "id": "theme_grand",
+      "name": "Luxury Gold",
+      "gradient": "linear-gradient(135deg, #FFD700 0%, #FFA500 100%)",
+      "textColor": "#000000",
+      "borderColor": "#FFD700",
+      "badgeBg": "rgba(255, 215, 0, 0.2)",
+      "badgeText": "#FFD700",
+      "cardBg": "linear-gradient(180deg, rgba(255, 215, 0, 0.15) 0%, rgba(18, 18, 20, 0.95) 100%)",
+      "stageBg": "radial-gradient(circle at 50% 30%, rgba(255, 215, 0, 0.35) 0%, rgba(10, 10, 15, 0.98) 70%)"
+    },
+    "1st Prize - iPhone 16 Pro Max": {
+      "id": "theme_1st",
+      "name": "Neon Cyber",
+      "gradient": "linear-gradient(135deg, #00E5A3 0%, #0080FF 100%)",
+      "textColor": "#000000",
+      "borderColor": "#00E5A3",
+      "badgeBg": "rgba(0, 229, 163, 0.2)",
+      "badgeText": "#00E5A3",
+      "cardBg": "linear-gradient(180deg, rgba(0, 229, 163, 0.15) 0%, rgba(18, 18, 20, 0.95) 100%)",
+      "stageBg": "radial-gradient(circle at 50% 30%, rgba(0, 229, 163, 0.35) 0%, rgba(10, 10, 15, 0.98) 70%)"
+    },
+    "2nd Prize - MacBook Air M3": {
+      "id": "theme_2nd",
+      "name": "Royal Purple",
+      "gradient": "linear-gradient(135deg, #B026FF 0%, #FF007F 100%)",
+      "textColor": "#FFFFFF",
+      "borderColor": "#B026FF",
+      "badgeBg": "rgba(176, 38, 255, 0.2)",
+      "badgeText": "#B026FF",
+      "cardBg": "linear-gradient(180deg, rgba(176, 38, 255, 0.15) 0%, rgba(18, 18, 20, 0.95) 100%)",
+      "stageBg": "radial-gradient(circle at 50% 30%, rgba(176, 38, 255, 0.35) 0%, rgba(10, 10, 15, 0.98) 70%)"
+    },
+    "3rd Prize - Gold Coin 1 Damlung": {
+      "id": "theme_3rd",
+      "name": "Sunset Orange",
+      "gradient": "linear-gradient(135deg, #FF5E3A 0%, #FF2A6D 100%)",
+      "textColor": "#FFFFFF",
+      "borderColor": "#FF5E3A",
+      "badgeBg": "rgba(255, 94, 58, 0.2)",
+      "badgeText": "#FF5E3A",
+      "cardBg": "linear-gradient(180deg, rgba(255, 94, 58, 0.15) 0%, rgba(18, 18, 20, 0.95) 100%)",
+      "stageBg": "radial-gradient(circle at 50% 30%, rgba(255, 94, 58, 0.35) 0%, rgba(10, 10, 15, 0.98) 70%)"
+    }
+  },
+  "roundConfigs": [
+    {
+      "roundIndex": 0,
+      "prizeName": "Grand Prize - Rolex Datejust",
+      "totalWinners": 1,
+      "dataSource": "list",
+      "audioSpinStart": true,
+      "soundSpinStart": "drumroll",
+      "audioSpinStop": true,
+      "soundSpinStop": "victory"
+    },
+    {
+      "roundIndex": 1,
+      "prizeName": "1st Prize - iPhone 16 Pro Max",
+      "totalWinners": 2,
+      "dataSource": "list",
+      "audioSpinStart": true,
+      "soundSpinStart": "drumroll",
+      "audioSpinStop": true,
+      "soundSpinStop": "victory"
+    },
+    {
+      "roundIndex": 2,
+      "prizeName": "2nd Prize - MacBook Air M3",
+      "totalWinners": 3,
+      "dataSource": "list",
+      "audioSpinStart": true,
+      "soundSpinStart": "drumroll",
+      "audioSpinStop": true,
+      "soundSpinStop": "victory"
+    },
+    {
+      "roundIndex": 3,
+      "prizeName": "3rd Prize - Gold Coin 1 Damlung",
+      "totalWinners": 5,
+      "dataSource": "list",
+      "audioSpinStart": true,
+      "soundSpinStart": "drumroll",
+      "audioSpinStop": true,
+      "soundSpinStop": "victory"
+    }
+  ],
+  "displaySettings": {
+    "showCompanyLogo": true,
+    "companyName": "Gala Annual Celebration 2026",
+    "vjMirrorMode": "active",
+    "themeStyle": "arena_dark"
+  },
+  "participants": [
+    { "ticket_num": "VIP-001", "name": "Chan Sothea (CEO)", "department": "Executive" },
+    { "ticket_num": "VIP-002", "name": "Meas Rithy (Director)", "department": "Board" },
+    { "ticket_num": "VIP-003", "name": "Sokha Vanna (Manager)", "department": "Finance" },
+    { "ticket_num": "VIP-004", "name": "Chea Dara (Lead Engineer)", "department": "Technology" },
+    { "ticket_num": "VIP-005", "name": "Pich Bopha (Marketing Head)", "department": "Marketing" },
+    { "ticket_num": "VIP-006", "name": "Kheng Sophea (HR Specialist)", "department": "HR" },
+    { "ticket_num": "VIP-007", "name": "Yim Sreynich (Accountant)", "department": "Finance" },
+    { "ticket_num": "VIP-008", "name": "Chhoun Piseth (Senior Designer)", "department": "Design" },
+    { "ticket_num": "VIP-009", "name": "Heng Vuthy (Product Manager)", "department": "Product" },
+    { "ticket_num": "VIP-010", "name": "Keo Sambo (Operations Lead)", "department": "Operations" },
+    { "ticket_num": "VIP-011", "name": "Ngeth Nary (Customer Success)", "department": "Support" },
+    { "ticket_num": "VIP-012", "name": "Vong Bora (System Architect)", "department": "Technology" },
+    { "ticket_num": "VIP-013", "name": "San Serey (PR Manager)", "department": "Marketing" },
+    { "ticket_num": "VIP-014", "name": "Chhim Chantrea (Data Analyst)", "department": "Data" },
+    { "ticket_num": "VIP-015", "name": "Luy Ratanak (DevOps Engineer)", "department": "Technology" },
+    { "ticket_num": "VIP-016", "name": "Som Kolab (Legal Counsel)", "department": "Legal" },
+    { "ticket_num": "VIP-017", "name": "Lim Kiri (Sales Director)", "department": "Sales" },
+    { "ticket_num": "VIP-018", "name": "Ros Channary (Quality Assurance)", "department": "Technology" },
+    { "ticket_num": "VIP-019", "name": "Prak Moni (Logistics Head)", "department": "Operations" },
+    { "ticket_num": "VIP-020", "name": "Khiev Sreyroth (Events Coordinator)", "department": "HR" },
+    { "ticket_num": "VIP-021", "name": "Sim Samnang (Cloud Engineer)", "department": "Technology" },
+    { "ticket_num": "VIP-022", "name": "Touch Sophal (Business Analyst)", "department": "Product" },
+    { "ticket_num": "VIP-023", "name": "Tep Bopha (UX Researcher)", "department": "Design" },
+    { "ticket_num": "VIP-024", "name": "Nhem Virak (Security Officer)", "department": "Technology" },
+    { "ticket_num": "VIP-025", "name": "Phan Sokunthea (Treasury Lead)", "department": "Finance" },
+    { "ticket_num": "VIP-026", "name": "Mao Sokun (Frontend Developer)", "department": "Technology" },
+    { "ticket_num": "VIP-027", "name": "Seng Chantha (Content Lead)", "department": "Marketing" },
+    { "ticket_num": "VIP-028", "name": "Bouy Siphon (Network Engineer)", "department": "Technology" },
+    { "ticket_num": "VIP-029", "name": "Kang Veasna (Creative Director)", "department": "Design" },
+    { "ticket_num": "VIP-030", "name": "Ly Visoth (Chief Innovation Officer)", "department": "Executive" }
+  ]
+}

@@ -36,7 +36,7 @@ window.ZoneE = {
             <!-- Resolume Browser Tabs -->
             <div class="arena-tab-bar">
                 <button class="arena-tab-btn ${this.activeTab === 'pool' ? 'active' : ''}" onclick="ZoneE.setTab('pool')">
-                    Names (${participants.length})
+                    ⚡ Stage Controls
                 </button>
                 <button class="arena-tab-btn ${this.activeTab === 'reports' ? 'active' : ''}" onclick="ZoneE.setTab('reports')">
                     Winners (${totalWinners})
@@ -45,32 +45,7 @@ window.ZoneE = {
 
             <div class="inspector-body" style="display:flex; flex-direction:column; gap:10px; padding:10px;">
                 ${this.activeTab === 'pool' ? `
-                    <!-- Pool Search & Actions -->
-                    <div style="display:flex; gap:6px;">
-                        <input type="text" placeholder="Search..." value="${this.searchQuery.replace(/"/g, '&quot;')}" oninput="ZoneE.searchQuery=this.value; ZoneE.renderGrid();" style="flex:1;">
-                    </div>
-                    <div style="display:flex; gap:6px;">
-                        <input type="text" id="zoneE_addInput" placeholder="Add name..." onkeydown="if(event.key==='Enter') ZoneE.addParticipant()" style="flex:1;">
-                        <button class="btn-arena btn-arena-primary" onclick="ZoneE.addParticipant()" style="padding:4px 10px; font-size:11px;">Add</button>
-                    </div>
-
-                    <div style="display:flex; gap:6px; justify-content:space-between; padding-top:4px; border-top:1px solid var(--border-light);">
-                        <label class="btn-arena" style="flex:1; cursor:pointer; font-size:10px; padding:4px 6px;">
-                            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                            Import
-                            <input type="file" accept=".csv" style="display:none;" onchange="ZoneE.handleCsvImport(event)">
-                        </label>
-                        <button class="btn-arena" onclick="ZoneE.exportCsv()" style="font-size:10px; padding:4px 6px;">
-                            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                            Export
-                        </button>
-                        ${participants.length > 0 ? `
-                        <button class="btn-arena btn-arena-danger" onclick="ZoneE.clearAll()" style="font-size:10px; padding:4px 6px;">Clear</button>
-                        ` : ''}
-                    </div>
-
-                    <!-- Grid of Participant Chips -->
-                    <div id="zoneE_grid" class="participant-grid" style="overflow-y:auto; max-height:480px; margin-top:4px;"></div>
+                    <div id="zoneE_stage_container"></div>
                 ` : `
                     <!-- Reports & Exports Tab -->
                     <div style="display:flex; flex-direction:column; gap:10px;">
@@ -108,48 +83,13 @@ window.ZoneE = {
             </div>
         `;
 
-        if (this.activeTab === 'pool') this.renderGrid();
+        if (this.activeTab === 'pool' && window.ZoneEStageControls) {
+            ZoneEStageControls.render(document.getElementById('zoneE_stage_container'));
+        }
     },
 
     renderGrid() {
-        const S = EngineState;
-        const gridEl = document.getElementById('zoneE_grid');
-        if (!gridEl) return;
-
-        const participants = S.getParticipantList();
-        const q = (this.searchQuery || '').toLowerCase().trim();
-
-        const filtered = participants.filter((p, idx) => {
-            if (!q) return true;
-            return p.name.toLowerCase().includes(q) || `l_${idx + 1}`.includes(q);
-        });
-
-        if (filtered.length === 0) {
-            gridEl.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:24px; color:var(--text-muted); font-size:11px;">No names found. Add or import above.</div>`;
-            return;
-        }
-
-        let html = '';
-        filtered.forEach(p => {
-            const originalIndex = participants.findIndex(x => x === p);
-            html += `
-                <div class="participant-chip ${p.hidden ? 'hidden' : ''}">
-                    <span class="participant-chip-name" title="${p.name.replace(/"/g, '&quot;')}">
-                        <b style="color:var(--text-secondary); font-family:var(--font-mono); margin-right:4px;">#${originalIndex + 1}</b>
-                        ${p.name}
-                    </span>
-                    <div style="display:flex; gap:2px; flex-shrink:0;">
-                        <button onclick="ZoneE.toggleHide(${originalIndex})" title="${p.hidden ? 'Show' : 'Hide'}" style="background:none; border:none; color:${p.hidden ? '#888' : 'var(--accent-cyan)'}; cursor:pointer; padding:2px;">
-                            <svg class="svg-icon" viewBox="0 0 24 24"><path d="${p.hidden ? 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24' : 'M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z'}"/><circle cx="12" cy="12" r="3"/></svg>
-                        </button>
-                        <button onclick="ZoneE.deleteParticipant(${originalIndex})" title="Delete" style="background:none; border:none; color:var(--danger-color); cursor:pointer; padding:2px;">
-                            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-        gridEl.innerHTML = html;
+        // No-op since 'None' tab is clean
     },
 
     addParticipant() {
@@ -160,9 +100,19 @@ window.ZoneE = {
         if (!val) return;
 
         const participants = S.getParticipantList();
-        participants.push({ name: val, hidden: false });
+        let newId = (participants.length + 1).toString();
+        let newName = val;
+        if (val.includes('-')) {
+            const parts = val.split('-');
+            if (parts[0].trim().length <= 15 && parts.length >= 2) {
+                newId = parts[0].trim();
+                newName = parts.slice(1).join('-').trim();
+            }
+        }
+        participants.push({ id: newId, name: newName, dept: '', phone: '', eligibility: 'All', status: 'ELIGIBLE', hidden: false });
         S.saveParticipantList(participants);
         input.value = '';
+        Draw.initializePoolsSilently();
         this.render();
         if (window.ZoneC) ZoneC.render();
     },

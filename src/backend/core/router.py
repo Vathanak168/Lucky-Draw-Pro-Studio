@@ -8,6 +8,7 @@ from src.backend.core.models import (
 )
 from src.backend.core.pool_service import pool_service
 from src.backend.core.slots_service import slots_service
+from src.backend.core.projects_service import projects_service
 
 router = APIRouter(prefix="/api/core", tags=["Core VJ Console Engine"])
 
@@ -105,3 +106,17 @@ def reset_all_deck_slots():
     """Resets all slots and all candidate win states across the entire console."""
     slots_service.reset_all_slots()
     return {"status": "success", "message": "All slots and pools reset completely."}
+
+# ==================== PROJECTS ENDPOINTS ====================
+
+@router.get("/projects/list")
+def get_saved_projects():
+    return projects_service.get_all_projects()
+
+@router.post("/projects/save")
+def save_project_to_file(snapshot: dict):
+    return projects_service.save_project(snapshot)
+
+@router.delete("/projects/delete/{project_id}")
+def delete_project_from_file(project_id: str):
+    return projects_service.delete_project(project_id)

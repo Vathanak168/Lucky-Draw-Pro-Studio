@@ -19,12 +19,28 @@ window.ZoneB = {
         const currentSpeed = S.displaySettings.drawSpeed || 'normal';
 
         el.innerHTML = `
-            <div style="display:flex; align-items:center; gap:16px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <!-- Microsoft Word File & Save Controls -->
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button class="btn-arena" onclick="Studio.openProjectManager('recent')" style="background:#222; border-color:var(--accent-cyan); color:var(--accent-cyan); font-weight:800; padding:4px 10px;">
+                        📁 File
+                    </button>
+                    <button class="btn-arena" onclick="Studio.quickSaveProject()" title="Save Project (Ctrl+S)" style="background:#1f2937; border-color:#374151; color:#fff; font-weight:700; padding:4px 10px;">
+                        💾 Save
+                    </button>
+                    <span style="font-size:12px; font-weight:700; color:#fff; margin-left:4px; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        ${S.currentProjectName || 'Default VJ Project'}
+                    </span>
+                    <span id="topBarSaveStatusBadge" class="save-status-badge" style="${S.isDirty ? 'background:rgba(245, 158, 11, 0.2); color:var(--warning-color);' : 'background:rgba(16, 185, 129, 0.15); color:var(--success-color);'}">
+                        ${S.isDirty ? '• Unsaved' : '✓ Saved'}
+                    </span>
+                </div>
+
                 <!-- Timing / Speed Knob -->
-                <div style="display:flex; align-items:center; gap:8px; background:var(--bg-panel); padding:4px 10px; border-radius:var(--radius-sm); border:1px solid var(--border-light);">
+                <div style="display:flex; align-items:center; gap:6px; background:var(--bg-panel); padding:4px 8px; border-radius:var(--radius-sm); border:1px solid var(--border-light);">
                     <svg class="svg-icon" style="color:var(--accent-cyan);" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase;">Speed:</span>
-                    <select onchange="ZoneB.setSpeed(this.value)" style="width:90px; padding:2px 6px; font-size:11px; background:var(--bg-elevated); border:1px solid #3c3c3c; color:#fff;">
+                    <select onchange="ZoneB.setSpeed(this.value)" style="width:80px; padding:2px 4px; font-size:11px; background:var(--bg-elevated); border:1px solid #3c3c3c; color:#fff;">
                         <option value="fast" ${currentSpeed === 'fast' ? 'selected' : ''}>Fast</option>
                         <option value="normal" ${currentSpeed === 'normal' ? 'selected' : ''}>Normal</option>
                         <option value="suspense" ${currentSpeed === 'suspense' ? 'selected' : ''}>Slow</option>
@@ -63,8 +79,12 @@ window.ZoneB = {
                 `}
             </div>
 
-            <!-- Right Controls: Pop-Out, Reports -->
+            <!-- Right Controls: Pop-Out, Reports, Hotkeys -->
             <div style="display:flex; align-items:center; gap:8px;">
+                <button class="btn-arena" onclick="Studio.openHotkeysHelp()" title="Keyboard Shortcuts">
+                    <svg class="svg-icon" style="color:var(--warning-color);" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/></svg>
+                    Hotkeys
+                </button>
                 <button class="btn-arena" onclick="Studio.openProjector()">
                     <svg class="svg-icon" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
                     Projector
@@ -87,17 +107,20 @@ window.ZoneB = {
         const S = EngineState;
         if (!confirm(`Are you sure you want to clear all winners for Column #${S.currentRound + 1} and re-spin the entire slot?`)) return;
 
+        const rc = S.roundConfigs[S.currentRound] || S.getDefaultRoundConfig(S.currentRound);
+        S.syncSettingsFromConfigs();
+
         const roundResult = S.roundResults[S.currentRound];
         if (roundResult && roundResult.winners) {
             // Return to pool if duplicates disabled
             if (!S.settings.allowDuplicates) {
-                const currentDataSource = S.settings.roundDataSources[S.currentRound];
-                let currentPool = (currentDataSource === 'list') ? S.drawListPool : S.drawNumericPool;
-                let currentMasterPool = (currentDataSource === 'list') ? S.masterListPool : S.masterNumericPool;
+                const currentDataSource = rc.dataSource || roundResult.type || S.settings.roundDataSources[S.currentRound] || 'numeric';
+                let currentPool = (currentDataSource === 'list') ? S.drawListPool : ((currentDataSource === 'id') ? S.drawIdPool : S.drawNumericPool);
+                let currentMasterPool = (currentDataSource === 'list') ? S.masterListPool : ((currentDataSource === 'id') ? S.masterIdPool : S.masterNumericPool);
                 roundResult.winners.forEach(w => {
                     if (w && w.id) {
                         const masterObj = currentMasterPool.find(p => p.id === w.id);
-                        if (masterObj) currentPool.push(masterObj);
+                        if (masterObj && currentPool) currentPool.push(masterObj);
                         const allIdx = S.allWinners.findIndex(aw => aw.id === w.id);
                         if (allIdx !== -1) S.allWinners.splice(allIdx, 1);
                     }
@@ -107,6 +130,9 @@ window.ZoneB = {
 
         S.roundResults[S.currentRound] = null;
         S.drawCompletedThisRound = false;
+        if (typeof Draw !== 'undefined' && typeof Draw.initializePoolsSilently === 'function') {
+            Draw.initializePoolsSilently();
+        }
         Display.resetDisplayForNewRound();
         Draw.startDraw();
     }

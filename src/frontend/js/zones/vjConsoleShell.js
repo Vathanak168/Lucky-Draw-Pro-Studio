@@ -101,12 +101,19 @@ class VJConsoleMasterController {
             }
         }
 
-        // Run 80ms loop for projector localStorage sync and audio ticks (identical to index16 interval)
+        // Run 80ms loop for projector sync and audio ticks using BroadcastChannel
+        if (!this.mirrorChannel && ('BroadcastChannel' in window)) {
+            this.mirrorChannel = new BroadcastChannel('ldp_vj_mirror_channel');
+        }
         this.tickerInterval = setInterval(() => {
             const randomCand = candidates[Math.floor(Math.random() * candidates.length)];
             const candName = randomCand.name ? `${randomCand.name} (${randomCand.ticket_num || ''})` : (randomCand.ticket_num || 'Participant');
             this.tickerText = candName;
-            localStorage.setItem("ldp_ticker_text", this.tickerText);
+            if (this.mirrorChannel) {
+                this.mirrorChannel.postMessage({ type: 'ticker_update', text: this.tickerText });
+            } else {
+                localStorage.setItem("ldp_ticker_text", this.tickerText);
+            }
             if (window.AudioSynth) {
                 window.AudioSynth.playTick();
             }

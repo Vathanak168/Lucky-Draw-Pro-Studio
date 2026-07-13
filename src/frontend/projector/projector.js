@@ -18,6 +18,21 @@ class StageProjectorSync {
             VirtualStageFitter.attach(this.viewportEl, this.shellEl);
         }
 
+        if ('BroadcastChannel' in window) {
+            this.mirrorChannel = new BroadcastChannel('ldp_vj_mirror_channel');
+            this.mirrorChannel.onmessage = (e) => {
+                if (!e.data || !this.canvasEl) return;
+                if (e.data.type === 'mirror_update') {
+                    if (e.data.html !== this.canvasEl.innerHTML) {
+                        this.canvasEl.innerHTML = e.data.html;
+                    }
+                } else if (e.data.type === 'ticker_update') {
+                    const tickerEl = document.querySelector(".ticker-text");
+                    if (tickerEl) tickerEl.textContent = e.data.text;
+                }
+            };
+        }
+
         setInterval(() => this.syncFromStorage(), 120);
         window.addEventListener("storage", (e) => {
             if (["vj_stage_mirror_html", "vj_stage_mirror_time", "ldp_is_drawing", "ldp_last_winner", "luckyDrawState"].includes(e.key)) {
@@ -155,9 +170,23 @@ class StageProjectorSync {
         winners.forEach((w, idx) => {
             const isPlaceholder = !w || w.name === '???' || w.name === '' || w.type === 'dummy';
             const displayText = (w && w.name !== '???' && w.type !== 'dummy') ? w.name : '';
+            
+            let cardFontSize = layout.fontSize;
+            if (displayText && displayText.length > 0) {
+                const usableWidth = Math.max(200, (layout.cardWidth || 600) - 48);
+                if (displayText.length <= 11) {
+                    const max1Line = Math.floor(usableWidth / (displayText.length * 0.54));
+                    cardFontSize = Math.min(layout.fontSize, Math.max(36, max1Line));
+                } else {
+                    const max2Lines = Math.floor((usableWidth * 1.8) / (displayText.length * 0.52));
+                    const maxByHeight = Math.floor((layout.cardHeight || 280) * 0.42);
+                    cardFontSize = Math.min(layout.fontSize, Math.min(maxByHeight, Math.max(28, max2Lines)));
+                }
+            }
+
             html += `
                 <div class="virtual-winner-card ${isPlaceholder ? '' : 'completed has-glow'}" style="min-height:${layout.cardHeight}px; width:${layout.cardWidth}px;">
-                    <span class="virtual-winner-value" style="font-size:${layout.fontSize}px; font-family:var(--font-mono, 'JetBrains Mono', monospace); font-weight:900;">
+                    <span class="virtual-winner-value" style="font-size:${cardFontSize}px; font-family:var(--font-mono, 'JetBrains Mono', monospace); font-weight:900;">
                         ${displayText}
                     </span>
                 </div>

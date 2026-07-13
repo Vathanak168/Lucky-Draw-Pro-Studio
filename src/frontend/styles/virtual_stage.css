@@ -125,10 +125,11 @@
   font-weight: 800 !important;
   font-variant-numeric: tabular-nums !important;
   font-feature-settings: "tnum" on, "cv01" on, "cv02" on !important;
-  line-height: 1.05 !important;
-  letter-spacing: 0.04em !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0.03em !important;
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
   text-shadow: 0 6px 20px rgba(0,0,0,0.8), 0 0 25px rgba(255,255,255,0.25);
 }
 

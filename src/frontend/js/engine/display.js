@@ -49,9 +49,23 @@ window.Display = {
         winners.forEach((w, i) => {
             const isPlaceholder = !w || w.name === '???' || w.name === '' || w.type === 'dummy';
             const displayText = (w && w.name !== '???' && w.type !== 'dummy') ? w.name : '';
+            
+            let cardFontSize = layout.fontSize;
+            if (displayText && displayText.length > 0) {
+                const usableWidth = Math.max(200, (layout.cardWidth || 600) - 48);
+                if (displayText.length <= 11) {
+                    const max1Line = Math.floor(usableWidth / (displayText.length * 0.54));
+                    cardFontSize = Math.min(layout.fontSize, Math.max(36, max1Line));
+                } else {
+                    const max2Lines = Math.floor((usableWidth * 1.8) / (displayText.length * 0.52));
+                    const maxByHeight = Math.floor((layout.cardHeight || 280) * 0.42);
+                    cardFontSize = Math.min(layout.fontSize, Math.min(maxByHeight, Math.max(28, max2Lines)));
+                }
+            }
+
             html += `
                 <div class="virtual-winner-card ${isPlaceholder ? '' : 'completed'}" id="item-${i}" style="min-height:${layout.cardHeight}px; width:${layout.cardWidth}px;">
-                    <span class="virtual-winner-value" style="font-size:${layout.fontSize}px; font-family:var(--font-display, 'Chakra Petch', 'Koulen', 'JetBrains Mono', monospace); font-weight:900;">
+                    <span class="virtual-winner-value" style="font-size:${cardFontSize}px; font-family:var(--font-display, 'Chakra Petch', 'Koulen', 'JetBrains Mono', monospace); font-weight:900;">
                         ${displayText}
                     </span>
                 </div>
@@ -115,8 +129,21 @@ window.Display = {
         try {
             const virtualCanvas = document.getElementById('virtualCanvas');
             if (virtualCanvas) {
-                localStorage.setItem('vj_stage_mirror_html', virtualCanvas.innerHTML);
-                localStorage.setItem('vj_stage_mirror_time', Date.now().toString());
+                if (!this.mirrorChannel && ('BroadcastChannel' in window)) {
+                    this.mirrorChannel = new BroadcastChannel('ldp_vj_mirror_channel');
+                }
+                if (this.mirrorChannel) {
+                    this.mirrorChannel.postMessage({
+                        type: 'mirror_update',
+                        html: virtualCanvas.innerHTML,
+                        time: Date.now()
+                    });
+                }
+                const S = EngineState;
+                if (!S.isDrawing && (!window.VJConsole || !window.VJConsole.isDrawing)) {
+                    localStorage.setItem('vj_stage_mirror_html', virtualCanvas.innerHTML);
+                    localStorage.setItem('vj_stage_mirror_time', Date.now().toString());
+                }
             }
         } catch (e) {}
     },
@@ -128,7 +155,11 @@ window.Display = {
         try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
         S.saveDrawState();
 
-        if (window.AudioSynth) AudioSynth.playFanfare();
+        const rcStop = S.roundConfigs[S.currentRound] || S.getDefaultRoundConfig(S.currentRound);
+        const isStopEnabled = (rcStop.audioSpinStop !== undefined) ? rcStop.audioSpinStop : (S.audioSettings && S.audioSettings.autoSpinStop);
+        if (window.AudioSynth && isStopEnabled) {
+            AudioSynth.playSound(rcStop.soundSpinStop || 'victory');
+        }
 
         this.showWinnersInstantly(winners);
 
@@ -136,6 +167,16 @@ window.Display = {
         if (window.ZoneB) ZoneB.render();
         if (window.ZoneD) ZoneD.render();
         if (window.ZoneE) ZoneE.render();
+
+        if (window.ZoneETelegramBot) {
+            const category = S.settings.roundCategories[S.currentRound] || `Column #${S.currentRound + 1}`;
+            if (rcStop.telegramAutoGroup) {
+                ZoneETelegramBot.executeAutoRoundBroadcast(winners, category);
+            }
+            if (rcStop.telegramAutoDirect) {
+                ZoneETelegramBot.executeAutoDirectMessages(winners, category);
+            }
+        }
     },
 
     nextRound() {
