@@ -115,7 +115,7 @@ window.Draw = {
         // Auto-heal stuck isDrawing state if no active intervals/animations exist
         if (S.isDrawing && (!S.AnimationManager || (S.AnimationManager.intervals && S.AnimationManager.intervals.size === 0))) {
             S.isDrawing = false;
-            try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
+            if (window.ProjectorSync) ProjectorSync.publish({ type: 'draw_status', isDrawing: false });
         }
         if (S.isDrawing) return;
 
@@ -162,9 +162,11 @@ window.Draw = {
         }
         if (window.ZoneB) ZoneB.render();
 
-        // Sync to projector
-        localStorage.setItem('ldp_is_drawing', 'true');
-        localStorage.removeItem('ldp_last_winner');
+        // Sync to projector without browser storage.
+        if (window.ProjectorSync) {
+            ProjectorSync.publish({ type: 'draw_status', isDrawing: true });
+            ProjectorSync.publish({ type: 'winner_update', winner: null });
+        }
 
         const roundWinnerIds = this.selectWinnerIdsForRound(currentPool, currentMasterPool);
         const roundWinnerObjects = roundWinnerIds.map(id =>
@@ -313,7 +315,7 @@ window.Draw = {
 
     initializeDisplayMode(forceNewDraw) {
         const S = EngineState;
-        const hasSavedState = localStorage.getItem('luckyDrawState');
+        const hasSavedState = !!S.drawState;
         if (hasSavedState && !forceNewDraw) {
             const tempDrawState = S.restoreDrawStateData();
             if (tempDrawState) {
@@ -340,7 +342,7 @@ window.Draw = {
         S.currentRound = 0;
         S.drawCompletedThisRound = false;
         S.isDrawing = false;
-        try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
+        if (window.ProjectorSync) ProjectorSync.publish({ type: 'draw_status', isDrawing: false });
         S.allWinners = [];
         S.roundResults = {};
         this.initializePoolsSilently();

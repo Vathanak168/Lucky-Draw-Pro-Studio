@@ -101,7 +101,7 @@ export function autoSaveAllSettings() {
             setupData.rounds.push(roundSettings);
         }
 
-        localStorage.setItem('luckyDrawSetupData', JSON.stringify(setupData));
+        if (window.EngineState && typeof EngineState.autoSaveAllSettings === 'function') EngineState.autoSaveAllSettings();
     } catch (e) {
         console.error("Error auto-saving settings:", e);
     }
@@ -109,7 +109,7 @@ export function autoSaveAllSettings() {
 
 export function loadAllSavedData() {
     try {
-        const savedData = localStorage.getItem('luckyDrawSetupData');
+        const savedData = null;
         if (!savedData) return;
 
         const setupData = JSON.parse(savedData);
@@ -156,7 +156,6 @@ export function loadAllSavedData() {
 
         if (setupData.fontSizeCache) {
             EngineState.fontSizeCache = setupData.fontSizeCache;
-            localStorage.setItem('luckyDrawFontSizeCache', JSON.stringify(EngineState.fontSizeCache));
         }
 
         if (setupData.roundCount) {
@@ -321,8 +320,7 @@ export function handleSettingsFileLoad(event) {
     reader.onload = function (e) {
         try {
             const setupData = JSON.parse(e.target.result);
-            localStorage.setItem('luckyDrawSetupData', JSON.stringify(setupData));
-            loadAllSavedData();
+            if (!EngineState.applyProjectDocument(setupData, { path: null })) throw new Error('Invalid settings data');
             alert('Settings loaded successfully!');
         } catch (err) {
             alert('Invalid settings JSON file.');
@@ -464,20 +462,19 @@ export function exportParticipantsToCsv() {
     document.body.removeChild(link);
 }
 
-export function handleImageUpload(e) {
+export async function handleImageUpload(e) {
     const t = e.target.files[0];
     if (t) {
-        const reader = new FileReader();
-        reader.onload = res => { EngineState.tempBgFile = res.target.result; };
-        reader.readAsDataURL(t);
+        const asset = await DesktopStorage.uploadBackgroundAsset(t, 'image');
+        EngineState.setBackgroundAsset(asset);
     }
 }
 
-export function handleVideoUpload(e) {
+export async function handleVideoUpload(e) {
     const file = e.target.files[0];
     if (file) {
-        if (EngineState.tempBgVideoFile) URL.revokeObjectURL(EngineState.tempBgVideoFile);
-        EngineState.tempBgVideoFile = URL.createObjectURL(file);
+        const asset = await DesktopStorage.uploadBackgroundAsset(file, 'video');
+        EngineState.setBackgroundAsset(asset);
     }
 }
 

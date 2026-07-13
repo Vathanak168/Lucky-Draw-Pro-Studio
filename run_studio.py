@@ -12,6 +12,9 @@ import webview
 from src.backend.config import APP_NAME, APP_VERSION
 from src.backend.auth.router import router as auth_router
 from src.backend.core.router import router as core_router
+from src.backend.desktop.bridge import desktop_bridge
+from src.backend.desktop.router import router as desktop_router
+from src.backend.desktop.storage_service import desktop_storage
 
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
 
@@ -36,9 +39,15 @@ app.add_middleware(
 # Include API Routers
 app.include_router(auth_router)
 app.include_router(core_router)
+app.include_router(desktop_router)
 
 # Serve Frontend static assets from src/frontend
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "frontend")
+app.mount(
+    "/local-assets",
+    StaticFiles(directory=str(desktop_storage.workspaces_dir)),
+    name="local-assets"
+)
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 
 def run_fastapi():
@@ -57,11 +66,13 @@ def main():
     window = webview.create_window(
         title=f"{APP_NAME} ({APP_VERSION})",
         url="http://127.0.0.1:8926/index.html",
+        js_api=desktop_bridge,
         width=1440,
         height=900,
         min_size=(1024, 700),
         background_color="#161616"
     )
+    desktop_bridge._bind_window(window)
     
     # Start desktop GUI loop
     webview.start(debug=False)

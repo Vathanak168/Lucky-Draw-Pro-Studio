@@ -78,8 +78,10 @@ class VJConsoleMasterController {
         const speedMultiplier = window.ZoneB_Transport ? (1.0 / window.ZoneB_Transport.speed) : 1.0;
         const totalDurationMs = durationSeconds * 1000 * speedMultiplier;
 
-        localStorage.setItem("ldp_is_drawing", "true");
-        localStorage.removeItem("ldp_last_winner");
+        if (window.ProjectorSync) {
+            ProjectorSync.publish({ type: 'draw_status', isDrawing: true });
+            ProjectorSync.publish({ type: 'winner_update', winner: null });
+        }
 
         // 3. Execute exact legacy index16 animation & typography fitting on local monitor and sync to projector
         const monitorEl = document.getElementById("monitorAnimationTicker");
@@ -112,7 +114,7 @@ class VJConsoleMasterController {
             if (this.mirrorChannel) {
                 this.mirrorChannel.postMessage({ type: 'ticker_update', text: this.tickerText });
             } else {
-                localStorage.setItem("ldp_ticker_text", this.tickerText);
+                if (window.ProjectorSync) ProjectorSync.publish({ type: 'ticker_update', text: this.tickerText });
             }
             if (window.AudioSynth) {
                 window.AudioSynth.playTick();
@@ -126,8 +128,10 @@ class VJConsoleMasterController {
         // 4. Finalize Winner Display and state
         this.lastWinner = winnerObj;
         this.isDrawing = false;
-        localStorage.setItem("ldp_is_drawing", "false");
-        localStorage.setItem("ldp_last_winner", JSON.stringify(this.lastWinner));
+        if (window.ProjectorSync) {
+            ProjectorSync.publish({ type: 'draw_status', isDrawing: false });
+            ProjectorSync.publish({ type: 'winner_update', winner: this.lastWinner });
+        }
 
         if (monitorEl) {
             monitorEl.innerHTML = winnerObj.name || winnerObj.ticket_num;
@@ -149,7 +153,7 @@ class VJConsoleMasterController {
 
     applyTextScale(scaleFactor) {
         this.activeScale = scaleFactor;
-        localStorage.setItem("ldp_text_scale", scaleFactor);
+        if (window.DesktopStorage) DesktopStorage.updateSettings({ projectorTextScale: scaleFactor }).catch(() => null);
         const box = document.getElementById("liveOutputDisplayBox");
         if (box) {
             box.style.transform = `scale(${scaleFactor})`;

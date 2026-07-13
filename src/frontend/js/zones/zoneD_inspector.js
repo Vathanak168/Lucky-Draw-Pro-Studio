@@ -378,42 +378,40 @@ window.ZoneD = {
         if (window.Studio) Studio.openCategoryManager();
     },
 
-    handleBgImageUpload(event) {
+    async handleBgImageUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            EngineState.tempBgFile = e.target.result;
-            EngineState.displaySettings.bgType = 'image';
-            EngineState.settings.bgImage = `url('${e.target.result}')`;
-            EngineState.settings.bgVideo = null;
+        try {
+            const asset = await DesktopStorage.uploadBackgroundAsset(file, 'image');
+            EngineState.setBackgroundAsset(asset);
             if (window.ZoneC) ZoneC.applyBackground();
             this.render();
-        };
-        reader.readAsDataURL(file);
+        } catch (error) {
+            console.error('Background image import failed:', error);
+            alert(`Background image could not be loaded: ${error.message}`);
+        } finally {
+            event.target.value = '';
+        }
     },
 
-    handleBgVideoUpload(event) {
+    async handleBgVideoUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            EngineState.tempBgVideoFile = e.target.result;
-            EngineState.displaySettings.bgType = 'video';
-            EngineState.settings.bgVideo = e.target.result;
-            EngineState.settings.bgImage = 'none';
+        try {
+            const asset = await DesktopStorage.uploadBackgroundAsset(file, 'video');
+            EngineState.setBackgroundAsset(asset);
             if (window.ZoneC) ZoneC.applyBackground();
             this.render();
-        };
-        reader.readAsDataURL(file);
+        } catch (error) {
+            console.error('Background video import failed:', error);
+            alert(`Background video could not be loaded: ${error.message}`);
+        } finally {
+            event.target.value = '';
+        }
     },
 
     clearBackground() {
-        EngineState.tempBgFile = null;
-        EngineState.tempBgVideoFile = null;
-        EngineState.displaySettings.bgType = 'image';
-        EngineState.settings.bgImage = 'none';
-        EngineState.settings.bgVideo = null;
+        EngineState.clearBackgroundAsset();
         if (window.ZoneC) ZoneC.applyBackground();
         this.render();
     }

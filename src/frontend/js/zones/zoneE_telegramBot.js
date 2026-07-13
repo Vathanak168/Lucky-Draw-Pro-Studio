@@ -8,23 +8,20 @@
 window.ZoneETelegramBot = {
     getSettings() {
         const S = EngineState;
-        if (!S.telegramSettings) {
-            try {
-                S.telegramSettings = JSON.parse(localStorage.getItem('luckyDrawTelegramSettings') || '{"botToken": "", "groupChatId": ""}');
-            } catch (e) {
-                S.telegramSettings = { botToken: '', groupChatId: '' };
-            }
-        }
+        if (!S.telegramSettings) S.telegramSettings = { botToken: '', groupChatId: '' };
         return S.telegramSettings;
     },
 
-    saveSettings(botToken, groupChatId) {
+    async saveSettings(botToken, groupChatId) {
         const S = EngineState;
         if (!S.telegramSettings) S.telegramSettings = {};
         if (botToken !== undefined) S.telegramSettings.botToken = botToken.trim();
         if (groupChatId !== undefined) S.telegramSettings.groupChatId = groupChatId.trim();
-        localStorage.setItem('luckyDrawTelegramSettings', JSON.stringify(S.telegramSettings));
-        if (typeof S.autoSaveAllSettings === 'function') S.autoSaveAllSettings();
+        try {
+            await DesktopStorage.updateSettings({ telegramSettings: S.telegramSettings });
+        } catch (error) {
+            console.error('Telegram settings save failed:', error);
+        }
     },
 
     render(containerEl) {

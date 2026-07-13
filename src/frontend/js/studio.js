@@ -53,35 +53,41 @@ window.AudioSynth = {
 };
 
 window.Studio = {
-    init() {
+    async init() {
         console.log("Initializing Resolume Arena 7 Workstation v6.0...");
 
-        // 1. Load data from localStorage
-        EngineState.loadParticipantsFromStorage();
-        const loaded = EngineState.loadAllSavedData();
-        if (!loaded) {
-            EngineState.ensureRoundConfigs(1);
-        }
-        if (!localStorage.getItem('ldp_default_migration_v6_num')) {
-            EngineState.displaySettings.winnerGlowEnabled = false;
-            if (Array.isArray(EngineState.roundConfigs)) {
-                EngineState.roundConfigs.forEach(rc => {
-                    if (rc.dataSource === 'list') rc.dataSource = 'numeric';
-                });
-            }
-            EngineState.syncSettingsFromConfigs();
-            EngineState.autoSaveAllSettings();
-            localStorage.setItem('ldp_default_migration_v6_num', '1');
-        } else {
-            EngineState.syncSettingsFromConfigs();
+        // 1. Load desktop settings and optional crash recovery from local files.
+        let startup = { settings: {}, recent: [], recoveries: [] };
+        let resumedFromRecovery = false;
+        try {
+            startup = await DesktopStorage.init();
+            EngineState.applyAppSettings(startup.settings);
+            EngineState.savedProjectsList = startup.recent || [];
+            if (window.ZoneDPoolManager) ZoneDPoolManager.ribbonMode = startup.settings.poolRibbonMode || 'all';
+        } catch (error) {
+            console.error('Desktop storage initialization failed:', error);
+            alert(`Local storage service could not start: ${error.message}`);
         }
 
-        // Auto-load last opened project if present
-        if (EngineState.savedProjectsList && EngineState.savedProjectsList.length > 0) {
-            const lastOpenedId = localStorage.getItem('luckyDrawLastOpenedProjectId') || EngineState.savedProjectsList[0].id;
-            if (lastOpenedId) {
-                EngineState.loadFromLocalProjectList(lastOpenedId);
+        if (startup.recoveries && startup.recoveries.length > 0) {
+            const latest = startup.recoveries[0];
+            const shouldRestore = confirm(`Recovery data was found for "${latest.name}" from ${latest.savedAt || 'the previous session'}. Restore it now?`);
+            if (shouldRestore) {
+                try {
+                    const result = await DesktopStorage.restoreRecovery(latest.id);
+                    resumedFromRecovery = EngineState.applyProjectDocument(result.document, { path: result.path });
+                    EngineState.savedProjectsList = result.recent || EngineState.savedProjectsList;
+                } catch (error) {
+                    console.error('Recovery restore failed:', error);
+                    alert(`Recovery could not be restored: ${error.message}`);
+                }
             }
+        }
+
+        if (!resumedFromRecovery) {
+            EngineState.loadParticipantsFromStorage();
+            EngineState.ensureRoundConfigs(1);
+            EngineState.syncSettingsFromConfigs();
         }
 
         // 2. Init all 5 Resolume Arena zones
@@ -91,14 +97,13 @@ window.Studio = {
         if (window.ZoneD) ZoneD.init();
         if (window.ZoneE) ZoneE.init();
 
-        // 3. Check for saved active draw state
-        const hasSavedState = localStorage.getItem('luckyDrawState');
-        if (hasSavedState && confirm('A previous draw session was found. Would you like to resume right where you left off?')) {
+        // 3. Restore an approved disk recovery or initialize a clean draw session.
+        if (resumedFromRecovery && EngineState.drawState) {
             Draw.initializeDisplayMode(false);
         } else {
             EngineState.isDrawing = false;
             EngineState.drawCompletedThisRound = false;
-            try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
+            if (window.ProjectorSync) ProjectorSync.publish({ type: 'draw_status', isDrawing: false });
             Draw.initializePoolsSilently();
             if (window.Display) Display.resetDisplayForNewRound();
         }
@@ -193,8 +198,8 @@ window.Studio = {
             }
         });
 
-        // 5. Apply saved Ribbon / Workspace Layout Display Mode (`Auto-hide Ribbon | Show Tabs | Show Tabs and Commands`)
-        this.ribbonDisplayMode = localStorage.getItem('ldp_ribbon_mode') || 'all';
+        // 5. Apply app preferences loaded from settings.json.
+        this.ribbonDisplayMode = (startup.settings && startup.settings.ribbonMode) || 'all';
         this.applyRibbonDisplayMode();
 
         // Close Ribbon menu when clicking outside
@@ -205,16 +210,35 @@ window.Studio = {
             }
         });
 
+        window.addEventListener('beforeunload', (event) => {
+            if (!EngineState.isDirty) return;
+            DesktopStorage.flushRecovery();
+            event.preventDefault();
+            event.returnValue = '';
+        });
+
         console.log("Resolume Arena 7 Workstation ready!");
     },
 
     ribbonDisplayMode: 'all',
+
+    escapeHtml(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[char]);
+    },
 
     applyRibbonDisplayMode() {
         // No-op for global body; Ribbon Mode strictly controls Pool Manager (`ZoneDPoolManager`)
     },
 
     setRibbonDisplayMode(mode) {
+        this.ribbonDisplayMode = mode;
+        if (window.DesktopStorage) DesktopStorage.updateSettings({ ribbonMode: mode }).catch(error => console.error('Ribbon preference save failed:', error));
         if (window.ZoneDPoolManager) {
             ZoneDPoolManager.setRibbonMode(mode);
         }
@@ -414,36 +438,62 @@ window.Studio = {
     updateSaveStatusUI() {
         const badge = document.getElementById('topBarSaveStatusBadge');
         if (badge) {
-            if (EngineState.isDirty) {
+            if (!EngineState.currentProjectSaved && !EngineState.isDirty) {
+                badge.style.background = 'rgba(255, 255, 255, 0.08)';
+                badge.style.color = 'var(--text-secondary)';
+                badge.textContent = 'Not saved';
+            } else if (EngineState.isDirty) {
                 badge.style.background = 'rgba(245, 158, 11, 0.2)';
                 badge.style.color = 'var(--warning-color)';
-                badge.textContent = '• Unsaved';
+                badge.textContent = 'Unsaved';
             } else {
                 badge.style.background = 'rgba(16, 185, 129, 0.15)';
                 badge.style.color = 'var(--success-color)';
-                badge.textContent = '✓ Saved';
+                badge.textContent = 'Saved';
             }
         }
     },
 
-    quickSaveProject() {
+    async quickSaveProject() {
         // Exact Microsoft Word Ctrl+S behavior
-        if (!EngineState.currentProjectSaved || !EngineState.currentProjectName || EngineState.currentProjectName === "Default VJ Project") {
+        if (!EngineState.currentProjectSaved || !EngineState.currentProjectPath) {
             // If never saved before / Untitled -> open Save As Backstage tab
             this.openProjectManager('saveAs');
             return;
         }
 
-        // If already saved -> instant silent update
-        const snapshot = EngineState.saveToLocalProjectList();
-        EngineState.isDirty = false;
-        this.updateSaveStatusUI();
+        await this.saveCurrentProject(false);
+    },
 
-        if (window.AudioSynth) AudioSynth.playTick();
-        const badge = document.getElementById('topBarSaveStatusBadge');
-        if (badge) {
-            badge.textContent = '✓ Saved right now';
-            setTimeout(() => { if (badge) badge.textContent = '✓ Saved'; }, 2500);
+    async saveCurrentProject(saveAs = false) {
+        try {
+            const saveRevision = DesktopStorage.revision;
+            const documentData = EngineState.exportProjectDocument();
+            const result = await DesktopStorage.saveProject(documentData, saveAs);
+            if (!result || result.cancelled) return false;
+            if (!result.ok) throw new Error('Project save did not complete.');
+
+            EngineState.currentProjectPath = result.path || EngineState.currentProjectPath;
+            EngineState.currentProjectSaved = true;
+            const changedDuringSave = DesktopStorage.revision !== saveRevision;
+            EngineState.isDirty = changedDuringSave;
+            EngineState.savedProjectsList = result.recent || DesktopStorage.recent || [];
+            if (!changedDuringSave) await DesktopStorage.clearRecoveryAfterSave(EngineState.currentProjectId).catch(() => null);
+            else DesktopStorage.scheduleRecovery(() => EngineState.exportProjectDocument(), true);
+            this.updateSaveStatusUI();
+            if (window.AudioSynth) AudioSynth.playTick();
+            const badge = document.getElementById('topBarSaveStatusBadge');
+            if (badge) {
+                badge.textContent = changedDuringSave ? '• New changes are not saved' : '✓ Saved right now';
+                if (!changedDuringSave) setTimeout(() => Studio.updateSaveStatusUI(), 2500);
+            }
+            return true;
+        } catch (error) {
+            EngineState.isDirty = true;
+            this.updateSaveStatusUI();
+            console.error('Project save failed:', error);
+            alert(`Project could not be saved: ${error.message}`);
+            return false;
         }
     },
 
@@ -475,6 +525,7 @@ window.Studio = {
         const contentArea = document.getElementById('wordBackstageContentArea');
         if (!contentArea) return;
         const S = EngineState;
+        const safeCurrentProjectName = this.escapeHtml(S.currentProjectName || 'Untitled Project');
 
         if (tabId === 'recent') {
             const projects = S.loadSavedProjectsList();
@@ -484,26 +535,31 @@ window.Studio = {
             } else {
                 let listItems = '';
                 projects.forEach(p => {
-                    const isCurrent = (p.name === S.currentProjectName);
+                    const isCurrent = !!(p.path && p.path === S.currentProjectPath);
+                    const pathToken = encodeURIComponent(p.path || '').replace(/'/g, '%27');
+                    const projectName = this.escapeHtml(p.name || 'Untitled Project');
+                    const updatedAt = this.escapeHtml(p.updatedAt || 'Recently');
+                    const totalRounds = Math.max(1, Number(p.totalRounds) || 1);
+                    const participantCount = Math.max(0, Number(p.participantCount) || 0);
                     listItems += `
                         <div style="padding:14px 18px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; background:${isCurrent ? 'rgba(0, 229, 163, 0.08)' : 'var(--bg-elevated)'}; border-radius:var(--radius-sm); margin-bottom:8px;">
                             <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
                                 <div style="font-weight:800; font-size:15px; color:${isCurrent ? 'var(--accent-cyan)' : '#fff'}; display:flex; align-items:center; gap:8px;">
-                                    <span>📄 ${p.name}</span>
+                                    <span>📄 ${projectName}</span>
                                     ${isCurrent ? `<span style="font-size:10px; background:var(--accent-cyan); color:#000; padding:2px 6px; border-radius:3px; font-weight:800;">ACTIVE DOCUMENT</span>` : ''}
                                 </div>
                                 <div style="font-size:11px; color:var(--text-secondary);">
-                                    Last Modified: <b style="color:#eee;">${p.updatedAt || 'Recently'}</b> · <b style="color:#fff;">${p.totalRounds || 1}</b> Columns · <b style="color:#fff;">${p.participants ? p.participants.length : 0}</b> Names
+                                    Last Modified: <b style="color:#eee;">${updatedAt}</b> · <b style="color:#fff;">${totalRounds}</b> Columns · <b style="color:#fff;">${participantCount}</b> Names${p.missing ? ' · File missing' : ''}
                                 </div>
                             </div>
                             <div style="display:flex; gap:8px;">
-                                ${!isCurrent ? `
-                                <button class="btn-arena btn-arena-primary" onclick="Studio.loadProjectFromLocal('${p.id}')" style="padding:6px 16px; font-size:12px; font-weight:700;">
+                                ${!isCurrent && !p.missing ? `
+                                <button class="btn-arena btn-arena-primary" onclick="Studio.loadProjectFromLocal('${pathToken}')" style="padding:6px 16px; font-size:12px; font-weight:700;">
                                     Open
                                 </button>
                                 ` : ''}
-                                <button class="btn-arena btn-arena-danger" onclick="Studio.deleteProjectFromLocal('${p.id}')" style="padding:6px 12px; font-size:12px;">
-                                    Delete
+                                <button class="btn-arena btn-arena-danger" onclick="Studio.deleteProjectFromLocal('${pathToken}')" style="padding:6px 12px; font-size:12px;">
+                                    Remove
                                 </button>
                             </div>
                         </div>
@@ -517,10 +573,10 @@ window.Studio = {
                     <div style="border-bottom:1px solid var(--border-light); padding-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <div style="font-size:18px; font-weight:800; color:#fff;">Home / Recent Projects</div>
-                            <div style="font-size:12px; color:var(--text-secondary);">Open recent files or manage saved snapshots on this computer.</div>
+                            <div style="font-size:12px; color:var(--text-secondary);">Open recent .ldp project files stored on this computer.</div>
                         </div>
                         <div style="background:#111; border:1px solid var(--accent-cyan); padding:8px 14px; border-radius:var(--radius-sm); font-size:12px; font-weight:700; color:var(--accent-cyan);">
-                            Current: ${S.currentProjectName}
+                            Current: ${safeCurrentProjectName}
                         </div>
                     </div>
                     <div style="display:flex; flex-direction:column;">
@@ -581,8 +637,9 @@ window.Studio = {
                         <svg class="svg-icon" style="width:48px; height:48px; color:var(--accent-cyan);" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                         <div style="font-size:16px; font-weight:800; color:#fff;">Click here to Browse Computer File (.ldp / .json)</div>
                         <div style="font-size:12px; color:var(--text-secondary);">Supported file formats: Lucky Draw Pro Studio Project files</div>
-                        <input type="file" accept=".json,.ldp" style="display:none;" onchange="Studio.importProjectFile(event)">
+                        <input id="browserProjectFileInput" type="file" accept=".json,.ldp" style="display:none;" onclick="if(window.DesktopStorage && DesktopStorage.bridge){event.preventDefault(); Studio.openProjectFile();}" onchange="Studio.importProjectFile(event)">
                     </label>
+                    <button class="btn-arena" onclick="Studio.openLegacyRecovery()" style="align-self:flex-start; padding:10px 16px;">Recover Old Browser Data...</button>
                 </div>
             `;
         } else if (tabId === 'saveAs') {
@@ -596,26 +653,26 @@ window.Studio = {
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
                         <div style="background:var(--bg-elevated); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:24px; display:flex; flex-direction:column; gap:14px;">
                             <div style="font-size:15px; font-weight:800; color:var(--accent-cyan); display:flex; align-items:center; gap:8px;">
-                                <span>💾 Option 1: Save to Studio Local List</span>
+                                <span>💾 Option 1: Save Project File (.ldp)</span>
                             </div>
-                            <div style="font-size:12px; color:var(--text-secondary);">Saves this project directly inside this PC's Studio database so you can open it anytime from Home/Recent.</div>
+                            <div style="font-size:12px; color:var(--text-secondary);">Choose a local folder and save the complete project, participants, winners, draw progress and media.</div>
                             <label style="font-size:11px; color:#aaa; font-weight:700;">Project Document Name:</label>
-                            <input type="text" id="saveAsNameInput" value="${S.currentProjectName || 'Event Project 2026'}" style="padding:10px 14px; background:#111; border:1px solid #333; color:#fff; border-radius:var(--radius-sm); font-size:14px;">
+                            <input type="text" id="saveAsNameInput" value="${safeCurrentProjectName}" style="padding:10px 14px; background:#111; border:1px solid #333; color:#fff; border-radius:var(--radius-sm); font-size:14px;">
                             <button class="btn-arena btn-arena-primary" onclick="Studio.confirmSaveAsLocal()" style="margin-top:auto; padding:12px; font-size:14px; font-weight:800;">
-                                Save Document Now
+                                Save Project As...
                             </button>
                         </div>
 
                         <div style="background:var(--bg-elevated); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:24px; display:flex; flex-direction:column; gap:14px;">
                             <div style="font-size:15px; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px;">
-                                <span>📤 Option 2: Export (.ldp) File to PC / USB</span>
+                                <span>📤 Option 2: Save a Copy to PC / USB</span>
                             </div>
-                            <div style="font-size:12px; color:var(--text-secondary);">Downloads a standalone project file ('.ldp' / '.json') to your computer so you can copy to a flash drive or another laptop.</div>
+                            <div style="font-size:12px; color:var(--text-secondary);">Create another complete .ldp project package for backup, USB or another computer.</div>
                             <div style="background:#111; padding:12px; border-radius:var(--radius-sm); border:1px solid #222; font-family:var(--font-mono); font-size:11px; color:#aaa;">
                                 Filename: ${(S.currentProjectName || 'project').toLowerCase().replace(/[^a-z0-9]/g, '_')}_v6.ldp
                             </div>
                             <button class="btn-arena" onclick="Studio.exportProjectFile()" style="margin-top:auto; padding:12px; font-size:14px; font-weight:800; border-color:var(--accent-cyan); color:var(--accent-cyan);">
-                                Download to Computer
+                                Save Copy As...
                             </button>
                         </div>
                     </div>
@@ -627,6 +684,7 @@ window.Studio = {
     createNewWordProjectFlow() {
         const input = document.getElementById('newWordProjNameInput');
         const name = input ? input.value.trim() : "";
+        if (EngineState.isDirty && !confirm("Create a new project without saving the current changes?")) return;
         if (!name && !confirm("Create new Untitled Project? Any unsaved changes will be reset.")) return;
         
         EngineState.createNewProject(name || "Untitled VJ Project");
@@ -684,80 +742,107 @@ window.Studio = {
         this.switchWordTab('recent');
     },
 
-    confirmSaveAsLocal() {
+    async confirmSaveAsLocal() {
         const input = document.getElementById('saveAsNameInput');
         const name = input ? input.value.trim() : "";
         if (name) EngineState.currentProjectName = name;
-        
-        const snapshot = EngineState.saveToLocalProjectList();
-        EngineState.isDirty = false;
-        EngineState.currentProjectSaved = true;
-        this.updateSaveStatusUI();
-        if (window.ZoneB) ZoneB.render();
-        
-        alert(`Document "${snapshot.name}" saved successfully!`);
-        this.switchWordTab('recent');
-    },
 
-    loadProjectFromLocal(id) {
-        if (EngineState.isDirty && !confirm("You have unsaved changes in your current document. Open another project without saving?")) return;
-        const success = EngineState.loadFromLocalProjectList(id);
-        if (success) {
-            if (window.ZoneA) ZoneA.render();
+        const saved = await this.saveCurrentProject(true);
+        if (saved) {
             if (window.ZoneB) ZoneB.render();
-            if (window.ZoneC) ZoneC.render();
-            if (window.ZoneD) ZoneD.render();
-            if (window.ZoneE) ZoneE.render();
-            if (window.Display) Display.resetDisplayForNewRound();
-            this.closeProjectManager();
-        } else {
-            alert("Could not load selected project.");
+            alert(`Document "${EngineState.currentProjectName}" saved successfully.`);
+            this.switchWordTab('recent');
         }
     },
 
-    deleteProjectFromLocal(id) {
-        if (!confirm("Delete this saved project from PC?")) return;
-        EngineState.deleteFromLocalProjectList(id);
-        this.switchWordTab('recent');
+    async loadProjectFromLocal(pathToken) {
+        if (EngineState.isDirty && !confirm("You have unsaved changes in your current document. Open another project without saving?")) return;
+        try {
+            const result = await DesktopStorage.openRecent(decodeURIComponent(pathToken));
+            if (!result || !result.ok || !EngineState.applyProjectDocument(result.document, { path: result.path })) {
+                throw new Error('Project data is invalid.');
+            }
+            EngineState.savedProjectsList = result.recent || DesktopStorage.recent || [];
+            this.refreshAfterProjectLoad();
+            this.closeProjectManager();
+        } catch (error) {
+            console.error('Recent project open failed:', error);
+            alert(`Could not load selected project: ${error.message}`);
+        }
     },
 
-    exportProjectFile() {
-        const json = EngineState.exportProjectAsJson();
-        const fileName = `${(EngineState.currentProjectName || 'ldp_project').toLowerCase().replace(/[^a-z0-9]/g, '_')}_v6.ldp`;
-        const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", fileName);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+    async deleteProjectFromLocal(pathToken) {
+        if (!confirm("Remove this file from the Recent Projects list? The .ldp file will not be deleted.")) return;
+        try {
+            EngineState.savedProjectsList = await DesktopStorage.removeRecent(decodeURIComponent(pathToken));
+            this.switchWordTab('recent');
+        } catch (error) {
+            alert(`Recent entry could not be removed: ${error.message}`);
+        }
     },
 
-    importProjectFile(event) {
+    async exportProjectFile() {
+        await this.saveCurrentProject(true);
+    },
+
+    async openProjectFile() {
+        if (EngineState.isDirty && !confirm('Open another project without saving the current changes?')) return;
+        try {
+            const result = await DesktopStorage.openProject();
+            if (result && result.needsBrowserFile) {
+                const input = document.getElementById('browserProjectFileInput');
+                if (input) input.click();
+                return;
+            }
+            if (!result || result.cancelled) return;
+            if (!result.ok || !EngineState.applyProjectDocument(result.document, { path: result.path })) {
+                throw new Error('Project data is invalid.');
+            }
+            EngineState.savedProjectsList = result.recent || DesktopStorage.recent || [];
+            this.refreshAfterProjectLoad();
+            this.closeProjectManager();
+        } catch (error) {
+            console.error('Project open failed:', error);
+            alert(`Project could not be opened: ${error.message}`);
+        }
+    },
+
+    openLegacyRecovery() {
+        window.open('legacy-recovery.html', 'LuckyDrawLegacyRecovery', 'width=820,height=680,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
+    },
+
+    async importProjectFile(event) {
         const file = event.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            if (EngineState.isDirty && !confirm(`Import project file "${file.name}" over your unsaved session?`)) return;
-            const success = EngineState.importProjectFromJson(e.target.result);
-            if (success) {
-                EngineState.isDirty = false;
-                EngineState.currentProjectSaved = true;
-                if (window.ZoneA) ZoneA.render();
-                if (window.ZoneB) ZoneB.render();
-                if (window.ZoneC) ZoneC.render();
-                if (window.ZoneD) ZoneD.render();
-                if (window.ZoneE) ZoneE.render();
-                if (window.Display) Display.resetDisplayForNewRound();
-                this.closeProjectManager();
-                alert(`Project "${EngineState.currentProjectName}" imported successfully!`);
-            } else {
-                alert("Invalid or corrupted project file format (.json / .ldp).");
+        if (EngineState.isDirty && !confirm(`Import project file "${file.name}" over your unsaved session?`)) return;
+        try {
+            const result = await DesktopStorage.openBrowserFile(file);
+            if (!result.ok || !EngineState.applyProjectDocument(result.document, { path: null })) {
+                throw new Error('Invalid or corrupted project file format.');
             }
-        };
-        reader.readAsText(file);
+            EngineState.currentProjectSaved = false;
+            this.refreshAfterProjectLoad();
+            this.closeProjectManager();
+            alert(`Project "${EngineState.currentProjectName}" imported successfully.`);
+        } catch (error) {
+            console.error('Browser project import failed:', error);
+            alert(`Project could not be imported: ${error.message}`);
+        } finally {
+            event.target.value = '';
+        }
+    },
+
+    refreshAfterProjectLoad() {
+        if (window.ZoneA) ZoneA.render();
+        if (window.ZoneB) ZoneB.render();
+        if (window.ZoneC) ZoneC.render();
+        if (window.ZoneD) ZoneD.render();
+        if (window.ZoneE) ZoneE.render();
+        if (EngineState.drawState && EngineState.roundResults.some(Boolean)) Draw.initializeDisplayMode(false);
+        else {
+            Draw.initializePoolsSilently();
+            if (window.Display) Display.resetDisplayForNewRound();
+        }
     },
 
     // ---- 2-Column Prize Category Manager (No Icons, WordPress/Pro Layout) ----

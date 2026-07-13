@@ -1,14 +1,18 @@
 /**
  * state.js - Core State Management (Global, non-module)
- * Preserves 100% of original index16 state schema + localStorage persistence.
+ * Preserves the draw schema while delegating persistence to DesktopStorage.
  * Upgraded for Resolume Arena 7 structure: category tabs, individual winner re-draw.
  */
 window.EngineState = {
     // Project management
-    currentProjectName: "Default VJ Project",
+    currentProjectId: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `project_${Date.now()}`,
+    currentProjectName: "Untitled Project",
+    currentProjectPath: null,
+    currentProjectCreatedAt: new Date().toISOString(),
     savedProjectsList: [],
     isDirty: false,
     currentProjectSaved: false,
+    isHydrating: false,
 
     // Participant pools
     masterListPool: [],
@@ -28,9 +32,9 @@ window.EngineState = {
         "Consolation": { color: "green", defaultPool: "numeric" }
     },
     activeCategoryTab: "All", // "All" or a specific category
-    categoryQuotas: JSON.parse(localStorage.getItem('luckyDrawCategoryQuotas') || '{"Grand Prizes": 2, "VIP Rounds": 10, "Regular Draw": 50, "Consolation": 20}'),
-    audioSettings: JSON.parse(localStorage.getItem('luckyDrawAudioSettings') || '{"autoSpinStart": false, "autoSpinStop": false}'),
-    telegramSettings: JSON.parse(localStorage.getItem('luckyDrawTelegramSettings') || '{"botToken": "", "groupChatId": ""}'),
+    categoryQuotas: { "Grand Prizes": 2, "VIP Rounds": 10, "Regular Draw": 50, "Consolation": 20 },
+    audioSettings: { autoSpinStart: false, autoSpinStop: false },
+    telegramSettings: { botToken: "", groupChatId: "" },
 
     // Active draw status
     isDrawing: false,
@@ -42,6 +46,8 @@ window.EngineState = {
     // Media & Cache
     tempBgFile: null,
     tempBgVideoFile: null,
+    assets: [],
+    backgroundAssetId: null,
     shuffleIntervals: [],
     manualFontSize: null,
     fontSizeCache: {},
@@ -126,7 +132,11 @@ window.EngineState = {
         const validParticipants = participantArray.filter(p => p && (typeof p.name === 'string' || typeof p.id === 'string') && ((p.name && p.name.trim() !== '') || (p.id && p.id.trim() !== '')));
         const masterList = document.getElementById('customList');
         if (masterList) masterList.value = JSON.stringify(validParticipants, null, 2);
-        localStorage.setItem('luckyDrawParticipants', JSON.stringify(validParticipants, null, 2));
+        if (!this.isHydrating) {
+            this.isDirty = true;
+            if (window.DesktopStorage) DesktopStorage.scheduleRecovery(() => this.exportProjectDocument());
+            if (window.Studio && typeof Studio.updateSaveStatusUI === 'function') Studio.updateSaveStatusUI();
+        }
     },
 
     setParticipantList(participantArray) {
@@ -134,22 +144,8 @@ window.EngineState = {
     },
 
     loadParticipantsFromStorage() {
-        const savedListJSON = localStorage.getItem('luckyDrawParticipants');
         const masterList = document.getElementById('customList');
-        if (savedListJSON && masterList) {
-            try {
-                const parsedData = JSON.parse(savedListJSON);
-                if (Array.isArray(parsedData)) {
-                    masterList.value = savedListJSON;
-                }
-            } catch (e) {
-                const names = (typeof savedListJSON === 'string' && savedListJSON.length > 0) ? savedListJSON.split('\n').filter(n => n.trim() !== '') : [];
-                const participantObjects = names.map(name => ({ name: name.trim(), hidden: false }));
-                this.saveParticipantList(participantObjects);
-            }
-        } else if (masterList) {
-            masterList.value = '[]';
-        }
+        if (masterList && !masterList.value.trim()) masterList.value = '[]';
     },
 
     // ---- Round Config Management ----
@@ -218,8 +214,8 @@ window.EngineState = {
     },
 
     // ---- Draw State Persistence ----
-    saveDrawState() {
-        this.drawState = {
+    buildDrawState() {
+        return {
             currentRound: this.currentRound,
             totalRounds: this.totalRounds,
             allWinners: this.allWinners,
@@ -228,99 +224,59 @@ window.EngineState = {
             drawNumericPool: this.drawNumericPool,
             masterListPool: this.masterListPool,
             masterNumericPool: this.masterNumericPool,
-            settings: this.settings,
             presetWinners: this.presetWinners,
-            fontSizeCache: this.fontSizeCache
+            fontSizeCache: this.fontSizeCache,
+            drawCompletedThisRound: this.drawCompletedThisRound
         };
-        localStorage.setItem('luckyDrawState', JSON.stringify(this.drawState));
+    },
+
+    saveDrawState() {
+        this.drawState = this.buildDrawState();
+        this.isDirty = true;
+        if (window.DesktopStorage && !this.isHydrating) {
+            DesktopStorage.scheduleRecovery(() => this.exportProjectDocument(), true);
+        }
     },
 
     restoreDrawStateData() {
-        const savedState = localStorage.getItem('luckyDrawState');
-        if (!savedState) return null;
-        try {
-            const data = JSON.parse(savedState);
-            if (data) {
-                if (data.currentRound !== undefined) this.currentRound = data.currentRound;
-                if (data.totalRounds !== undefined) this.totalRounds = data.totalRounds;
-                if (data.allWinners !== undefined) this.allWinners = data.allWinners;
-                if (data.roundResults !== undefined) this.roundResults = data.roundResults;
-                if (data.drawListPool !== undefined && Array.isArray(data.drawListPool)) this.drawListPool = data.drawListPool;
-                if (data.drawNumericPool !== undefined && Array.isArray(data.drawNumericPool)) this.drawNumericPool = data.drawNumericPool;
-                if (data.masterListPool !== undefined && Array.isArray(data.masterListPool)) this.masterListPool = data.masterListPool;
-                if (data.masterNumericPool !== undefined && Array.isArray(data.masterNumericPool)) this.masterNumericPool = data.masterNumericPool;
-                if (data.presetWinners !== undefined) this.presetWinners = data.presetWinners;
-                if (data.fontSizeCache !== undefined) this.fontSizeCache = data.fontSizeCache;
-                this.isDrawing = false; // Always reset drawing lock when restoring
-                try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
-                return data;
-            }
-            return null;
-        }
-        catch (e) { console.error('Error restoring draw state:', e); return null; }
+        const data = this.drawState;
+        if (!data || typeof data !== 'object') return null;
+        if (data.currentRound !== undefined) this.currentRound = data.currentRound;
+        if (data.totalRounds !== undefined) this.totalRounds = data.totalRounds;
+        if (Array.isArray(data.allWinners)) this.allWinners = data.allWinners;
+        if (Array.isArray(data.roundResults)) this.roundResults = data.roundResults;
+        if (Array.isArray(data.drawListPool)) this.drawListPool = data.drawListPool;
+        if (Array.isArray(data.drawNumericPool)) this.drawNumericPool = data.drawNumericPool;
+        if (Array.isArray(data.masterListPool)) this.masterListPool = data.masterListPool;
+        if (Array.isArray(data.masterNumericPool)) this.masterNumericPool = data.masterNumericPool;
+        if (Array.isArray(data.presetWinners)) this.presetWinners = data.presetWinners;
+        if (data.fontSizeCache && typeof data.fontSizeCache === 'object') this.fontSizeCache = data.fontSizeCache;
+        this.drawCompletedThisRound = !!data.drawCompletedThisRound;
+        this.isDrawing = false;
+        if (window.ProjectorSync) ProjectorSync.publish({ type: 'draw_status', isDrawing: false });
+        return data;
     },
 
     clearDrawState() {
         this.drawState = null;
-        localStorage.removeItem('luckyDrawState');
     },
 
-    // ---- Auto-Save All Settings ----
+    // ---- Disk Recovery Scheduling ----
     autoSaveAllSettings() {
-        try {
-            const saveData = {
-                version: "5.0",
-                timestamp: new Date().toISOString(),
-                currentProjectName: this.currentProjectName,
-                currentProjectSaved: this.currentProjectSaved,
-                lastOpenedProjectId: localStorage.getItem('luckyDrawLastOpenedProjectId') || '',
-                prizeCategories: this.prizeCategories,
-                categoryQuotas: this.categoryQuotas || {},
-                audioSettings: this.audioSettings || { autoSpinStart: true, autoSpinStop: true },
-                roundConfigs: this.roundConfigs,
-                displaySettings: this.displaySettings,
-                fontSizeCache: this.fontSizeCache,
-                totalRounds: this.totalRounds,
-                activeCategoryTab: this.activeCategoryTab,
-                categoryThemes: this.categoryThemes || {}
-            };
-            localStorage.setItem('luckyDrawSetupData', JSON.stringify(saveData));
-            this.isDirty = true;
-            if (window.Studio && typeof Studio.updateSaveStatusUI === 'function') Studio.updateSaveStatusUI();
-        } catch (e) {
-            console.error("Auto-save error:", e);
-        }
+        if (this.isHydrating) return;
+        this.isDirty = true;
+        if (window.DesktopStorage) DesktopStorage.scheduleRecovery(() => this.exportProjectDocument());
+        if (window.Studio && typeof Studio.updateSaveStatusUI === 'function') Studio.updateSaveStatusUI();
     },
 
     loadAllSavedData() {
-        try {
-            const saved = localStorage.getItem('luckyDrawSetupData');
-            if (!saved) return false;
-            const data = JSON.parse(saved);
+        return false;
+    },
 
-            if (data.currentProjectName) this.currentProjectName = data.currentProjectName;
-            if (data.currentProjectSaved !== undefined) this.currentProjectSaved = data.currentProjectSaved;
-            if (data.lastOpenedProjectId) try { localStorage.setItem('luckyDrawLastOpenedProjectId', data.lastOpenedProjectId); } catch(e){}
-            if (Array.isArray(data.prizeCategories)) this.prizeCategories = data.prizeCategories;
-            if (data.categoryQuotas) this.categoryQuotas = { ...this.categoryQuotas, ...data.categoryQuotas };
-            if (data.audioSettings) this.audioSettings = { ...this.audioSettings, ...data.audioSettings };
-            if (data.displaySettings) this.displaySettings = { ...this.displaySettings, ...data.displaySettings };
-            if (data.fontSizeCache) this.fontSizeCache = data.fontSizeCache;
-            if (data.totalRounds) this.totalRounds = data.totalRounds;
-            if (data.activeCategoryTab) this.activeCategoryTab = data.activeCategoryTab;
-            if (Array.isArray(data.roundConfigs)) {
-                this.roundConfigs = data.roundConfigs;
-            }
-            if (data.categoryThemes) this.categoryThemes = data.categoryThemes;
-            else {
-                this.prizeCategories.forEach(c => this.getCategoryThemeObj(c));
-            }
-            this.ensureRoundConfigs(this.totalRounds);
-            this.loadSavedProjectsList();
-            return true;
-        } catch (e) {
-            console.error("Load saved data error:", e);
-            return false;
+    applyAppSettings(settings) {
+        if (!settings || typeof settings !== 'object') return;
+        if (settings.telegramSettings) {
+            this.telegramSettings = { ...this.telegramSettings, ...settings.telegramSettings };
         }
     },
 
@@ -354,29 +310,23 @@ window.EngineState = {
 
     // ---- Word-Style Project Management (Point 5) ----
     loadSavedProjectsList() {
-        try {
-            const saved = localStorage.getItem('luckyDrawSavedProjects');
-            if (saved) {
-                this.savedProjectsList = JSON.parse(saved) || [];
-            }
-        } catch (e) {
-            this.savedProjectsList = [];
-        }
-        if (window.StudioAPI && typeof StudioAPI.getSavedProjectsFromDisk === 'function') {
-            StudioAPI.getSavedProjectsFromDisk().then(list => {
-                if (list && Array.isArray(list) && list.length > 0) {
-                    this.savedProjectsList = list;
-                    try { localStorage.setItem('luckyDrawSavedProjects', JSON.stringify(list)); } catch(e){}
-                }
-            }).catch(()=>{});
+        if (window.DesktopStorage && Array.isArray(DesktopStorage.recent)) {
+            this.savedProjectsList = DesktopStorage.recent;
         }
         return this.savedProjectsList;
     },
 
     createNewProject(name, initialCategories) {
+        this.isHydrating = true;
+        this.currentProjectId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `project_${Date.now()}`;
         this.currentProjectName = name ? name.trim() : "New Event Project";
-        const projectId = this.currentProjectName.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        try { localStorage.setItem('luckyDrawLastOpenedProjectId', projectId); } catch(e){}
+        this.currentProjectPath = null;
+        this.currentProjectCreatedAt = new Date().toISOString();
+        this.assets = [];
+        this.backgroundAssetId = null;
+        this.tempBgFile = null;
+        this.tempBgVideoFile = null;
+        this.saveParticipantList([]);
         if (initialCategories && Array.isArray(initialCategories) && initialCategories.length > 0) {
             this.prizeCategories = initialCategories;
         } else {
@@ -393,122 +343,134 @@ window.EngineState = {
         this.displaySettings.winnerGlowEnabled = false;
         this.clearDrawState();
         this.syncSettingsFromConfigs();
-        this.autoSaveAllSettings();
+        this.isHydrating = false;
         this.isDirty = false;
         this.currentProjectSaved = false;
+        if (window.DesktopStorage) DesktopStorage.newProjectWorkspace().catch(error => console.error('New workspace failed:', error));
         if (window.Studio && typeof Studio.updateSaveStatusUI === 'function') Studio.updateSaveStatusUI();
     },
 
     saveToLocalProjectList() {
-        this.loadSavedProjectsList();
-        const projectId = this.currentProjectName.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        try { localStorage.setItem('luckyDrawLastOpenedProjectId', projectId); } catch(e){}
-        const now = new Date().toLocaleString();
-        
-        const snapshot = {
-            id: projectId,
-            name: this.currentProjectName,
-            updatedAt: now,
-            totalRounds: this.totalRounds,
-            prizeCategories: [...this.prizeCategories],
-            categoryThemes: JSON.parse(JSON.stringify(this.categoryThemes || {})),
-            roundConfigs: JSON.parse(JSON.stringify(this.roundConfigs)),
-            displaySettings: { ...this.displaySettings },
-            participants: this.getParticipantList()
-        };
-
-        const existingIdx = this.savedProjectsList.findIndex(p => p.id === projectId || p.name === this.currentProjectName);
-        if (existingIdx >= 0) {
-            this.savedProjectsList[existingIdx] = snapshot;
-        } else {
-            this.savedProjectsList.unshift(snapshot);
-        }
-        localStorage.setItem('luckyDrawSavedProjects', JSON.stringify(this.savedProjectsList));
-        if (window.StudioAPI && typeof StudioAPI.saveProjectToDisk === 'function') {
-            StudioAPI.saveProjectToDisk(snapshot).catch(()=>{});
-        }
-        this.isDirty = false;
-        this.currentProjectSaved = true;
-        if (window.Studio && typeof Studio.updateSaveStatusUI === 'function') Studio.updateSaveStatusUI();
-        return snapshot;
+        return this.exportProjectDocument();
     },
 
-    loadFromLocalProjectList(projectId) {
-        this.loadSavedProjectsList();
-        const proj = this.savedProjectsList.find(p => p.id === projectId || p.name === projectId);
-        if (!proj) return false;
-
-        try { localStorage.setItem('luckyDrawLastOpenedProjectId', proj.id || projectId); } catch(e){}
-        this.currentProjectName = proj.name || "Loaded Project";
-        if (proj.prizeCategories) this.prizeCategories = proj.prizeCategories;
-        if (proj.categoryThemes) this.categoryThemes = proj.categoryThemes;
-        else this.prizeCategories.forEach(c => this.getCategoryThemeObj(c));
-        if (proj.displaySettings) this.displaySettings = { ...this.displaySettings, ...proj.displaySettings };
-        if (proj.totalRounds) this.totalRounds = proj.totalRounds;
-        if (Array.isArray(proj.roundConfigs)) this.roundConfigs = proj.roundConfigs;
-        if (proj.participants) this.saveParticipantList(proj.participants);
-
-        this.ensureRoundConfigs(this.totalRounds);
-        this.roundResults = [];
-        this.allWinners = [];
-        this.currentRound = 0;
-        this.clearDrawState();
-        this.syncSettingsFromConfigs();
-        this.autoSaveAllSettings();
-        this.isDirty = false;
-        this.currentProjectSaved = true;
-        if (window.Studio && typeof Studio.updateSaveStatusUI === 'function') Studio.updateSaveStatusUI();
-        return true;
+    loadFromLocalProjectList() {
+        return false;
     },
 
-    deleteFromLocalProjectList(projectId) {
-        this.loadSavedProjectsList();
-        this.savedProjectsList = this.savedProjectsList.filter(p => p.id !== projectId && p.name !== projectId);
-        localStorage.setItem('luckyDrawSavedProjects', JSON.stringify(this.savedProjectsList));
-        if (window.StudioAPI && typeof StudioAPI.deleteProjectFromDisk === 'function') {
-            StudioAPI.deleteProjectFromDisk(projectId).catch(()=>{});
-        }
+    deleteFromLocalProjectList(projectPath) {
+        this.savedProjectsList = this.savedProjectsList.filter(p => p.path !== projectPath);
         return this.savedProjectsList;
     },
 
-    exportProjectAsJson() {
-        const payload = {
+    exportProjectDocument() {
+        return {
             appName: "LuckyDrawProStudio",
-            version: "6.0",
-            exportedAt: new Date().toISOString(),
+            schemaVersion: "7.0",
+            projectId: this.currentProjectId,
             projectName: this.currentProjectName,
+            createdAt: this.currentProjectCreatedAt,
+            updatedAt: new Date().toISOString(),
             prizeCategories: this.prizeCategories,
             categoryThemes: this.categoryThemes || {},
+            categoryQuotas: this.categoryQuotas || {},
+            audioSettings: this.audioSettings || {},
+            activeCategoryTab: this.activeCategoryTab,
             totalRounds: this.totalRounds,
             roundConfigs: this.roundConfigs,
             displaySettings: this.displaySettings,
-            participants: this.getParticipantList()
+            fontSizeCache: this.fontSizeCache,
+            participants: this.getParticipantList(),
+            drawState: this.buildDrawState(),
+            assets: this.assets || [],
+            background: {
+                type: this.displaySettings.bgType || 'none',
+                assetId: this.backgroundAssetId
+            }
         };
-        return JSON.stringify(payload, null, 2);
+    },
+
+    exportProjectAsJson() {
+        return JSON.stringify(this.exportProjectDocument(), null, 2);
+    },
+
+    setBackgroundAsset(asset) {
+        if (!asset || !asset.id || !asset.url) return false;
+        this.assets = (this.assets || []).filter(item => item.id !== this.backgroundAssetId && item.id !== asset.id);
+        this.assets.push(asset);
+        this.backgroundAssetId = asset.id;
+        this.displaySettings.bgType = asset.kind === 'video' ? 'video' : 'image';
+        this.tempBgFile = asset.kind === 'image' ? asset.url : null;
+        this.tempBgVideoFile = asset.kind === 'video' ? asset.url : null;
+        this.syncSettingsFromConfigs();
+        this.autoSaveAllSettings();
+        return true;
+    },
+
+    clearBackgroundAsset() {
+        this.assets = (this.assets || []).filter(item => item.id !== this.backgroundAssetId);
+        this.backgroundAssetId = null;
+        this.tempBgFile = null;
+        this.tempBgVideoFile = null;
+        this.displaySettings.bgType = 'image';
+        this.syncSettingsFromConfigs();
+        this.autoSaveAllSettings();
+    },
+
+    applyProjectDocument(data, context = {}) {
+        if (!data || typeof data !== 'object') return false;
+        this.isHydrating = true;
+        try {
+            this.currentProjectId = data.projectId || ((window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `project_${Date.now()}`);
+            this.currentProjectName = data.projectName || data.name || "Imported VJ Project";
+            this.currentProjectPath = context.path || (data.runtime && data.runtime.projectPath) || null;
+            this.currentProjectCreatedAt = data.createdAt || new Date().toISOString();
+            if (Array.isArray(data.prizeCategories)) this.prizeCategories = data.prizeCategories;
+            if (data.categoryThemes) this.categoryThemes = data.categoryThemes;
+            else this.prizeCategories.forEach(c => this.getCategoryThemeObj(c));
+            if (data.categoryQuotas) this.categoryQuotas = { ...this.categoryQuotas, ...data.categoryQuotas };
+            if (data.audioSettings) this.audioSettings = { ...this.audioSettings, ...data.audioSettings };
+            if (data.displaySettings) this.displaySettings = { ...this.displaySettings, ...data.displaySettings };
+            if (data.activeCategoryTab) this.activeCategoryTab = data.activeCategoryTab;
+            if (data.totalRounds) this.totalRounds = data.totalRounds;
+            if (Array.isArray(data.roundConfigs)) this.roundConfigs = data.roundConfigs;
+            if (data.fontSizeCache) this.fontSizeCache = data.fontSizeCache;
+            this.saveParticipantList(Array.isArray(data.participants) ? data.participants : []);
+
+            this.assets = Array.isArray(data.assets) ? data.assets : [];
+            this.backgroundAssetId = data.background ? data.background.assetId : null;
+            const backgroundAsset = this.assets.find(asset => asset.id === this.backgroundAssetId);
+            this.tempBgFile = backgroundAsset && backgroundAsset.kind === 'image' ? backgroundAsset.url : null;
+            this.tempBgVideoFile = backgroundAsset && backgroundAsset.kind === 'video' ? backgroundAsset.url : null;
+            if (backgroundAsset) this.displaySettings.bgType = backgroundAsset.kind;
+
+            this.ensureRoundConfigs(this.totalRounds || 1);
+            this.syncSettingsFromConfigs();
+            const hasDrawState = data.drawState
+                && typeof data.drawState === 'object'
+                && Object.keys(data.drawState).length > 0;
+            this.drawState = hasDrawState ? data.drawState : null;
+            if (this.drawState) this.restoreDrawStateData();
+            else {
+                this.roundResults = [];
+                this.allWinners = [];
+                this.currentRound = 0;
+                this.drawCompletedThisRound = false;
+            }
+            this.currentProjectSaved = !!this.currentProjectPath;
+            this.isDirty = false;
+            if (window.Studio && typeof Studio.updateSaveStatusUI === 'function') Studio.updateSaveStatusUI();
+            return true;
+        } finally {
+            this.isHydrating = false;
+        }
     },
 
     importProjectFromJson(jsonString) {
         try {
             const data = JSON.parse(jsonString);
             if (!data || (!data.roundConfigs && !data.prizeCategories)) return false;
-
-            this.currentProjectName = data.projectName || "Imported VJ Project";
-            if (Array.isArray(data.prizeCategories)) this.prizeCategories = data.prizeCategories;
-            if (data.categoryThemes) this.categoryThemes = data.categoryThemes;
-            else this.prizeCategories.forEach(c => this.getCategoryThemeObj(c));
-            if (data.displaySettings) this.displaySettings = { ...this.displaySettings, ...data.displaySettings };
-            if (data.totalRounds) this.totalRounds = data.totalRounds;
-            if (Array.isArray(data.roundConfigs)) this.roundConfigs = data.roundConfigs;
-            if (data.participants) this.saveParticipantList(data.participants);
-
-            this.ensureRoundConfigs(this.totalRounds);
-            this.roundResults = [];
-            this.allWinners = [];
-            this.currentRound = 0;
-            this.clearDrawState();
-            this.syncSettingsFromConfigs();
-            this.autoSaveAllSettings();
-            return true;
+            return this.applyProjectDocument(data, { path: null });
         } catch (e) {
             console.error("Failed to import project:", e);
             return false;

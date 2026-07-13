@@ -6,7 +6,8 @@ class StageProjectorSync {
         this.canvasEl = null;
         this.lastWinnerId = null;
         this.isCurrentlyDrawing = false;
-        this.lastMirrorTime = '';
+        this.socket = null;
+        this.reconnectTimer = null;
     }
 
     init() {
@@ -18,94 +19,40 @@ class StageProjectorSync {
             VirtualStageFitter.attach(this.viewportEl, this.shellEl);
         }
 
-        if ('BroadcastChannel' in window) {
-            this.mirrorChannel = new BroadcastChannel('ldp_vj_mirror_channel');
-            this.mirrorChannel.onmessage = (e) => {
-                if (!e.data || !this.canvasEl) return;
-                if (e.data.type === 'mirror_update') {
-                    if (e.data.html !== this.canvasEl.innerHTML) {
-                        this.canvasEl.innerHTML = e.data.html;
-                    }
-                } else if (e.data.type === 'ticker_update') {
-                    const tickerEl = document.querySelector(".ticker-text");
-                    if (tickerEl) tickerEl.textContent = e.data.text;
-                }
-            };
-        }
-
-        setInterval(() => this.syncFromStorage(), 120);
-        window.addEventListener("storage", (e) => {
-            if (["vj_stage_mirror_html", "vj_stage_mirror_time", "ldp_is_drawing", "ldp_last_winner", "luckyDrawState"].includes(e.key)) {
-                this.syncFromStorage();
-            }
-        });
-        console.log("Projector 1920x1080 Stage Sync Active!");
-        this.syncFromStorage();
+        this.connect();
+        console.log("Projector 1920x1080 localhost sync active.");
     }
 
-    syncFromStorage() {
-        if (!this.canvasEl) return;
-        try {
-            // 1. Direct HTML Mirroring from Display Engine (Guarantees 100% exact same video/screen replication)
-            const mirrorHtml = localStorage.getItem("vj_stage_mirror_html");
-            if (mirrorHtml && mirrorHtml.trim().length > 0) {
-                const mirrorTime = localStorage.getItem("vj_stage_mirror_time") || '';
-                if (mirrorTime !== this.lastMirrorTime || this.canvasEl.innerHTML !== mirrorHtml) {
-                    this.lastMirrorTime = mirrorTime;
-                    this.canvasEl.innerHTML = mirrorHtml;
-                }
-                return;
+    connect() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        this.socket = new WebSocket(`${protocol}//${window.location.host}/api/desktop/projector/ws`);
+        this.socket.onmessage = event => {
+            try { this.applyMessage(JSON.parse(event.data)); } catch (error) {
+                console.error('Invalid projector message:', error);
             }
+        };
+        this.socket.onclose = () => {
+            if (this.reconnectTimer) return;
+            this.reconnectTimer = setTimeout(() => {
+                this.reconnectTimer = null;
+                this.connect();
+            }, 1000);
+        };
+        this.socket.onerror = () => {
+            try { this.socket.close(); } catch (e) {}
+        };
+    }
 
-            // 2. Fallback State Reconstruction if mirror not initialized
-            const isDrawing = localStorage.getItem("ldp_is_drawing") === "true";
-            const tickerText = localStorage.getItem("ldp_ticker_text") || "SPINNING...";
-            const lastWinnerJson = localStorage.getItem("ldp_last_winner");
-            const lastWinner = lastWinnerJson ? JSON.parse(lastWinnerJson) : null;
-
-            let roundTitle = "Col #1";
-            let prizeName = "Draw";
-            let winners = [];
-
-            const stateJson = localStorage.getItem("luckyDrawState");
-            if (stateJson) {
-                const stateData = JSON.parse(stateJson);
-                const currentRound = stateData.currentRound || 0;
-                if (stateData.roundResults && stateData.roundResults[currentRound]) {
-                    winners = stateData.roundResults[currentRound].winners || [];
-                }
-                if (stateData.settings) {
-                    roundTitle = stateData.settings.roundCategories?.[currentRound] || `Col #${currentRound + 1}`;
-                    prizeName = `${roundTitle}`;
-                }
-            }
-
-            if (isDrawing) {
-                if (!this.isCurrentlyDrawing) {
-                    this.isCurrentlyDrawing = true;
-                    this.renderDrawing({ title: roundTitle, prize_name: prizeName }, tickerText);
-                } else {
-                    const tickerEl = document.querySelector(".ticker-text");
-                    if (tickerEl) tickerEl.textContent = tickerText;
-                }
-            } else if (winners && winners.length > 0) {
-                this.isCurrentlyDrawing = false;
-                const topWinner = winners[0];
-                if (topWinner && this.lastWinnerId !== topWinner.id) {
-                    this.lastWinnerId = topWinner.id;
-                }
-                this.renderStageWinners(roundTitle, winners);
-            } else if (lastWinner) {
-                this.isCurrentlyDrawing = false;
-                if (this.lastWinnerId !== lastWinner.id) {
-                    this.lastWinnerId = lastWinner.id;
-                }
-                this.renderStageWinners(roundTitle, [lastWinner]);
-            } else {
-                this.isCurrentlyDrawing = false;
-                this.renderReady({ title: roundTitle, prize_name: prizeName });
-            }
-        } catch (e) {}
+    applyMessage(message) {
+        if (!message || !this.canvasEl) return;
+        if (message.type === 'mirror_update' && typeof message.html === 'string') {
+            if (message.html !== this.canvasEl.innerHTML) this.canvasEl.innerHTML = message.html;
+        } else if (message.type === 'ticker_update') {
+            const tickerEl = document.querySelector('.ticker-text');
+            if (tickerEl) tickerEl.textContent = message.text || '';
+        } else if (message.type === 'draw_status') {
+            this.isCurrentlyDrawing = !!message.isDrawing;
+        }
     }
 
     renderReady(slot) {

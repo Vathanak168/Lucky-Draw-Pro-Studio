@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Draw Pro Studio - Legacy Recovery</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #151518; color: #f5f5f5; font-family: Arial, sans-serif; }
+        main { width: min(760px, calc(100% - 32px)); margin: 32px auto; }
+        h1 { margin: 0 0 8px; font-size: 24px; }
+        p { color: #b7b7c2; line-height: 1.55; }
+        .notice { border-left: 3px solid #f5a623; background: #222126; padding: 12px 16px; margin: 20px 0; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0; }
+        button { border: 1px solid #3c3c45; background: #27272d; color: #fff; min-height: 38px; padding: 0 16px; cursor: pointer; }
+        button.primary { background: #00b88a; border-color: #00b88a; color: #07120f; font-weight: 700; }
+        button.danger { border-color: #e25b5b; color: #ff8d8d; }
+        button:disabled { opacity: .45; cursor: not-allowed; }
+        #status { background: #0d0d0f; border: 1px solid #303038; min-height: 170px; padding: 14px; white-space: pre-wrap; overflow-wrap: anywhere; font-family: Consolas, monospace; font-size: 12px; line-height: 1.55; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Recover Old Browser Data</h1>
+        <p>This utility reads the old browser profile only after you press Inspect. It is separate from the main Studio startup.</p>
+        <div class="notice">Do not clear browser data before migration completes. Old keys can be removed only after Python confirms that new .ldp files were written.</div>
+        <div class="actions">
+            <button id="inspectBtn" class="primary">Inspect Old Data</button>
+            <button id="migrateBtn" disabled>Migrate to Local Files</button>
+            <button id="removeBtn" class="danger" disabled>Remove Migrated Browser Keys</button>
+        </div>
+        <div id="status">Ready. No browser data has been read.</div>
+    </main>
+    <script src="js/legacy_recovery.js?v=7.0.0"></script>
+</body>
+</html>
+

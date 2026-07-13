@@ -7,7 +7,7 @@ window.ZoneDPoolManager = {
     searchQuery: '',
     filterStatus: 'all', // 'all', 'active', 'hidden'
     filterCategory: 'all',
-    ribbonMode: localStorage.getItem('ldp_pool_ribbon_mode') || 'all',
+    ribbonMode: 'all',
 
     render(containerEl) {
         if (!containerEl) return;
@@ -109,7 +109,7 @@ window.ZoneDPoolManager = {
             });
         }
 
-        const currentRibbonMode = this.ribbonMode || localStorage.getItem('ldp_pool_ribbon_mode') || 'all';
+        const currentRibbonMode = this.ribbonMode || 'all';
 
         let headerControlsHtml = '';
 
@@ -375,7 +375,7 @@ window.ZoneDPoolManager = {
 
     setRibbonMode(mode) {
         this.ribbonMode = mode;
-        localStorage.setItem('ldp_pool_ribbon_mode', mode);
+        if (window.DesktopStorage) DesktopStorage.updateSettings({ poolRibbonMode: mode }).catch(error => console.error('Pool preference save failed:', error));
         if (window.ZoneD && ZoneD.activeTab === 'pool') {
             this.render(document.getElementById('zoneD_pool_container'));
         }

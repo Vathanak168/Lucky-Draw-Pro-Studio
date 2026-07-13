@@ -99,7 +99,7 @@ window.Display = {
     resetDisplayForNewRound() {
         const S = EngineState;
         S.isDrawing = false;
-        try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
+        if (window.ProjectorSync) ProjectorSync.publish({ type: 'draw_status', isDrawing: false });
         const rc = S.roundConfigs[S.currentRound] || S.getDefaultRoundConfig(S.currentRound);
         const count = rc.winnerCount || 1;
         const placeholders = Array.from({ length: count }, (_, i) => ({ id: `dummy_${i}`, name: '', type: 'dummy' }));
@@ -109,7 +109,7 @@ window.Display = {
     showWinnersInstantly(winners) {
         const S = EngineState;
         S.isDrawing = false;
-        try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
+        if (window.ProjectorSync) ProjectorSync.publish({ type: 'draw_status', isDrawing: false });
         const rc = S.roundConfigs[S.currentRound] || S.getDefaultRoundConfig(S.currentRound);
         this.renderGridMode(winners, rc);
 
@@ -128,23 +128,11 @@ window.Display = {
     syncToProjectorMirror() {
         try {
             const virtualCanvas = document.getElementById('virtualCanvas');
-            if (virtualCanvas) {
-                if (!this.mirrorChannel && ('BroadcastChannel' in window)) {
-                    this.mirrorChannel = new BroadcastChannel('ldp_vj_mirror_channel');
-                }
-                if (this.mirrorChannel) {
-                    this.mirrorChannel.postMessage({
-                        type: 'mirror_update',
-                        html: virtualCanvas.innerHTML,
-                        time: Date.now()
-                    });
-                }
-                const S = EngineState;
-                if (!S.isDrawing && (!window.VJConsole || !window.VJConsole.isDrawing)) {
-                    localStorage.setItem('vj_stage_mirror_html', virtualCanvas.innerHTML);
-                    localStorage.setItem('vj_stage_mirror_time', Date.now().toString());
-                }
-            }
+            if (virtualCanvas && window.ProjectorSync) ProjectorSync.publish({
+                type: 'mirror_update',
+                html: virtualCanvas.innerHTML,
+                time: Date.now()
+            });
         } catch (e) {}
     },
 
@@ -152,7 +140,7 @@ window.Display = {
         const S = EngineState;
         S.isDrawing = false;
         S.drawCompletedThisRound = true;
-        try { localStorage.setItem('ldp_is_drawing', 'false'); } catch(e){}
+        if (window.ProjectorSync) ProjectorSync.publish({ type: 'draw_status', isDrawing: false });
         S.saveDrawState();
 
         const rcStop = S.roundConfigs[S.currentRound] || S.getDefaultRoundConfig(S.currentRound);

@@ -1,5 +1,8 @@
 ﻿node_modules/
 *.log
+.venv/
+__pycache__/
+*.py[cod]
 .DS_Store
 .gemini/
 scratch/
