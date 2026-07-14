@@ -1001,7 +1001,7 @@ export function exportReportToExcel() {
                 <tr><th colspan="2" style="background-color: #4f5dff; color: #ffffff; padding: 10px; font-size: 1.2em;">Draw Summary</th></tr>
             </thead>
             <tbody>
-                <tr><td style="padding: 8px; border: 1px solid #999; font-weight: bold;">Program Name</td><td style="padding: 8px; border: 1px solid #999;">Lucky Draw Pro v4.9.6</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #999; font-weight: bold;">Program Name</td><td style="padding: 8px; border: 1px solid #999;">Asta Studio</td></tr>
                 <tr><td style="padding: 8px; border: 1px solid #999; font-weight: bold;">Report Date</td><td style="padding: 8px; border: 1px solid #999;">${reportDate}</td></tr>
                 <tr><td style="padding: 8px; border: 1px solid #999; font-weight: bold;">Total Rounds</td><td style="padding: 8px; border: 1px solid #999;">${EngineState.totalRounds}</td></tr>
                 <tr><td style="padding: 8px; border: 1px solid #999; font-weight: bold;">Total Winners</td><td style="padding: 8px; border: 1px solid #999;">${totalWinners}</td></tr>
@@ -1038,7 +1038,7 @@ export function exportReportToExcel() {
         <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.TR/REC-html40">
         <head><meta charset="UTF-8">${styles}</head>
         <body>
-            <h1>Lucky Draw Report</h1>
+            <h1>Asta Studio Report</h1>
             <h2>Summary</h2>${summaryHTML}
             <h2>Winner Details</h2>${tableHTML}
         </body>

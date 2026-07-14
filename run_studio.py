@@ -43,6 +43,7 @@ app.include_router(desktop_router)
 
 # Serve Frontend static assets from src/frontend
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "frontend")
+APP_ICON = os.path.join(FRONTEND_DIR, "assets", "asta-mark.ico")
 app.mount(
     "/local-assets",
     StaticFiles(directory=str(desktop_storage.workspaces_dir)),
@@ -75,7 +76,7 @@ def main():
     desktop_bridge._bind_window(window)
     
     # Start desktop GUI loop
-    webview.start(debug=False)
+    webview.start(debug=False, icon=APP_ICON)
 
 if __name__ == "__main__":
     main()

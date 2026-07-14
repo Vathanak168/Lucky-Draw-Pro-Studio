@@ -2,7 +2,7 @@
 import os
 import hashlib
 
-APP_NAME = "Lucky Draw Pro Studio - VJ Console Edition"
+APP_NAME = "Asta Studio"
 APP_VERSION = "5.0.0"
 
 # Local storage path for machine-bound authentication token

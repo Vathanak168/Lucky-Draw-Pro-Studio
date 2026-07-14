@@ -66,7 +66,7 @@ class DesktopBridge:
             "open",
             directory=settings.get("lastProjectDirectory") or "",
             allow_multiple=False,
-            file_types=("Lucky Draw Pro Studio (*.ldp;*.json)",),
+            file_types=("Asta Studio (*.ldp;*.json)",),
         )
         if not selected:
             return {"ok": False, "cancelled": True}
@@ -87,7 +87,7 @@ class DesktopBridge:
             "save",
             directory=settings.get("lastProjectDirectory") or "",
             save_filename=suggested,
-            file_types=("Lucky Draw Pro Studio (*.ldp)",),
+            file_types=("Asta Studio (*.ldp)",),
         )
         if not selected:
             return {"ok": False, "cancelled": True}
@@ -111,7 +111,7 @@ class DesktopBridge:
     def export_history(self, report: Dict[str, Any]) -> Dict[str, Any]:
         settings = self._storage.load_settings()
         suggested = safe_history_filename(
-            str(report.get("projectName") or "Lucky Draw"),
+            str(report.get("projectName") or "Asta Studio"),
             "all" if report.get("scope") == "all" else "view",
         )
         selected = self._select_one(

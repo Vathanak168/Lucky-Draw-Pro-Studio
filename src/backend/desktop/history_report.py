@@ -54,11 +54,11 @@ ROW_ALT = "F5F8FA"
 
 
 def safe_history_filename(project_name: str, scope: str = "all") -> str:
-    stem = re.sub(r'[\x00-\x1f<>:"/\\|?*]+', "_", str(project_name or "Lucky Draw"))
-    stem = re.sub(r"\s+", " ", stem).strip(" ._") or "Lucky Draw"
+    stem = re.sub(r'[\x00-\x1f<>:"/\\|?*]+', "_", str(project_name or "Asta Studio"))
+    stem = re.sub(r"\s+", " ", stem).strip(" ._") or "Asta Studio"
     if stem.upper() in {"CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in range(1, 10)), *(f"LPT{i}" for i in range(1, 10))}:
         stem = f"_{stem}"
-    stem = stem[:80].rstrip(" .") or "Lucky Draw"
+    stem = stem[:80].rstrip(" .") or "Asta Studio"
     suffix = "all" if scope == "all" else "current-view"
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
     return f"{stem} - Draw History - {suffix} - {timestamp}.xlsx"
@@ -107,7 +107,7 @@ def _configure_page(ws, orientation: str = "landscape") -> None:
     ws.page_margins.right = 0.3
     ws.page_margins.top = 0.45
     ws.page_margins.bottom = 0.45
-    ws.oddHeader.center.text = "&B Lucky Draw Pro Studio - Draw History"
+    ws.oddHeader.center.text = "&B Asta Studio - Draw History"
     ws.oddFooter.left.text = "Generated &D &T"
     ws.oddFooter.right.text = "Page &P of &N"
 
@@ -304,9 +304,9 @@ def build_history_workbook(report: Dict[str, Any]) -> tuple[bytes, Dict[str, Any
         raise ValueError("No history data is available to export")
 
     wb = Workbook()
-    wb.properties.title = "Lucky Draw Pro Studio - Draw History"
+    wb.properties.title = "Asta Studio - Draw History"
     wb.properties.subject = "Draw results and activity audit"
-    wb.properties.creator = "Lucky Draw Pro Studio"
+    wb.properties.creator = "Asta Studio"
     _write_summary_sheet(wb, report)
 
     generated_label = str(report.get("generatedAt") or "")

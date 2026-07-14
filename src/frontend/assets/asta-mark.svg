@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="astaTitle">
+  <title id="astaTitle">Asta Studio</title>
+  <rect x="2" y="2" width="60" height="60" rx="13" fill="#08111b"/>
+  <rect x="2.5" y="2.5" width="59" height="59" rx="12.5" fill="none" stroke="#263747"/>
+  <g fill="#f5f8fb">
+    <path d="M31 8 17 13.8l7.4 14.4 7.8-8.4z"/>
+    <path d="M35 8.8 50 16.5 38.5 29l-2.1-11.3z"/>
+    <path d="M52 20.5V38l-15.9-3.4 8.3-7z"/>
+    <path d="M48.8 42 34 54l-6.4-15.2 11.7 4.7z"/>
+    <path d="M29.4 55 14.7 46.2 27.2 36l.5 12.1z"/>
+    <path d="M12 41.5V23.8l15.7 7.3-8.4 6.6z"/>
+  </g>
+  <path fill="#12cfff" d="M32 20.5c1.15 6.9 2.6 8.35 9.5 9.5-6.9 1.15-8.35 2.6-9.5 9.5-1.15-6.9-2.6-8.35-9.5-9.5 6.9-1.15 8.35-2.6 9.5-9.5z"/>
+</svg>

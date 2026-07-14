@@ -46,7 +46,7 @@
         }
 
         const count = Object.keys(recoveredStorage).length;
-        append(count ? `Inspection complete. ${count} key(s) can be migrated.` : 'No legacy Lucky Draw data was found in this browser profile.');
+        append(count ? `Inspection complete. ${count} key(s) can be migrated.` : 'No legacy project data was found in this browser profile.');
         migrateBtn.disabled = count === 0;
         inspectBtn.disabled = false;
     });
@@ -75,13 +75,12 @@
     });
 
     removeBtn.addEventListener('click', () => {
-        if (!migratedKeys.length || !confirm('Remove only the Lucky Draw keys that were migrated successfully?')) return;
+        if (!migratedKeys.length || !confirm('Remove only the project keys that were migrated successfully?')) return;
         const failed = [];
         for (const key of migratedKeys) {
             try { localStorage.removeItem(key); } catch (error) { failed.push(key); }
         }
-        append(failed.length ? `Some keys could not be removed: ${failed.join(', ')}` : 'Migrated Lucky Draw browser keys were removed.');
+        append(failed.length ? `Some keys could not be removed: ${failed.join(', ')}` : 'Migrated project browser keys were removed.');
         removeBtn.disabled = true;
     });
 })();
-

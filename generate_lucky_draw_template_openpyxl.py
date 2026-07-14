@@ -3,7 +3,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.worksheet.datavalidation import DataValidation
 from pathlib import Path
 
-OUTPUT_FILE = Path("Lucky_Draw_Pro_Participants_Master_Template.xlsx")
+OUTPUT_FILE = Path("src/frontend/assets/Asta_Studio_Participant_Template.xlsx")
 
 EMERALD = "0F766E"
 EMERALD_DARK = "115E59"
@@ -120,7 +120,7 @@ def build_workbook():
     guide.sheet_view.showGridLines = False
 
     guide.merge_cells("A1:G3")
-    guide["A1"] = "Lucky Draw Pro Studio v6.0\nMaster Participant Data Template"
+    guide["A1"] = "Asta Studio\nMaster Participant Data Template"
     guide["A1"].fill = solid(SLATE_900)
     guide["A1"].font = Font(name="Segoe UI", size=22, bold=True, color=WHITE)
     guide["A1"].alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)

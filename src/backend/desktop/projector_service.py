@@ -153,7 +153,7 @@ class ProjectorOutputService:
             self.storage.update_settings({"projectorDisplayId": target_id})
             try:
                 output = self.webview.create_window(
-                    "Lucky Draw Program Output",
+                    "Asta Output",
                     url=self._projector_url,
                     width=max(1, int(getattr(screen, "width", 1920) or 1920)),
                     height=max(1, int(getattr(screen, "height", 1080) or 1080)),

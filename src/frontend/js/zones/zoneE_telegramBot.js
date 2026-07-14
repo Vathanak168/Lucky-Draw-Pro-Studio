@@ -3,8 +3,9 @@
  * Network requests and the bot token remain behind DesktopStorage's Python bridge.
  */
 window.ZoneETelegramBot = {
+    legacyGroupRoundTemplate: '<b>OFFICIAL RESULTS: {{category}}</b>\n\n{{winners}}\n\nLucky Draw Pro Studio',
     defaultTemplates: {
-        groupRound: '<b>OFFICIAL RESULTS: {{category}}</b>\n\n{{winners}}\n\nLucky Draw Pro Studio',
+        groupRound: '<b>OFFICIAL RESULTS: {{category}}</b>\n\n{{winners}}\n\nAsta Studio',
         groupSingle: '<b>WINNER ANNOUNCEMENT</b>\n\nWinner: <b>{{winner}}</b>\nID: <code>{{winnerId}}</code>\nPrize: {{category}}\nSlot: #{{slot}}',
         groupRedraw: '<b>UPDATED RESULT: {{category}}</b>\n\nPrevious Winner: <s>{{previousWinner}}</s>\nNew Winner: <b>{{winner}}</b>\nSlot: #{{slot}}\n\n{{winners}}',
         personalWinner: '<b>CONGRATULATIONS {{winner}}!</b>\n\nYou have won {{category}}.\nWinner ID: <code>{{winnerId}}</code>\nSlot: #{{slot}}',
@@ -37,6 +38,9 @@ window.ZoneETelegramBot = {
         const S = EngineState;
         if (!S.telegramSettings) S.telegramSettings = { groupChatId: '', botIdentity: {}, templates: {} };
         if (!S.telegramSettings.templates) S.telegramSettings.templates = {};
+        if (S.telegramSettings.templates.groupRound === this.legacyGroupRoundTemplate) {
+            S.telegramSettings.templates.groupRound = this.defaultTemplates.groupRound;
+        }
         S.telegramSettings.templates = { ...this.defaultTemplates, ...S.telegramSettings.templates };
         return S.telegramSettings;
     },

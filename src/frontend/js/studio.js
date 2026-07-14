@@ -68,7 +68,7 @@ window.Studio = {
     projectorPollTimer: null,
 
     async init() {
-        console.log("Initializing Lucky Draw Pro Studio...");
+        console.log("Initializing Asta Studio...");
 
         // 1. Load desktop settings and optional crash recovery from local files.
         let startup = { settings: {}, recent: [], recoveries: [] };
@@ -244,7 +244,7 @@ window.Studio = {
             event.returnValue = '';
         });
 
-        console.log("Lucky Draw Pro Studio ready!");
+        console.log("Asta Studio ready!");
     },
 
     ribbonDisplayMode: 'all',
@@ -1022,7 +1022,7 @@ window.Studio = {
         const scopeLabel = report.scope === 'all' ? 'All History' : `Current ${report.view === 'activity' ? 'Activity' : 'Results'} View`;
         return `
             <header class="history-print-header">
-                <div><span>Lucky Draw Pro Studio</span><h1>Draw History</h1><p>${this.escapeHtml(report.projectName)}</p></div>
+                <div><span>Asta Studio</span><h1>Draw History</h1><p>${this.escapeHtml(report.projectName)}</p></div>
                 <div class="history-print-meta"><strong>${this.escapeHtml(scopeLabel)}</strong><span>${this.escapeHtml(this.formatHistoryTime(report.generatedAt))}</span></div>
             </header>
             <section class="history-print-summary">
@@ -2115,8 +2115,8 @@ window.Studio = {
 
         if (format === 'xlsx') {
             const a = document.createElement('a');
-            a.href = "assets/Lucky_Draw_Pro_Participants_Master_Template.xlsx";
-            a.download = "Lucky_Draw_Pro_Participants_Master_Template.xlsx";
+            a.href = "assets/Asta_Studio_Participant_Template.xlsx";
+            a.download = "Asta_Studio_Participant_Template.xlsx";
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);

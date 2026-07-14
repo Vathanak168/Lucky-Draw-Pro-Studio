@@ -33,6 +33,11 @@ window.ZoneB = {
 
         el.innerHTML = `
             <div style="display:flex; align-items:center; gap:12px;">
+                <div class="asta-app-brand" aria-label="Asta Studio">
+                    <img class="asta-app-brand-mark" src="assets/asta-mark.svg" alt="">
+                    <span class="asta-app-brand-name">Asta Studio</span>
+                </div>
+
                 <!-- Microsoft Word File & Save Controls -->
                 <div style="display:flex; align-items:center; gap:6px; min-width:0;">
                     <button class="btn-arena" onclick="Studio.openProjectManager('recent')" style="background:#222; border-color:var(--accent-cyan); color:var(--accent-cyan); font-weight:800; padding:4px 10px;">

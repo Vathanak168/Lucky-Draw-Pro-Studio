@@ -20,12 +20,13 @@ from src.backend.desktop.storage_service import DesktopStorageService, desktop_s
 
 
 DEFAULT_TELEGRAM_TEMPLATES = {
-    "groupRound": "<b>OFFICIAL RESULTS: {{category}}</b>\n\n{{winners}}\n\nLucky Draw Pro Studio",
+    "groupRound": "<b>OFFICIAL RESULTS: {{category}}</b>\n\n{{winners}}\n\nAsta Studio",
     "groupSingle": "<b>WINNER ANNOUNCEMENT</b>\n\nWinner: <b>{{winner}}</b>\nID: <code>{{winnerId}}</code>\nPrize: {{category}}\nSlot: #{{slot}}",
     "groupRedraw": "<b>UPDATED RESULT: {{category}}</b>\n\nPrevious Winner: <s>{{previousWinner}}</s>\nNew Winner: <b>{{winner}}</b>\nSlot: #{{slot}}\n\n{{winners}}",
     "personalWinner": "<b>CONGRATULATIONS {{winner}}!</b>\n\nYou have won {{category}}.\nWinner ID: <code>{{winnerId}}</code>\nSlot: #{{slot}}",
     "personalRevoked": "<b>WINNING STATUS REVOKED</b>\n\n{{previousWinner}}, your winning status for {{category}} (Slot #{{slot}}) is no longer valid following an official redraw.",
 }
+LEGACY_GROUP_ROUND_TEMPLATE = "<b>OFFICIAL RESULTS: {{category}}</b>\n\n{{winners}}\n\nLucky Draw Pro Studio"
 
 GROUP_JOB_TYPES = {"group_round", "group_single", "group_redraw", "group_revocation"}
 PERSONAL_JOB_TYPES = {"personal_winner", "personal_revocation"}
@@ -267,6 +268,8 @@ class TelegramService:
         result.setdefault("groupChatId", "")
         result.setdefault("botIdentity", {})
         templates = result.get("templates") if isinstance(result.get("templates"), dict) else {}
+        if templates.get("groupRound") == LEGACY_GROUP_ROUND_TEMPLATE:
+            templates = {**templates, "groupRound": DEFAULT_TELEGRAM_TEMPLATES["groupRound"]}
         result["templates"] = {**DEFAULT_TELEGRAM_TEMPLATES, **templates}
         return result
 

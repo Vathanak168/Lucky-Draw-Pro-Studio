@@ -217,11 +217,11 @@ def export_history(request: HistoryExportRequest):
     try:
         output, _metadata = build_history_workbook(request.report)
         filename = safe_history_filename(
-            str(request.report.get("projectName") or "Lucky Draw"),
+            str(request.report.get("projectName") or "Asta Studio"),
             "all" if request.report.get("scope") == "all" else "view",
         )
         fallback_filename = safe_history_filename(
-            "Lucky Draw",
+            "Asta Studio",
             "all" if request.report.get("scope") == "all" else "view",
         )
         encoded_filename = quote(filename)

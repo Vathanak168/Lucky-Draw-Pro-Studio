@@ -84,7 +84,7 @@ function doPost(e) {
           const customEmailHtml = `
             <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 400; max-width: 480px; background-color: #0c0c0e; color: #d1d1d6; padding: 28px 24px; border-radius: 12px; border: 1px solid #222228; margin: 0 auto;">
               <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #222228; padding-bottom: 16px; margin-bottom: 20px;">
-                <span style="font-size: 17px; color: #ffffff; letter-spacing: -0.3px;">LDP Studio Gatekeeper</span>
+                <span style="font-size: 17px; color: #ffffff; letter-spacing: 0;">Asta Studio Gatekeeper</span>
                 <span style="background-color: #18181f; color: ${isSuper ? '#00e5a3' : '#3ea6ff'}; border: 1px solid ${isSuper ? '#00e5a3' : '#3ea6ff'}; font-size: 11px; padding: 3px 10px; border-radius: 4px; text-transform: uppercase;">${isSuper ? 'Super Admin' : 'Admin'}</span>
               </div>
               
@@ -119,14 +119,14 @@ function doPost(e) {
               </div>
 
               <div style="border-top: 1px solid #222228; margin-top: 24px; padding-top: 14px; font-size: 11px; color: #505058; text-align: center;">
-                Lucky Draw Pro Studio v5.0.0
+                Asta Studio v5.0.0
               </div>
             </div>
           `;
 
           MailApp.sendEmail({
             to: cleanEmail,
-            name: "LDP Studio Gatekeeper",
+            name: "Asta Studio Gatekeeper",
             subject: emailSubject,
             htmlBody: customEmailHtml
           });
@@ -171,7 +171,7 @@ function doPost(e) {
             <div style="font-size:11px; color:#6e6e78; text-transform:uppercase; margin-bottom:4px;">Master Password</div>
             <div style="font-size:17px; color:#00e5a3; font-family:ui-monospace, monospace;">${newPassword}</div>
           </div>
-          <div style="font-size:11px; color:#505058; text-align:center; margin-top:20px;">Lucky Draw Pro Studio v5.0.0</div>
+          <div style="font-size:11px; color:#505058; text-align:center; margin-top:20px;">Asta Studio v5.0.0</div>
         </div>`
       });
 
@@ -445,7 +445,7 @@ function renderIOSPortal(e, props, statusOverride, toastMessage) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LDP Studio — Gateway Portal</title>
+  <title>Asta Studio - Gateway Portal</title>
   <style>
     :root {
       --ios-bg: #0b0b0e;
@@ -575,7 +575,7 @@ function renderIOSPortal(e, props, statusOverride, toastMessage) {
 <body>
   <div class="header-nav">
     <div class="header-title">
-      <span>LDP Studio</span>
+      <span>Asta Studio</span>
     </div>
     <div class="role-badge">${isSuperAdmin ? 'Super Admin' : 'Admin'}</div>
   </div>
@@ -623,7 +623,7 @@ function renderIOSPortal(e, props, statusOverride, toastMessage) {
     ${superAdminHtml}
 
     <div class="footer-note">
-      Lucky Draw Pro Studio v5.0.0
+      Asta Studio v5.0.0
     </div>
   </div>
 </body>
@@ -631,8 +631,7 @@ function renderIOSPortal(e, props, statusOverride, toastMessage) {
   `;
 
   return HtmlService.createHtmlOutput(htmlContent)
-    .setTitle("LDP Studio — iOS Gateway Portal")
+    .setTitle("Asta Studio - Gateway Portal")
     .addMetaTag("viewport", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
-

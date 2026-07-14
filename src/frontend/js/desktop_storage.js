@@ -244,7 +244,7 @@ window.DesktopStorage = {
 
         const blob = await response.blob();
         const encodedFilename = response.headers.get('X-Export-Filename');
-        let filename = 'Lucky Draw - Draw History.xlsx';
+        let filename = 'Asta Studio - Draw History.xlsx';
         if (encodedFilename) {
             try {
                 filename = decodeURIComponent(encodedFilename);
