@@ -189,7 +189,8 @@ window.Draw = {
             round: S.currentRound + 1,
             winners: roundWinnerObjects,
             type: S.settings.roundDataSources[S.currentRound],
-            category: S.settings.roundCategories[S.currentRound] || 'Regular Draw'
+            category: S.settings.roundCategories[S.currentRound] || 'Regular Draw',
+            lastDrawnAt: new Date().toISOString()
         };
 
         // Pre-render exact geometric virtual stage cards before animation so size & font are 100% identical!
@@ -299,6 +300,7 @@ window.Draw = {
                 ProjectorSync.publish({ type: 'draw_status', isDrawing: false });
             }
 
+            roundResult.lastDrawnAt = new Date().toISOString();
             S.saveDrawState();
 
             if (isLiveRound && window.AudioSynth && isStopEnabled) {

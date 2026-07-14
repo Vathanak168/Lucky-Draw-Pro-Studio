@@ -324,18 +324,39 @@ window.Studio = {
         );
     },
 
+    getHistoryResultsNewestFirst() {
+        const entries = Object.entries(EngineState.roundResults || {})
+            .filter(([, result]) => result)
+            .map(([index, result]) => ({ index: Number(index), result }));
+
+        entries.sort((a, b) => {
+            const aTime = Date.parse(a.result.lastDrawnAt || '');
+            const bTime = Date.parse(b.result.lastDrawnAt || '');
+            const aHasTime = Number.isFinite(aTime);
+            const bHasTime = Number.isFinite(bTime);
+
+            if (aHasTime && bHasTime && aTime !== bTime) return bTime - aTime;
+            if (aHasTime !== bHasTime) return bHasTime ? 1 : -1;
+
+            const aRound = Number(a.result.round) || a.index + 1;
+            const bRound = Number(b.result.round) || b.index + 1;
+            return bRound - aRound;
+        });
+
+        return entries.map(entry => entry.result);
+    },
+
     showReport() {
         const modal = document.getElementById('reportModal');
         const body = document.getElementById('report-body');
         if (!modal || !body) return;
 
-        const results = EngineState.roundResults;
-        if (results.length === 0 || !results.some(r => r)) {
+        const results = this.getHistoryResultsNewestFirst();
+        if (results.length === 0) {
             body.innerHTML = '<div class="ui-empty-state">No Draw History</div>';
         } else {
             let tableHTML = '<table class="winner-table"><thead><tr><th>Round</th><th>Prize Category</th><th>Draw Source</th><th>Winner</th></tr></thead><tbody>';
-            results.forEach((r, idx) => {
-                if (!r) return;
+            results.forEach(r => {
                 const roundType = r.type === 'list' ? 'Participant Name' : ((r.type === 'id') ? 'ID Ticket' : 'Number Range');
                 const categoryName = r.category || '<i>Draw</i>';
                 r.winners.forEach((w, i) => {
@@ -383,7 +404,7 @@ window.Studio = {
     },
 
     exportReportToExcel() {
-        const results = EngineState.roundResults.filter(r => r);
+        const results = this.getHistoryResultsNewestFirst();
         if (results.length === 0) { alert('No report data to export.'); return; }
 
         const totalWinners = results.reduce((acc, r) => acc + (r.winners?.length || 0), 0);
