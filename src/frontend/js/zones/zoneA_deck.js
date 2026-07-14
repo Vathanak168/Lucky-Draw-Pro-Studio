@@ -65,6 +65,7 @@ window.ZoneA = {
 
             columnsHtml += `
                 <div class="arena-column-slot ${isActive ? 'active' : ''} ${isDrawing ? 'drawing' : ''}" 
+                     data-round-index="${i}"
                      draggable="true"
                      ondragstart="ZoneA.onDragStart(event, ${i})"
                      ondragover="ZoneA.onDragOver(event)"
@@ -96,8 +97,8 @@ window.ZoneA = {
                              Round <span style="color:#fff;">#${i + 1}</span>
                         </span>
                         <div style="display:flex; gap:4px;">
-                            <button class="btn-arena" onclick="event.stopPropagation(); ZoneA.duplicateSlot(${i})" title="Duplicate Round" style="padding:2px 6px; font-size:10px;">
-                                <i data-lucide="copy"></i>
+                            <button class="btn-arena" onclick="event.stopPropagation(); ZoneA.duplicateSlot(${i})" title="Duplicate Round" aria-label="Duplicate Round" style="padding:2px 6px; font-size:10px;">
+                                <i data-lucide="copy-plus"></i>
                             </button>
                             ${totalRounds > 1 ? `
                             <button class="btn-arena btn-arena-danger" onclick="event.stopPropagation(); ZoneA.deleteSlot(${i})" title="Delete Round" style="padding:2px 6px; font-size:10px;">
@@ -203,15 +204,71 @@ window.ZoneA = {
 
     duplicateSlot(index) {
         const S = EngineState;
+        if (S.isDrawing) {
+            this.showActionStatus('Finish the current draw first', 'warning');
+            return;
+        }
+
         const src = S.roundConfigs[index];
         if (!src) return;
+
+        const previousRoundCount = S.totalRounds;
+        const insertIndex = index + 1;
         const newConfig = JSON.parse(JSON.stringify(src));
-        S.roundConfigs.splice(index + 1, 0, newConfig);
-        S.totalRounds++;
+        S.roundConfigs.splice(insertIndex, 0, newConfig);
+
+        if (!Array.isArray(S.roundResults)) S.roundResults = [];
+        while (S.roundResults.length < previousRoundCount) S.roundResults.push(null);
+        S.roundResults.splice(insertIndex, 0, null);
+        S.roundResults.forEach((result, resultIndex) => {
+            if (result) result.round = resultIndex + 1;
+        });
+
+        if (Array.isArray(S.historyEvents)) {
+            S.historyEvents.forEach(historyEvent => {
+                if (Number.isInteger(historyEvent?.roundIndex) && historyEvent.roundIndex >= insertIndex) {
+                    historyEvent.roundIndex += 1;
+                    historyEvent.round = historyEvent.roundIndex + 1;
+                }
+            });
+        }
+
+        S.totalRounds = previousRoundCount + 1;
         S.ensureRoundConfigs(S.totalRounds);
         S.syncSettingsFromConfigs();
+        S.drawCompletedThisRound = false;
         S.autoSaveAllSettings();
-        this.selectSlot(index + 1);
+        this.selectSlot(insertIndex);
+        this.revealSlot(insertIndex);
+        this.showActionStatus(`Round #${insertIndex + 1} duplicated`, 'success');
+    },
+
+    revealSlot(index) {
+        requestAnimationFrame(() => {
+            const slot = document.querySelector(`#zoneA_deckMatrix .arena-column-slot[data-round-index="${index}"]`);
+            if (slot) slot.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        });
+    },
+
+    showActionStatus(message, state = 'success') {
+        if (!document.body) return;
+        const existing = document.getElementById('roundActionToast');
+        if (existing) existing.remove();
+        if (this.actionStatusTimer) clearTimeout(this.actionStatusTimer);
+
+        const toast = document.createElement('div');
+        toast.id = 'roundActionToast';
+        toast.className = 'round-action-toast';
+        toast.dataset.state = state;
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        this.actionStatusTimer = setTimeout(() => {
+            toast.remove();
+            this.actionStatusTimer = null;
+        }, 2200);
     },
 
     // ---- Drag and Drop Column Reordering (Point 8) ----
