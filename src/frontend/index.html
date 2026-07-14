@@ -12,7 +12,7 @@
     <!-- Styles -->
     <link rel="stylesheet" href="styles/resolume_arena.css?v=6.0.1">
     <link rel="stylesheet" href="styles/virtual_stage.css?v=6.0.1">
-    <link rel="stylesheet" href="styles/macos_pro.css?v=7.2.0">
+    <link rel="stylesheet" href="styles/macos_pro.css?v=7.3.0">
     
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
@@ -52,7 +52,7 @@
                     <i data-lucide="history"></i>
                     Draw History
                 </span>
-                <button onclick="Studio.closeReport()" class="modal-close" title="Close" aria-label="Close">
+                <button type="button" id="historyCloseButton" onclick="Studio.closeReport(event)" class="modal-close" title="Close" aria-label="Close">
                     <i data-lucide="x"></i>
                 </button>
             </div>
@@ -70,10 +70,17 @@
                         <button role="menuitem" onclick="Studio.exportHistory('view')">Export Current View</button>
                     </div>
                 </div>
-                <button class="btn-arena" onclick="Studio.printReport()">
-                    <i data-lucide="printer"></i>
-                    Print
-                </button>
+                <div class="history-menu-wrap">
+                    <button class="btn-arena" onclick="Studio.toggleHistoryMenu('print', event)" aria-haspopup="menu" title="Print">
+                        <i data-lucide="printer"></i>
+                        Print
+                        <i data-lucide="chevron-down"></i>
+                    </button>
+                    <div id="historyPrintMenu" class="history-popup-menu" role="menu" hidden>
+                        <button role="menuitem" onclick="Studio.printReport('all')">Print All</button>
+                        <button role="menuitem" onclick="Studio.printReport('view')">Print Current View</button>
+                    </div>
+                </div>
                 <div class="history-menu-wrap">
                     <button class="btn-arena history-more-button" onclick="Studio.toggleHistoryMenu('actions', event)" aria-haspopup="menu" title="More Actions" aria-label="More Actions">
                         <i data-lucide="ellipsis"></i>
@@ -85,7 +92,6 @@
                         </button>
                     </div>
                 </div>
-                <button class="btn-arena" onclick="Studio.closeReport()">Close</button>
             </div>
         </div>
     </div>

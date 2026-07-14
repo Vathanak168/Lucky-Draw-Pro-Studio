@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 import webview
 
+from src.backend.desktop.history_report import safe_history_filename, write_history_workbook
 from src.backend.desktop.storage_service import DesktopStorageService, _safe_filename, desktop_storage
 
 
@@ -93,6 +94,27 @@ class DesktopBridge:
 
     def discard_recovery(self, project_id: str) -> Dict[str, Any]:
         return {"ok": True, "removed": self._storage.discard_recovery(project_id)}
+
+    def export_history(self, report: Dict[str, Any]) -> Dict[str, Any]:
+        settings = self._storage.load_settings()
+        suggested = safe_history_filename(
+            str(report.get("projectName") or "Lucky Draw"),
+            "all" if report.get("scope") == "all" else "view",
+        )
+        selected = self._select_one(
+            "save",
+            directory=settings.get("lastProjectDirectory") or "",
+            save_filename=suggested,
+            file_types=("Excel Workbook (*.xlsx)",),
+        )
+        if not selected:
+            return {"ok": False, "cancelled": True}
+        path = Path(selected)
+        if path.suffix.lower() != ".xlsx":
+            path = path.with_suffix(".xlsx")
+        result = write_history_workbook(path, report)
+        self._storage.update_settings({"lastProjectDirectory": str(path.parent)})
+        return result
 
     def select_background_asset(self, kind: str) -> Dict[str, Any]:
         is_video = kind == "video"

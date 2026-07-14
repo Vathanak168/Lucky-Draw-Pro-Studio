@@ -129,6 +129,15 @@ window.Studio = {
                 return;
             }
 
+            if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyP' || e.key === 'p' || e.key === 'P')) {
+                const reportModal = document.getElementById('reportModal');
+                if (reportModal && reportModal.style.display !== 'none') {
+                    e.preventDefault();
+                    Studio.printReport('view');
+                    return;
+                }
+            }
+
             if (isInput) return;
 
             // Space / Enter: Launch Draw or Next Column
@@ -336,6 +345,8 @@ window.Studio = {
     historyActivityLimit: 50,
     historyOpenMenu: null,
     historySearchTimer: null,
+    historyStatusTimer: null,
+    historyExportBusy: false,
 
     getHistorySourceLabel(source) {
         if (source === 'list') return 'Participant Name';
@@ -618,12 +629,24 @@ window.Studio = {
                 <div class="history-content">${this.historyView === 'activity' ? this.renderHistoryActivity() : this.renderHistoryResults()}</div>
             </div>
         `;
-        const footerStatus = document.getElementById('historyFooterStatus');
-        if (footerStatus) {
-            const count = this.historyView === 'activity' ? this.getFilteredHistoryEvents().length : this.getFilteredHistoryResultEntries().length;
-            footerStatus.textContent = `${count} ${this.historyView === 'activity' ? (count === 1 ? 'Event' : 'Events') : (count === 1 ? 'Round' : 'Rounds')}`;
-        }
+        this.setHistoryFooterStatus();
         if (window.lucide) lucide.createIcons();
+    },
+
+    getHistoryFooterLabel() {
+        const count = this.historyView === 'activity' ? this.getFilteredHistoryEvents().length : this.getFilteredHistoryResultEntries().length;
+        return `${count} ${this.historyView === 'activity' ? (count === 1 ? 'Event' : 'Events') : (count === 1 ? 'Round' : 'Rounds')}`;
+    },
+
+    setHistoryFooterStatus(message = '', state = '') {
+        const footerStatus = document.getElementById('historyFooterStatus');
+        if (!footerStatus) return;
+        if (this.historyStatusTimer) clearTimeout(this.historyStatusTimer);
+        footerStatus.textContent = message || this.getHistoryFooterLabel();
+        footerStatus.dataset.state = state;
+        if (message && state) {
+            this.historyStatusTimer = setTimeout(() => this.setHistoryFooterStatus(), 3500);
+        }
     },
 
     showReport() {
@@ -641,7 +664,11 @@ window.Studio = {
         this.renderHistoryManager();
     },
 
-    closeReport() {
+    closeReport(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         const modal = document.getElementById('reportModal');
         this.closeHistoryMenus();
         if (modal) modal.style.display = 'none';
@@ -698,16 +725,20 @@ window.Studio = {
         if (event) event.stopPropagation();
         this.historyOpenMenu = this.historyOpenMenu === menu ? null : menu;
         const exportMenu = document.getElementById('historyExportMenu');
+        const printMenu = document.getElementById('historyPrintMenu');
         const actionMenu = document.getElementById('historyActionMenu');
         if (exportMenu) exportMenu.hidden = this.historyOpenMenu !== 'export';
+        if (printMenu) printMenu.hidden = this.historyOpenMenu !== 'print';
         if (actionMenu) actionMenu.hidden = this.historyOpenMenu !== 'actions';
     },
 
     closeHistoryMenus() {
         this.historyOpenMenu = null;
         const exportMenu = document.getElementById('historyExportMenu');
+        const printMenu = document.getElementById('historyPrintMenu');
         const actionMenu = document.getElementById('historyActionMenu');
         if (exportMenu) exportMenu.hidden = true;
+        if (printMenu) printMenu.hidden = true;
         if (actionMenu) actionMenu.hidden = true;
     },
 
@@ -741,11 +772,6 @@ window.Studio = {
         this.resetDrawData();
     },
 
-    printReport() {
-        this.closeHistoryMenus();
-        window.print();
-    },
-
     getHistoryResultExportRows(entries) {
         const rows = [];
         entries.forEach(({ index, result }) => {
@@ -757,7 +783,8 @@ window.Studio = {
                 'Draw Source': this.getHistorySourceLabel(result.type || 'numeric'),
                 'Slot': slotIndex + 1,
                 'Winner': winner?.name || 'N/A',
-                'Winner ID': winner?.id || ''
+                'Winner ID': winner?.id || '',
+                'Participant Name': winner?.participantName || winner?.originalParticipant?.name || ''
             }));
         });
         return rows;
@@ -767,49 +794,189 @@ window.Studio = {
         return events.map(event => ({
             'Time': event.timestamp || '',
             'Event': this.getHistoryEventLabel(event.type),
+            'Event ID': event.id || '',
             'Round': this.getHistoryEventRound(event),
             'Prize Category': event.category || 'Draw',
             'Draw Source': this.getHistorySourceLabel(event.source || 'numeric'),
             'Slot': Number.isInteger(event.slotIndex) ? event.slotIndex + 1 : '',
             'Previous Winner': event.previousWinner?.name || (event.previousWinners || []).map(winner => winner.name).join(', '),
+            'Previous Winner ID': event.previousWinner?.id || (event.previousWinners || []).map(winner => winner.id).join(', '),
             'New Winner': event.newWinner?.name || (event.winners || []).map(winner => winner.name).join(', '),
-            'Winner Count': event.winners?.length || 0
+            'New Winner ID': event.newWinner?.id || (event.winners || []).map(winner => winner.id).join(', '),
+            'Winner Count': event.winners?.length || 0,
+            'Details': this.getHistoryEventDetail(event)
         }));
     },
 
-    exportHistory(scope = 'all') {
+    getHistoryReportData(scope = 'view') {
+        const normalizedScope = scope === 'all' ? 'all' : 'view';
+        const includeResults = normalizedScope === 'all' || this.historyView === 'results';
+        const includeActivity = normalizedScope === 'all' || this.historyView === 'activity';
+        const resultEntries = includeResults
+            ? (normalizedScope === 'all' ? this.getHistoryResultEntries() : this.getFilteredHistoryResultEntries())
+            : [];
+        const events = includeActivity
+            ? (normalizedScope === 'all' ? this.getHistoryActivities() : this.getFilteredHistoryEvents())
+            : [];
+        return {
+            schemaVersion: 1,
+            projectName: EngineState.currentProjectName || 'Untitled Project',
+            generatedAt: new Date().toISOString(),
+            scope: normalizedScope,
+            view: this.historyView,
+            filters: {
+                search: normalizedScope === 'view' ? this.historySearch : '',
+                category: normalizedScope === 'view' ? this.historyCategory : 'all',
+                categoryLabel: normalizedScope === 'view' && this.historyCategory !== 'all' ? this.historyCategory : 'All Categories',
+                source: normalizedScope === 'view' ? this.historySource : 'all',
+                sourceLabel: normalizedScope === 'view' && this.historySource !== 'all' ? this.getHistorySourceLabel(this.historySource) : 'All Sources',
+                sort: this.historySort,
+                sortLabel: this.historySort === 'oldest' ? 'Oldest First' : 'Newest First'
+            },
+            summary: this.getHistorySummary(),
+            results: this.getHistoryResultExportRows(resultEntries),
+            activity: this.getHistoryActivityExportRows(events)
+        };
+    },
+
+    renderHistoryPrintTable(rows, columns) {
+        return `
+            <table class="history-print-table">
+                <thead><tr>${columns.map(column => `<th>${this.escapeHtml(column.label)}</th>`).join('')}</tr></thead>
+                <tbody>
+                    ${rows.map(row => `
+                        <tr>${columns.map(column => `<td class="${column.className || ''}">${this.escapeHtml(row[column.key] ?? '')}</td>`).join('')}</tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    },
+
+    buildHistoryPrintMarkup(report) {
+        const resultColumns = [
+            { key: 'Draw Time', label: 'Draw Time' },
+            { key: 'Round', label: 'Round' },
+            { key: 'Prize Category', label: 'Prize Category' },
+            { key: 'Draw Source', label: 'Draw Source' },
+            { key: 'Slot', label: 'Slot' },
+            { key: 'Winner', label: 'Winner' },
+            { key: 'Winner ID', label: 'Winner ID' }
+        ];
+        const activityColumns = [
+            { key: 'Time', label: 'Time' },
+            { key: 'Event', label: 'Event' },
+            { key: 'Round', label: 'Round' },
+            { key: 'Prize Category', label: 'Prize Category' },
+            { key: 'Draw Source', label: 'Draw Source' },
+            { key: 'Details', label: 'Details', className: 'history-print-wrap' }
+        ];
+        const sections = [];
+        if (report.results.length) {
+            sections.push(`
+                <section class="history-print-section">
+                    <div class="history-print-section-header"><h2>Results</h2><span>${report.results.length} Rows</span></div>
+                    ${this.renderHistoryPrintTable(report.results, resultColumns)}
+                </section>
+            `);
+        }
+        if (report.activity.length) {
+            sections.push(`
+                <section class="history-print-section ${report.results.length ? 'history-print-page-break' : ''}">
+                    <div class="history-print-section-header"><h2>Activity</h2><span>${report.activity.length} Events</span></div>
+                    ${this.renderHistoryPrintTable(report.activity, activityColumns)}
+                </section>
+            `);
+        }
+        const summary = report.summary;
+        const scopeLabel = report.scope === 'all' ? 'All History' : `Current ${report.view === 'activity' ? 'Activity' : 'Results'} View`;
+        return `
+            <header class="history-print-header">
+                <div><span>Lucky Draw Pro Studio</span><h1>Draw History</h1><p>${this.escapeHtml(report.projectName)}</p></div>
+                <div class="history-print-meta"><strong>${this.escapeHtml(scopeLabel)}</strong><span>${this.escapeHtml(this.formatHistoryTime(report.generatedAt))}</span></div>
+            </header>
+            <section class="history-print-summary">
+                <div><span>Rounds</span><strong>${summary.rounds}</strong></div>
+                <div><span>Winners</span><strong>${summary.winners}</strong></div>
+                <div><span>Redraws</span><strong>${summary.redraws}</strong></div>
+                <div><span>Latest Draw</span><strong>${this.escapeHtml(summary.latest)}</strong></div>
+            </section>
+            ${sections.join('')}
+        `;
+    },
+
+    printReport(scope = 'view') {
         this.closeHistoryMenus();
-        if (!window.XLSX || !XLSX.utils) {
-            alert('Excel export is unavailable.');
+        const report = this.getHistoryReportData(scope);
+        if (!report.results.length && !report.activity.length) {
+            alert('No history data to print.');
             return;
         }
-        const workbook = XLSX.utils.book_new();
-        let sheetCount = 0;
-        const appendSheet = (rows, name) => {
-            if (!rows.length) return;
-            const sheet = XLSX.utils.json_to_sheet(rows);
-            XLSX.utils.book_append_sheet(workbook, sheet, name);
-            sheetCount++;
-        };
 
-        if (scope === 'all' || this.historyView === 'results') {
-            const entries = scope === 'all' ? this.getHistoryResultEntries() : this.getFilteredHistoryResultEntries();
-            appendSheet(this.getHistoryResultExportRows(entries), 'Results');
-        }
-        if (scope === 'all' || this.historyView === 'activity') {
-            const events = scope === 'all' ? this.getHistoryActivities() : this.getFilteredHistoryEvents();
-            appendSheet(this.getHistoryActivityExportRows(events), 'Activity');
-        }
-        if (!sheetCount) {
+        const existing = document.getElementById('historyPrintRoot');
+        if (existing) existing.remove();
+        const printRoot = document.createElement('main');
+        printRoot.id = 'historyPrintRoot';
+        printRoot.className = 'history-print-report';
+        printRoot.innerHTML = this.buildHistoryPrintMarkup(report);
+        document.body.appendChild(printRoot);
+        document.body.classList.add('history-printing');
+        this.setHistoryFooterStatus('Preparing Print...');
+
+        const previousTitle = document.title;
+        document.title = `${report.projectName} - Draw History`;
+        let cleaned = false;
+        const cleanup = () => {
+            if (cleaned) return;
+            cleaned = true;
+            document.body.classList.remove('history-printing');
+            printRoot.remove();
+            document.title = previousTitle;
+            this.setHistoryFooterStatus();
+        };
+        window.addEventListener('afterprint', cleanup, { once: true });
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            try {
+                window.print();
+            } catch (error) {
+                cleanup();
+                console.error('History print failed:', error);
+                alert('Print preview could not be opened.');
+                return;
+            }
+            setTimeout(cleanup, 1000);
+        }));
+    },
+
+    async exportHistory(scope = 'all') {
+        this.closeHistoryMenus();
+        if (this.historyExportBusy) return;
+        const report = this.getHistoryReportData(scope);
+        if (!report.results.length && !report.activity.length) {
             alert('No history data to export.');
             return;
         }
-        const suffix = scope === 'all' ? 'all' : this.historyView;
-        XLSX.writeFile(workbook, `lucky_draw_history_${suffix}.xlsx`, { compression: true });
+
+        this.historyExportBusy = true;
+        this.setHistoryFooterStatus('Exporting Excel...');
+        try {
+            const result = await DesktopStorage.exportHistory(report);
+            if (!result || result.cancelled) {
+                this.setHistoryFooterStatus();
+                return;
+            }
+            const outputName = String(result.path || result.filename || 'Excel workbook').split(/[\\/]/).pop();
+            this.setHistoryFooterStatus(`Exported: ${outputName}`, 'success');
+        } catch (error) {
+            console.error('History export failed:', error);
+            this.setHistoryFooterStatus('Export Failed', 'error');
+            alert(`Excel export failed: ${error.message}`);
+        } finally {
+            this.historyExportBusy = false;
+        }
     },
 
     exportReportToExcel() {
-        this.exportHistory('all');
+        return this.exportHistory('all');
     },
 
     // ---- Microsoft Word File Workflow & Save Controls (Word Process) ----

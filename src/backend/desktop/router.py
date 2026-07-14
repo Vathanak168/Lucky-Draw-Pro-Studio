@@ -3,12 +3,16 @@ from __future__ import annotations
 import json
 import shutil
 import uuid
+from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict
+from urllib.parse import quote
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from src.backend.desktop.history_report import build_history_workbook, safe_history_filename
 from src.backend.desktop.storage_service import desktop_storage
 
 
@@ -33,6 +37,10 @@ class PathRequest(BaseModel):
 
 class LegacyMigrationRequest(BaseModel):
     storage: Dict[str, Any]
+
+
+class HistoryExportRequest(BaseModel):
+    report: Dict[str, Any]
 
 
 class ProjectorHub:
@@ -180,6 +188,34 @@ def restore_recovery(recovery_id: str):
 @router.delete("/recovery/{project_id}")
 def discard_recovery(project_id: str):
     return {"ok": True, "removed": desktop_storage.discard_recovery(project_id)}
+
+
+@router.post("/history/export")
+def export_history(request: HistoryExportRequest):
+    try:
+        output, _metadata = build_history_workbook(request.report)
+        filename = safe_history_filename(
+            str(request.report.get("projectName") or "Lucky Draw"),
+            "all" if request.report.get("scope") == "all" else "view",
+        )
+        fallback_filename = safe_history_filename(
+            "Lucky Draw",
+            "all" if request.report.get("scope") == "all" else "view",
+        )
+        encoded_filename = quote(filename)
+        return StreamingResponse(
+            BytesIO(output),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": (
+                    f'attachment; filename="{fallback_filename}"; '
+                    f"filename*=UTF-8''{encoded_filename}"
+                ),
+                "X-Export-Filename": encoded_filename,
+            },
+        )
+    except Exception as exc:
+        _raise_http_error(exc)
 
 
 @router.post("/legacy/migrate")

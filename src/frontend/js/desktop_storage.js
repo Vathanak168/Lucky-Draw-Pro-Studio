@@ -221,5 +221,46 @@ window.DesktopStorage = {
         this.recoveryProvider = null;
         await this.recoveryQueue.catch(() => null);
         return this.discardRecovery(projectId);
+    },
+
+    async exportHistory(report) {
+        if (this.bridge && typeof this.bridge.export_history === 'function') {
+            return this.bridge.export_history(report);
+        }
+
+        const response = await fetch('/api/desktop/history/export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ report })
+        });
+        if (!response.ok) {
+            let detail = `Export failed (${response.status})`;
+            try {
+                const payload = await response.json();
+                detail = payload.detail || detail;
+            } catch (e) {}
+            throw new Error(detail);
+        }
+
+        const blob = await response.blob();
+        const encodedFilename = response.headers.get('X-Export-Filename');
+        let filename = 'Lucky Draw - Draw History.xlsx';
+        if (encodedFilename) {
+            try {
+                filename = decodeURIComponent(encodedFilename);
+            } catch (e) {
+                filename = encodedFilename;
+            }
+        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return { ok: true, filename };
     }
 };
