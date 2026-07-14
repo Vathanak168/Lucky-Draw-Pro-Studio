@@ -36,7 +36,7 @@ window.ZoneETelegramBot = {
             <div style="background:var(--bg-surface); padding:8px 10px; border-radius:4px; border:1px solid var(--border-light); margin-bottom:10px;">
                 <div style="font-size:11px; font-weight:700; color:var(--accent-cyan); display:flex; justify-content:space-between; align-items:center;">
                     <span>Telegram</span>
-                    <span style="font-size:10px; color:#ffaa00;">Round #${currentRoundIdx + 1} · ${category}</span>
+                    <span style="font-size:10px; color:var(--accent-purple);">Round #${currentRoundIdx + 1} · ${category}</span>
                 </div>
             </div>
 
@@ -61,8 +61,8 @@ window.ZoneETelegramBot = {
 
         // Bulk Actions Bar
         html += `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,229,163,0.05); border:1px solid rgba(0,229,163,0.3); border-radius:4px; padding:6px 8px; margin-bottom:8px;">
-                <span style="font-size:10px; font-weight:700; color:#00e5a3;">${roundResult.winners.length} Winners</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(48,209,88,0.05); border:1px solid rgba(48,209,88,0.28); border-radius:4px; padding:6px 8px; margin-bottom:8px;">
+                <span style="font-size:10px; font-weight:700; color:var(--success-color);">${roundResult.winners.length} Winners</span>
                 <button onclick="ZoneETelegramBot.broadcastAllWinners(${currentRoundIdx})" class="btn-arena btn-arena-primary" style="padding:4px 10px; font-size:10px; font-weight:700;">
                     <i data-lucide="send"></i> Send All
                 </button>
@@ -84,10 +84,10 @@ window.ZoneETelegramBot = {
                             <span style="font-size:9px; color:var(--text-secondary);">ID: ${idStr}</span>
                         </div>
                         <div style="display:flex; gap:4px;">
-                            <button onclick="ZoneETelegramBot.sendSingleToGroup(${currentRoundIdx}, ${idx})" title="Send to Group" style="background:rgba(0,229,163,0.15); border:1px solid #00e5a3; color:#00e5a3; padding:4px 8px; border-radius:3px; font-size:10px; font-weight:700; cursor:pointer;">
+                            <button onclick="ZoneETelegramBot.sendSingleToGroup(${currentRoundIdx}, ${idx})" title="Send to Group" style="background:rgba(48,209,88,0.1); border:1px solid rgba(48,209,88,0.45); color:var(--success-color); padding:4px 8px; border-radius:3px; font-size:10px; font-weight:700; cursor:pointer;">
                                 <i data-lucide="send"></i> Group
                             </button>
-                            <button onclick="ZoneETelegramBot.sendDirectToUser(${currentRoundIdx}, ${idx})" title="Message Winner" style="background:rgba(0,195,255,0.15); border:1px solid #00c3ff; color:#00c3ff; padding:4px 8px; border-radius:3px; font-size:10px; font-weight:700; cursor:pointer;">
+                            <button onclick="ZoneETelegramBot.sendDirectToUser(${currentRoundIdx}, ${idx})" title="Message Winner" style="background:rgba(18,207,255,0.08); border:1px solid rgba(18,207,255,0.42); color:var(--accent-cyan); padding:4px 8px; border-radius:3px; font-size:10px; font-weight:700; cursor:pointer;">
                                 <i data-lucide="message-circle"></i> Message
                             </button>
                         </div>

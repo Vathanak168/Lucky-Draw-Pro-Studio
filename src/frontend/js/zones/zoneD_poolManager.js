@@ -168,7 +168,7 @@ window.ZoneDPoolManager = {
                 <div class="pool-unified-header" style="flex-shrink:0;">
                     <!-- Left: Pool Health & Live Count Badge -->
                     <div style="display:flex; align-items:center; gap: 12px;">
-                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(10, 132, 255, 0.1); border: 1px solid rgba(10, 132, 255, 0.3); display: flex; align-items: center; justify-content: center; color: var(--accent-cyan); flex-shrink: 0;">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(18, 207, 255, 0.07); border: 1px solid rgba(18, 207, 255, 0.28); display: flex; align-items: center; justify-content: center; color: var(--accent-cyan); flex-shrink: 0;">
                             <svg class="svg-icon" viewBox="0 0 24 24" style="width:18px; height:18px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         </div>
                         <div>
@@ -185,7 +185,7 @@ window.ZoneDPoolManager = {
                         <!-- Status Filter Segmented Control -->
                         <div style="display:flex; background: #0b0b10; border: 1px solid #282836; border-radius: 6px; padding: 2px; height:28px; align-items:center;">
                             <button onclick="ZoneDPoolManager.setFilterStatus('all')" style="border:none; border-radius:4px; height:22px; padding:0 10px; font-size:10px; font-weight:700; cursor:pointer; transition:all 0.2s; ${this.filterStatus === 'all' ? 'background:#242434; color:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.5);' : 'background:transparent; color:#888;'}">All</button>
-                            <button onclick="ZoneDPoolManager.setFilterStatus('active')" style="border:none; border-radius:4px; height:22px; padding:0 10px; font-size:10px; font-weight:700; cursor:pointer; transition:all 0.2s; ${this.filterStatus === 'active' ? 'background:var(--accent-cyan); color:#0c0c0c; box-shadow:0 1px 3px rgba(0,229,163,0.3);' : 'background:transparent; color:#888;'}">Eligible</button>
+                            <button onclick="ZoneDPoolManager.setFilterStatus('active')" style="border:none; border-radius:4px; height:22px; padding:0 10px; font-size:10px; font-weight:700; cursor:pointer; transition:all 0.2s; ${this.filterStatus === 'active' ? 'background:var(--accent-cyan); color:#031016;' : 'background:transparent; color:#888;'}">Eligible</button>
                             <button onclick="ZoneDPoolManager.setFilterStatus('hidden')" style="border:none; border-radius:4px; height:22px; padding:0 10px; font-size:10px; font-weight:700; cursor:pointer; transition:all 0.2s; ${this.filterStatus === 'hidden' ? 'background:#3f2020; color:#ff6b6b; box-shadow:0 1px 3px rgba(0,0,0,0.5);' : 'background:transparent; color:#888;'}">Excluded</button>
                         </div>
 

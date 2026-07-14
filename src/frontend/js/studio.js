@@ -392,7 +392,7 @@ window.Studio = {
         const summaryHTML = `
             <table style="width:100%;">
                 <thead>
-                    <tr><th colspan="2" style="background-color:#0a84ff; color:#ffffff; padding:10px; font-size:1.2em;">Lucky Draw Pro Studio - Draw History</th></tr>
+                    <tr><th colspan="2" style="background-color:#2f80ff; color:#ffffff; padding:10px; font-size:1.2em;">Lucky Draw Pro Studio - Draw History</th></tr>
                 </thead>
                 <tbody>
                     <tr><td style="padding:8px; border:1px solid #999;">Program Name</td><td style="padding:8px; border:1px solid #999;">Lucky Draw Pro Studio v6.0</td></tr>
@@ -545,7 +545,7 @@ window.Studio = {
                     const totalRounds = Math.max(1, Number(p.totalRounds) || 1);
                     const participantCount = Math.max(0, Number(p.participantCount) || 0);
                     listItems += `
-                        <div style="padding:14px 18px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; background:${isCurrent ? 'rgba(10, 132, 255, 0.1)' : 'var(--bg-elevated)'}; border-radius:var(--radius-sm); margin-bottom:8px;">
+                        <div style="padding:14px 18px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; background:${isCurrent ? 'rgba(47, 128, 255, 0.13)' : 'var(--bg-elevated)'}; border-radius:var(--radius-sm); margin-bottom:8px;">
                             <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
                                 <div style="font-weight:800; font-size:15px; color:${isCurrent ? 'var(--accent-cyan)' : '#fff'}; display:flex; align-items:center; gap:8px;">
                                     <i data-lucide="file" aria-hidden="true"></i>
@@ -632,7 +632,7 @@ window.Studio = {
                         <div style="font-size:18px; font-weight:800; color:#fff;">Open Project</div>
                     </div>
 
-                    <label style="border:2px dashed var(--accent-cyan); border-radius:var(--radius-lg); padding:60px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; cursor:pointer; background:rgba(10, 132, 255, 0.04); transition:all 0.2s;" onmouseover="this.style.background='rgba(10, 132, 255, 0.1)'" onmouseout="this.style.background='rgba(10, 132, 255, 0.04)'">
+                    <label style="border:2px dashed var(--accent-cyan); border-radius:var(--radius-lg); padding:60px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; cursor:pointer; background:rgba(18, 207, 255, 0.035); transition:all 0.2s;" onmouseover="this.style.background='rgba(18, 207, 255, 0.08)'" onmouseout="this.style.background='rgba(18, 207, 255, 0.035)'">
                         <i data-lucide="folder-open" aria-hidden="true" style="width:48px; height:48px; color:var(--accent-cyan);"></i>
                         <div style="font-size:16px; font-weight:800; color:#fff;">Choose Project File</div>
                         <div style="font-size:12px; color:var(--text-secondary);">.ldp · .json</div>
@@ -975,7 +975,7 @@ window.Studio = {
         if (trEl && !trEl.classList.contains('cat-drag-over')) {
             trEl.classList.add('cat-drag-over');
             trEl.style.borderTop = '2px solid var(--accent-cyan)';
-            trEl.style.background = 'rgba(10, 132, 255, 0.12)';
+            trEl.style.background = 'rgba(47, 128, 255, 0.15)';
         }
     },
 
@@ -1051,14 +1051,14 @@ window.Studio = {
                     ondragleave="Studio.onCatDragLeave(event)"
                     ondrop="Studio.onCatDrop(event, ${idx})"
                     style="border-bottom:1px solid #222; background:${idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'}; transition:all 0.2s; cursor:grab;"
-                    onmouseover="this.style.background='rgba(10, 132, 255, 0.08)'"
+                    onmouseover="this.style.background='rgba(18, 207, 255, 0.055)'"
                     onmouseout="this.style.background='${idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'}'"
                     title="Reorder Prize Category">
                     <td style="padding:12px 6px 12px 14px; text-align:center; color:#555; font-size:16px;">
                         <i data-lucide="grip-vertical" aria-hidden="true"></i>
                     </td>
                     <td style="padding:12px 14px; font-weight:800; color:#fff;">
-                        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${badgeColor}; margin-right:8px; box-shadow:0 0 6px ${badgeColor};"></span>
+                        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${badgeColor}; margin-right:8px;"></span>
                         ${catName}
                     </td>
                     <td style="padding:12px 14px; color:#aaa; font-size:12px;">
@@ -1234,7 +1234,7 @@ window.Studio = {
 
             html += `
                 <tr style="border-bottom:1px solid #222; background:${rowIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'}; transition:all 0.2s;"
-                    onmouseover="this.style.background='rgba(10, 132, 255, 0.06)'"
+                    onmouseover="this.style.background='rgba(18, 207, 255, 0.045)'"
                     onmouseout="this.style.background='${rowIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'}'">
                     <td style="padding:10px 14px; text-align:center;">
                         <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="Studio.toggleSelectParticipant(${p.originalIndex}, this.checked)" style="accent-color:var(--accent-cyan); width:15px; height:15px; cursor:pointer;">

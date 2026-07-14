@@ -27,7 +27,7 @@ window.ZoneA = {
             const isEmptyStyle = count === 0 ? 'opacity:0.45; filter:grayscale(0.5);' : '';
             tabsHtml += `
                 <button class="deck-tab-btn ${activeTab === cat ? 'active' : ''}" onclick="ZoneA.selectCategoryTab('${cat.replace(/'/g, "\\'")}')" style="display:inline-flex; align-items:center; gap:6px; ${isEmptyStyle}">
-                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${badgeColor}; box-shadow:0 0 6px ${badgeColor};"></span>
+                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${badgeColor};"></span>
                     ${cat} (${count})
                 </button>
             `;

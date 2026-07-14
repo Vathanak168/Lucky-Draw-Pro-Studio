@@ -80,7 +80,7 @@ window.ZoneD = {
                 `;
             });
             winnerTableHtml = `
-                <div class="inspector-section" style="border-color:var(--accent-cyan); background:rgba(10,132,255,0.04);">
+                <div class="inspector-section" style="border-color:var(--accent-cyan); background:rgba(18,207,255,0.035);">
                     <div class="inspector-section-title">
                         <span style="color:var(--accent-cyan);">Winners (${winners.length})</span>
                     </div>
@@ -121,7 +121,7 @@ window.ZoneD = {
                 ` : this.activeTab === 'round' ? `
                     ${winnerTableHtml}
 
-                    <div class="inspector-section" style="border:1px solid var(--accent-cyan); background:rgba(10, 132, 255, 0.05);">
+                    <div class="inspector-section" style="border:1px solid var(--accent-cyan); background:rgba(18, 207, 255, 0.04);">
                         <div class="inspector-section-title" style="display:flex; justify-content:space-between; align-items:center;">
                             <span style="color:var(--accent-cyan); font-size:11px; font-weight:800;">Prize Category</span>
                             <button class="btn-arena" onclick="ZoneA.manageCategoriesPrompt()" style="padding:1px 6px; font-size:9px; border-color:var(--border-light); color:#ddd;">
@@ -188,8 +188,8 @@ window.ZoneD = {
                     </div>
                 ` : `
                     <!-- Stage FX & Rules Tab -->
-                    <div class="inspector-section" style="border-left: 3px solid var(--accent-cyan); background: rgba(10, 132, 255, 0.04);">
-                        <div class="inspector-section-title"><span style="color:var(--accent-cyan);">Draw Rules</span></div>
+                    <div class="inspector-section" style="border-left: 3px solid var(--accent-purple); background: rgba(165, 92, 255, 0.035);">
+                        <div class="inspector-section-title"><span style="color:var(--accent-purple);">Draw Rules</span></div>
                         <div class="inspector-row" style="justify-content: flex-start; gap: 16px;">
                             <span class="inspector-label" style="width:auto; color:#fff; font-weight:700;">Allow Repeat Winners</span>
                             <label class="ios-toggle-label" title="Allow Repeat Winners">
@@ -199,8 +199,8 @@ window.ZoneD = {
                         </div>
                     </div>
 
-                    <div class="inspector-section" style="border-left: 3px solid #ffaa00; background: rgba(255, 170, 0, 0.03);">
-                        <div class="inspector-section-title"><span style="color:#ffaa00;">Sounds · Round #${S.currentRound + 1}</span></div>
+                    <div class="inspector-section" style="border-left: 3px solid var(--warning-color); background: rgba(255, 179, 64, 0.035);">
+                        <div class="inspector-section-title"><span style="color:var(--warning-color);">Sounds · Round #${S.currentRound + 1}</span></div>
                         
                         <div class="inspector-row" style="justify-content: flex-start; gap: 12px;">
                             <span class="inspector-label" style="width:auto; color:#fff;">Draw Start Sound</span>
@@ -229,9 +229,9 @@ window.ZoneD = {
                         </div>
                     </div>
 
-                    <div class="inspector-section" style="border-left: 3px solid #00c3ff; background: rgba(0, 195, 255, 0.03);">
+                    <div class="inspector-section" style="border-left: 3px solid var(--accent-cyan); background: rgba(18, 207, 255, 0.035);">
                         <div class="inspector-section-title" style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="color:#00c3ff;">Telegram · Round #${S.currentRound + 1}</span>
+                            <span style="color:var(--accent-cyan);">Telegram · Round #${S.currentRound + 1}</span>
                             <button class="btn-arena" onclick="if(window.ZoneE) { ZoneE.setTab('pool'); ZoneEStageControls.activeTab = 'telegram'; ZoneE.render(); }" style="padding:2px 7px; font-size:10px;">Settings</button>
                         </div>
                         

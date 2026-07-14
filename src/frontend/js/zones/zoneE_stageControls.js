@@ -141,7 +141,7 @@ window.ZoneEStageControls = {
                             <span style="color:var(--text-secondary);">Target</span>
                             <input type="number" value="${quota}" onchange="ZoneEStageControls.updateQuota('${cat}', this.value)" style="width:50px; background:#101018; border:1px solid var(--border-light); border-radius:3px; padding:2px 4px; color:#fff; font-size:11px; text-align:center;">
                         </div>
-                        <div style="font-size:10px; font-weight:600; color:${isFull ? '#ff5252' : '#00e5a3'};">
+                        <div style="font-size:10px; font-weight:600; color:${isFull ? 'var(--danger-color)' : 'var(--success-color)'};">
                             ${drawn} Drawn · ${remaining} Remaining
                         </div>
                     </div>
@@ -235,10 +235,10 @@ window.ZoneEStageControls = {
             </div>
 
             <!-- Quick Link & Global Override -->
-            <div style="background:rgba(255,170,0,0.06); border:1px solid rgba(255,170,0,0.3); border-radius:4px; padding:10px; display:flex; flex-direction:column; gap:8px;">
-                <div style="font-size:11px; font-weight:700; color:#ffaa00; display:flex; align-items:center; justify-content:space-between;">
+            <div style="background:rgba(223,91,211,0.045); border:1px solid rgba(223,91,211,0.28); border-radius:4px; padding:10px; display:flex; flex-direction:column; gap:8px;">
+                <div style="font-size:11px; font-weight:700; color:var(--accent-magenta); display:flex; align-items:center; justify-content:space-between;">
                     <span>Round Sounds</span>
-                    <button onclick="if(window.ZoneD) { ZoneD.setTab('fx'); }" class="btn-arena" style="padding:3px 8px; font-size:10px; font-weight:700; border-color:#ffaa00; color:#ffaa00; cursor:pointer;">Rules & Automation</button>
+                    <button onclick="if(window.ZoneD) { ZoneD.setTab('fx'); }" class="btn-arena" style="padding:3px 8px; font-size:10px; font-weight:700; border-color:var(--accent-magenta); color:var(--accent-magenta); cursor:pointer;">Rules & Automation</button>
                 </div>
             </div>
         `;
