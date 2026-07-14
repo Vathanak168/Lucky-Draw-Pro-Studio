@@ -16,6 +16,7 @@ from src.backend.desktop.history_report import build_history_workbook, safe_hist
 from src.backend.desktop.storage_service import desktop_storage
 from src.backend.desktop.telegram_service import TelegramApiError, telegram_service
 from src.backend.auth.dependencies import require_authenticated_session
+from src.backend.runtime_session import runtime_token_is_valid
 
 
 router = APIRouter(
@@ -163,9 +164,9 @@ def remove_recent(request: PathRequest):
 
 @router.post("/projects/upload")
 def upload_project(file: UploadFile = File(...)):
-    suffix = Path(file.filename or "import.ldp").suffix.lower()
-    if suffix not in {".ldp", ".json"}:
-        raise HTTPException(status_code=400, detail="Only .ldp and .json project files are supported")
+    suffix = Path(file.filename or "import.asta").suffix.lower()
+    if suffix not in {".asta", ".ldp", ".json"}:
+        raise HTTPException(status_code=400, detail="Only .asta, .ldp, and .json project files are supported")
     target = desktop_storage.imports_dir / f"{uuid.uuid4().hex}{suffix}"
     try:
         with target.open("wb") as destination:
@@ -326,7 +327,10 @@ def migrate_legacy_storage(request: LegacyMigrationRequest):
 
 
 @router.websocket("/projector/ws")
-async def projector_socket(websocket: WebSocket):
+async def projector_socket(websocket: WebSocket, runtime_token: str = ""):
+    if not runtime_token_is_valid(runtime_token):
+        await websocket.close(code=1008, reason="Invalid desktop runtime session")
+        return
     await projector_hub.connect(websocket)
     try:
         while True:

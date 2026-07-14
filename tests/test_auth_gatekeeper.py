@@ -57,12 +57,12 @@ class GatekeeperServiceTests(unittest.TestCase):
     def test_new_global_password_invalidates_the_previous_password(self):
         service = self.make_service()
         responses = [
-            FakeResponse({"global_password": "first-password", "password_version": 1}),
-            FakeResponse({"global_password": "second-password", "password_version": 2}),
-            FakeResponse({"global_password": "second-password", "password_version": 2}),
+            FakeResponse({"status": "OK", "verified": True, "password_version": 1}),
+            FakeResponse({"status": "OK", "verified": False, "password_version": 2}),
+            FakeResponse({"status": "OK", "verified": True, "password_version": 2}),
         ]
 
-        with patch.object(gatekeeper_module.requests, "get", side_effect=responses):
+        with patch.object(gatekeeper_module.requests, "post", side_effect=responses):
             self.assertTrue(service.verify_master_password("first-password"))
             service.lock_session()
             self.assertFalse(service.verify_master_password("first-password"))
@@ -77,7 +77,7 @@ class GatekeeperServiceTests(unittest.TestCase):
         )
         service = self.make_service()
 
-        with patch.object(gatekeeper_module.requests, "get", side_effect=OSError("offline")):
+        with patch.object(gatekeeper_module.requests, "post", side_effect=OSError("offline")):
             with self.assertRaises(gatekeeper_module.AuthenticationUnavailableError):
                 service.verify_master_password("cached-password")
 
@@ -93,8 +93,8 @@ class GatekeeperServiceTests(unittest.TestCase):
 
         with patch.object(
             gatekeeper_module.requests,
-            "get",
-            return_value=FakeResponse({"global_password": "old-password", "password_version": 8}),
+            "post",
+            return_value=FakeResponse({"status": "OK", "password_available": True, "password_version": 8}),
         ):
             result = service.sync_remote_password_from_super_admin()
 
@@ -106,16 +106,35 @@ class GatekeeperServiceTests(unittest.TestCase):
         service = self.make_service()
         password_hash = hashlib.sha256(b"cloud-password").hexdigest()
 
-        with patch.object(
-            gatekeeper_module.requests,
-            "get",
-            return_value=FakeResponse({"global_password_hash": password_hash, "password_version": 12}),
-        ):
-            result = service.sync_remote_password_from_super_admin()
+        with patch.object(gatekeeper_module.requests, "post", return_value=FakeResponse({
+            "status": "ERROR", "message": "Unknown POST action"
+        })):
+            with patch.object(
+                gatekeeper_module.requests,
+                "get",
+                return_value=FakeResponse({"global_password_hash": password_hash, "password_version": 12}),
+            ):
+                result = service.sync_remote_password_from_super_admin()
 
         self.assertTrue(result["synced"])
         self.assertEqual(service.current_password_hash, password_hash)
         self.assertEqual(service.password_version, 12)
+
+    def test_server_verified_password_does_not_cache_password_hash(self):
+        service = self.make_service()
+        response = FakeResponse({
+            "status": "OK",
+            "verified": True,
+            "password_available": True,
+            "password_version": 15,
+        })
+
+        with patch.object(gatekeeper_module.requests, "post", return_value=response):
+            self.assertTrue(service.verify_master_password("server-only-password"))
+
+        cached = json.loads(self.sync_file.read_text(encoding="utf-8"))
+        self.assertEqual(cached["version"], 15)
+        self.assertNotIn("password_hash", cached)
 
     def test_remote_approval_unlocks_only_the_current_process(self):
         service = self.make_service()

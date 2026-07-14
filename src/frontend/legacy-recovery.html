@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asta Studio - Legacy Recovery</title>
     <link rel="icon" type="image/svg+xml" href="assets/asta-mark.svg">
+    <script src="js/runtime_session.js?v=1.0.0"></script>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; background: #151518; color: #f5f5f5; font-family: Arial, sans-serif; }
@@ -24,7 +25,7 @@
     <main>
         <h1>Recover Old Browser Data</h1>
         <p>This utility reads the old browser profile only after you press Inspect. It is separate from the main Studio startup.</p>
-        <div class="notice">Do not clear browser data before migration completes. Old keys can be removed only after Python confirms that new .ldp files were written.</div>
+        <div class="notice">Do not clear browser data before migration completes. Old keys can be removed only after Python confirms that new Asta project files were written.</div>
         <div class="actions">
             <button id="inspectBtn" class="primary">Inspect Old Data</button>
             <button id="migrateBtn" disabled>Migrate to Local Files</button>

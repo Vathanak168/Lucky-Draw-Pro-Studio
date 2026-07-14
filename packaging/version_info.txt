@@ -1,0 +1,30 @@
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(6, 0, 0, 0),
+    prodvers=(6, 0, 0, 0),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo([
+      StringTable(
+        '040904B0',
+        [
+          StringStruct('CompanyName', 'Asta Studio'),
+          StringStruct('FileDescription', 'Asta Studio Desktop Application'),
+          StringStruct('FileVersion', '6.0.0'),
+          StringStruct('InternalName', 'Asta Studio'),
+          StringStruct('LegalCopyright', 'Copyright 2026 Asta Studio'),
+          StringStruct('OriginalFilename', 'Asta Studio.exe'),
+          StringStruct('ProductName', 'Asta Studio'),
+          StringStruct('ProductVersion', '6.0.0')
+        ]
+      )
+    ]),
+    VarFileInfo([VarStruct('Translation', [1033, 1200])])
+  ]
+)

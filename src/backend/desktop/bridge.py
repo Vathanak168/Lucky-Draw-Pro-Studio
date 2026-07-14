@@ -3,12 +3,18 @@ from __future__ import annotations
 from functools import wraps
 from pathlib import Path
 from typing import Any, Dict, Optional
+from urllib.parse import quote
 
 import webview
 
 from src.backend.desktop.history_report import safe_history_filename, write_history_workbook
 from src.backend.desktop.projector_service import ProjectorOutputService, projector_output
-from src.backend.desktop.storage_service import DesktopStorageService, _safe_filename, desktop_storage
+from src.backend.desktop.storage_service import (
+    PROJECT_EXTENSION,
+    DesktopStorageService,
+    _safe_filename,
+    desktop_storage,
+)
 from src.backend.desktop.telegram_service import TelegramService, telegram_service
 from src.backend.auth.gatekeeper import gatekeeper
 
@@ -25,12 +31,28 @@ class DesktopBridge:
         self._projector = projector
         self._window: Optional[Any] = None
 
-    def _bind_window(self, window: Any) -> None:
+    def _bind_window(self, window: Any, base_url: str, runtime_token: str) -> None:
         self._window = window
         self._projector.bind_main_window(
             window,
-            "http://127.0.0.1:8926/projector/projector.html",
+            f"{base_url}/projector/projector.html#runtime_token={quote(runtime_token)}",
         )
+
+    def _prepare_app_close(self) -> None:
+        try:
+            self._projector.close()
+        except Exception:
+            pass
+
+    def _shutdown(self) -> None:
+        try:
+            self._projector.close()
+        except Exception:
+            pass
+        try:
+            self._telegram.shutdown()
+        except Exception:
+            pass
 
     def _dialog_type(self, mode: str) -> Any:
         dialog_enum = getattr(webview, "FileDialog", None)
@@ -87,7 +109,7 @@ class DesktopBridge:
             "open",
             directory=settings.get("lastProjectDirectory") or "",
             allow_multiple=False,
-            file_types=("Asta Studio (*.ldp;*.json)",),
+            file_types=("Asta Studio (*.asta;*.ldp;*.json)",),
         )
         if not selected:
             return {"ok": False, "cancelled": True}
@@ -103,18 +125,18 @@ class DesktopBridge:
 
     def save_project_as(self, document: Dict[str, Any]) -> Dict[str, Any]:
         settings = self._storage.load_settings()
-        suggested = f"{_safe_filename(str(document.get('projectName') or 'Untitled Project'))}.ldp"
+        suggested = f"{_safe_filename(str(document.get('projectName') or 'Untitled Project'))}{PROJECT_EXTENSION}"
         selected = self._select_one(
             "save",
             directory=settings.get("lastProjectDirectory") or "",
             save_filename=suggested,
-            file_types=("Asta Studio (*.ldp)",),
+            file_types=("Asta Studio (*.asta)",),
         )
         if not selected:
             return {"ok": False, "cancelled": True}
         path = Path(selected)
-        if path.suffix.lower() != ".ldp":
-            path = path.with_suffix(".ldp")
+        if path.suffix.lower() != PROJECT_EXTENSION:
+            path = path.with_suffix(PROJECT_EXTENSION)
         return self._storage.save_project(document, str(path))
 
     def remove_recent(self, path: str) -> Dict[str, Any]:

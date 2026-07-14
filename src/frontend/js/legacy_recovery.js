@@ -54,7 +54,7 @@
     migrateBtn.addEventListener('click', async () => {
         if (!recoveredStorage) return;
         migrateBtn.disabled = true;
-        append('Writing recovered data to local .ldp files...');
+        append('Writing recovered data to local Asta project files...');
         try {
             const response = await fetch('/api/desktop/legacy/migrate', {
                 method: 'POST',

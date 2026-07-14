@@ -11,7 +11,7 @@
 
 const ASTA_AUTH = Object.freeze({
   APP_NAME: "Asta Studio",
-  APP_VERSION: "5.1.0",
+  APP_VERSION: "6.0.0",
   SUPER_ADMIN_EMAIL: "chhaysereyvathanak@gmail.com",
   REQUEST_PREFIX: "REQ_",
   STATUS_PREFIX: "STATUS_",
@@ -23,7 +23,6 @@ const ASTA_AUTH = Object.freeze({
   PASSWORD_VERSION_KEY: "GLOBAL_PASSWORD_VERSION",
   NOTIFICATIONS_KEY: "REQUEST_NOTIFICATIONS_ENABLED",
   AUDIT_LOG_KEY: "ADMIN_AUDIT_LOG",
-  DEFAULT_PASSWORD: "resolume2026",
   MAX_REQUESTS: 250,
   MAX_AUDIT_EVENTS: 100,
 });
@@ -41,8 +40,11 @@ function doPost(e) {
     if (action === "check") {
       return jsonOutput_(checkRemoteStatus_(data.machine_id, props));
     }
-    if (action === "sync_password") {
-      return jsonOutput_({ status: "OK", ...getPasswordPayload_(props) });
+    if (action === "service_status") {
+      return jsonOutput_({ status: "OK", ...getPasswordVersionPayload_(props) });
+    }
+    if (action === "verify_password") {
+      return jsonOutput_(verifyPassword_(data.password, props));
     }
 
     return jsonOutput_({ status: "ERROR", message: "Unknown POST action" });
@@ -58,9 +60,6 @@ function doGet(e) {
     const view = String((e && e.parameter && e.parameter.view) || "").trim().toLowerCase();
     const props = PropertiesService.getScriptProperties();
 
-    if (action === "sync_password") {
-      return jsonOutput_({ status: "OK", ...getPasswordPayload_(props) });
-    }
     if (action === "portal" || view === "admin") {
       return renderAdminWebApp_();
     }
@@ -156,6 +155,17 @@ function changeGlobalPassword(accessToken, newPassword) {
 }
 
 
+function verifyPassword_(password, props) {
+  const payload = getPasswordPayload_(props);
+  const candidateHash = sha256Hex_(String(password || ""));
+  return {
+    status: "OK",
+    verified: candidateHash === payload.global_password_hash,
+    password_version: payload.password_version,
+  };
+}
+
+
 function addAuthorizedAdmin(accessToken, email) {
   const props = PropertiesService.getScriptProperties();
   const actor = requireSuperAdmin_(accessToken, props);
@@ -232,7 +242,7 @@ function handleAccessRequest_(data, props) {
 function checkRemoteStatus_(machineId, props) {
   const normalizedMachineId = normalizeMachineId_(machineId);
   const rawStatus = props.getProperty(statusKey_(normalizedMachineId)) || "PENDING";
-  const passwordPayload = getPasswordPayload_(props);
+  const passwordPayload = getPasswordVersionPayload_(props);
 
   if (rawStatus.indexOf("BLOCKED:") === 0) {
     const duration = normalizeBlockDuration_(rawStatus.split(":")[1]);
@@ -446,7 +456,10 @@ function getPasswordPayload_(props) {
   let version = parseInt(props.getProperty(ASTA_AUTH.PASSWORD_VERSION_KEY) || "0", 10);
 
   if (!isSha256Hex_(passwordHash)) {
-    const legacyPassword = String(props.getProperty(ASTA_AUTH.LEGACY_PASSWORD_KEY) || ASTA_AUTH.DEFAULT_PASSWORD);
+    const legacyPassword = String(props.getProperty(ASTA_AUTH.LEGACY_PASSWORD_KEY) || "");
+    if (!legacyPassword) {
+      throw new Error("Global password is not configured");
+    }
     passwordHash = sha256Hex_(legacyPassword);
     version = version > 0 ? version : Date.now();
     props.setProperty(ASTA_AUTH.PASSWORD_HASH_KEY, passwordHash);
@@ -457,6 +470,15 @@ function getPasswordPayload_(props) {
   return {
     global_password_hash: passwordHash,
     password_version: version,
+  };
+}
+
+
+function getPasswordVersionPayload_(props) {
+  const payload = getPasswordPayload_(props);
+  return {
+    password_version: payload.password_version,
+    password_available: true,
   };
 }
 

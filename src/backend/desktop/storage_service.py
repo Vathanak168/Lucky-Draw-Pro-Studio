@@ -15,8 +15,12 @@ from typing import Any, Dict, Iterable, Optional
 from urllib.parse import quote
 
 
-APP_FOLDER_NAME = "LuckyDrawProStudio"
-PROJECT_SCHEMA_VERSION = "7.0"
+APP_FOLDER_NAME = "AstaStudio"
+LEGACY_APP_FOLDER_NAME = "LuckyDrawProStudio"
+PROJECT_SCHEMA_VERSION = "7.1"
+PROJECT_EXTENSION = ".asta"
+LEGACY_PROJECT_EXTENSION = ".ldp"
+SUPPORTED_PROJECT_EXTENSIONS = {PROJECT_EXTENSION, LEGACY_PROJECT_EXTENSION}
 MAX_RECENT_FILES = 30
 MAX_PROJECT_JSON_BYTES = 64 * 1024 * 1024
 WORKSPACE_ID_PATTERN = re.compile(r"^[0-9a-f]{32}$")
@@ -27,7 +31,7 @@ def _utc_now() -> str:
 
 
 def _default_app_data_dir() -> Path:
-    override = os.environ.get("LDP_APP_DATA_DIR")
+    override = os.environ.get("ASTA_APP_DATA_DIR") or os.environ.get("LDP_APP_DATA_DIR")
     if override:
         return Path(override).expanduser().resolve()
     local_app_data = os.environ.get("LOCALAPPDATA")
@@ -54,6 +58,8 @@ def _deep_merge(base: Dict[str, Any], patch: Dict[str, Any]) -> Dict[str, Any]:
 class DesktopStorageService:
     def __init__(self, app_data_dir: Optional[Path] = None):
         self.app_data_dir = Path(app_data_dir or _default_app_data_dir()).resolve()
+        if app_data_dir is None:
+            self._migrate_legacy_app_data()
         self.settings_file = self.app_data_dir / "settings.json"
         self.recent_file = self.app_data_dir / "recent.json"
         self.recovery_dir = self.app_data_dir / "Recovery"
@@ -62,9 +68,36 @@ class DesktopStorageService:
         self.imports_dir = self.app_data_dir / "Imports"
         self._lock = threading.RLock()
         self.current_project_path: Optional[Path] = None
+        self.pending_launch_path: Optional[Path] = None
         self.current_workspace_id = ""
         self._ensure_directories()
         self.new_workspace()
+
+    def _migrate_legacy_app_data(self) -> None:
+        if os.environ.get("ASTA_APP_DATA_DIR") or os.environ.get("LDP_APP_DATA_DIR"):
+            return
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if not local_app_data:
+            return
+        legacy = (Path(local_app_data) / LEGACY_APP_FOLDER_NAME).resolve()
+        if not legacy.is_dir() or legacy == self.app_data_dir:
+            return
+        try:
+            self.app_data_dir.mkdir(parents=True, exist_ok=True)
+            for source in legacy.rglob("*"):
+                relative = source.relative_to(legacy)
+                target = self.app_data_dir / relative
+                if source.is_dir():
+                    target.mkdir(parents=True, exist_ok=True)
+                elif not target.exists():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(source, target)
+            marker = self.app_data_dir / ".migrated-from-LuckyDrawProStudio"
+            if not marker.exists():
+                marker.write_text(_utc_now(), encoding="utf-8")
+        except OSError:
+            # Keep using the new directory even if one legacy file cannot be copied.
+            pass
 
     def _ensure_directories(self) -> None:
         for directory in (
@@ -211,7 +244,7 @@ class DesktopStorageService:
             return self.list_recent()
 
     def get_startup_state(self) -> Dict[str, Any]:
-        return {
+        state = {
             "settings": self.load_settings(),
             "recent": self.list_recent(),
             "recoveries": self.list_recoveries(),
@@ -219,12 +252,27 @@ class DesktopStorageService:
             "projectPath": str(self.current_project_path) if self.current_project_path else None,
             "appDataPath": str(self.app_data_dir),
         }
+        if self.pending_launch_path is not None:
+            launch_path = self.pending_launch_path
+            self.pending_launch_path = None
+            try:
+                state["launchProject"] = self.open_project(str(launch_path))
+            except Exception as exc:
+                state["launchProjectError"] = str(exc)
+        return state
+
+    def queue_launch_project(self, path: str) -> bool:
+        candidate = Path(path).expanduser().resolve()
+        if candidate.suffix.lower() not in {PROJECT_EXTENSION, LEGACY_PROJECT_EXTENSION, ".json"}:
+            return False
+        self.pending_launch_path = candidate
+        return True
 
     def _validate_document(self, document: Dict[str, Any]) -> Dict[str, Any]:
         if not isinstance(document, dict):
             raise ValueError("Project document must be an object")
         normalized = copy.deepcopy(document)
-        normalized["appName"] = "LuckyDrawProStudio"
+        normalized["appName"] = "AstaStudio"
         normalized["schemaVersion"] = PROJECT_SCHEMA_VERSION
         normalized["projectId"] = str(normalized.get("projectId") or uuid.uuid4().hex)[:200]
         normalized["projectName"] = str(normalized.get("projectName") or "Untitled Project")[:200]
@@ -331,8 +379,8 @@ class DesktopStorageService:
             if target is None:
                 name = _safe_filename(str(document.get("projectName") or "Untitled Project"))
                 target = self._available_project_path(name)
-            if target.suffix.lower() != ".ldp":
-                target = target.with_suffix(".ldp")
+            if target.suffix.lower() not in SUPPORTED_PROJECT_EXTENSIONS:
+                target = target.with_suffix(PROJECT_EXTENSION)
             target = target.resolve()
             normalized = self._write_project_package(target, document)
             self.current_project_path = target
@@ -350,10 +398,10 @@ class DesktopStorageService:
 
     def _available_project_path(self, name: str) -> Path:
         stem = _safe_filename(name, "Untitled Project")
-        candidate = self.projects_dir / f"{stem}.ldp"
+        candidate = self.projects_dir / f"{stem}{PROJECT_EXTENSION}"
         index = 2
         while candidate.exists():
-            candidate = self.projects_dir / f"{stem} ({index}).ldp"
+            candidate = self.projects_dir / f"{stem} ({index}){PROJECT_EXTENSION}"
             index += 1
         return candidate
 
@@ -414,7 +462,7 @@ class DesktopStorageService:
                         try:
                             project_info = archive.getinfo("project.json")
                         except KeyError as exc:
-                            raise ValueError("The .ldp package has no project.json") from exc
+                            raise ValueError("The Asta project package has no project.json") from exc
                         if project_info.file_size > MAX_PROJECT_JSON_BYTES:
                             raise ValueError("Project data is too large")
                         document = json.loads(archive.read(project_info).decode("utf-8"))
@@ -599,7 +647,7 @@ class DesktopStorageService:
         for index, snapshot in enumerate(candidates):
             name = str(snapshot.get("name") or snapshot.get("projectName") or f"Recovered Browser Project {index + 1}")
             document = {
-                "appName": "LuckyDrawProStudio",
+                "appName": "AstaStudio",
                 "schemaVersion": PROJECT_SCHEMA_VERSION,
                 "projectId": uuid.uuid4().hex,
                 "projectName": name,

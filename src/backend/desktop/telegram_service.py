@@ -139,7 +139,7 @@ class DpapiSecretStore:
         kernel32 = ctypes.windll.kernel32
         if not crypt32.CryptProtectData(
             ctypes.byref(source),
-            "Lucky Draw Pro Studio Telegram Token",
+            "Asta Studio Telegram Token",
             None,
             None,
             None,
@@ -216,6 +216,7 @@ class TelegramService:
         self._lock = threading.RLock()
         self._wake = threading.Event()
         self._stop = threading.Event()
+        self._worker: Optional[threading.Thread] = None
         self._last_sent_by_chat: Dict[str, float] = {}
         self._last_global_send = 0.0
         self._jobs = self._load_jobs()
@@ -224,6 +225,12 @@ class TelegramService:
         if start_worker:
             self._worker = threading.Thread(target=self._worker_loop, name="telegram-delivery", daemon=True)
             self._worker.start()
+
+    def shutdown(self, timeout: float = 2.0) -> None:
+        self._stop.set()
+        self._wake.set()
+        if self._worker is not None and self._worker.is_alive() and self._worker is not threading.current_thread():
+            self._worker.join(timeout=timeout)
 
     def _load_jobs(self) -> list[Dict[str, Any]]:
         raw = self.storage._read_json(self.jobs_file, [])

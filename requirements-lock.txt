@@ -1,0 +1,12 @@
+fastapi==0.139.0
+uvicorn==0.51.0
+websockets==16.1
+pywebview==6.2.1
+requests==2.34.2
+pydantic==2.13.4
+pyinstaller==6.21.0
+wmi==1.5.1
+python-multipart==0.0.32
+openpyxl==3.1.5
+pythonnet==3.1.0
+clr_loader==0.3.1

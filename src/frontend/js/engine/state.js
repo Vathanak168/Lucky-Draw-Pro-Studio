@@ -406,7 +406,7 @@ window.EngineState = {
 
     exportProjectDocument() {
         return {
-            appName: "LuckyDrawProStudio",
+            appName: "AstaStudio",
             schemaVersion: "7.0",
             projectId: this.currentProjectId,
             projectName: this.currentProjectName,

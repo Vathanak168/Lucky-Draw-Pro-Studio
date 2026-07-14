@@ -34,7 +34,16 @@ window.Studio = {
             alert(`Local storage service could not start: ${error.message}`);
         }
 
-        if (startup.recoveries && startup.recoveries.length > 0) {
+        if (startup.launchProject && startup.launchProject.ok) {
+            resumedFromRecovery = EngineState.applyProjectDocument(startup.launchProject.document, {
+                path: startup.launchProject.path
+            });
+            EngineState.savedProjectsList = startup.launchProject.recent || EngineState.savedProjectsList;
+        } else if (startup.launchProjectError) {
+            alert(`The project passed to Asta Studio could not be opened: ${startup.launchProjectError}`);
+        }
+
+        if (!resumedFromRecovery && startup.recoveries && startup.recoveries.length > 0) {
             const latest = startup.recoveries[0];
             const shouldRestore = confirm(`Recovery data was found for "${latest.name}" from ${latest.savedAt || 'the previous session'}. Restore it now?`);
             if (shouldRestore) {
@@ -1262,8 +1271,8 @@ window.Studio = {
                     <label style="border:2px dashed var(--accent-cyan); border-radius:var(--radius-lg); padding:60px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; cursor:pointer; background:rgba(18, 207, 255, 0.035); transition:all 0.2s;" onmouseover="this.style.background='rgba(18, 207, 255, 0.08)'" onmouseout="this.style.background='rgba(18, 207, 255, 0.035)'">
                         <i data-lucide="folder-open" aria-hidden="true" style="width:48px; height:48px; color:var(--accent-cyan);"></i>
                         <div style="font-size:16px; font-weight:800; color:#fff;">Choose Project File</div>
-                        <div style="font-size:12px; color:var(--text-secondary);">.ldp · .json</div>
-                        <input id="browserProjectFileInput" type="file" accept=".json,.ldp" style="display:none;" onclick="if(window.DesktopStorage && DesktopStorage.bridge){event.preventDefault(); Studio.openProjectFile();}" onchange="Studio.importProjectFile(event)">
+                        <div style="font-size:12px; color:var(--text-secondary);">.asta · .ldp · .json</div>
+                        <input id="browserProjectFileInput" type="file" accept=".asta,.ldp,.json" style="display:none;" onclick="if(window.DesktopStorage && DesktopStorage.bridge){event.preventDefault(); Studio.openProjectFile();}" onchange="Studio.importProjectFile(event)">
                     </label>
                     <button class="btn-arena" onclick="Studio.openLegacyRecovery()" style="align-self:flex-start; padding:10px 16px;"><i data-lucide="archive-restore" aria-hidden="true"></i>Recover Browser Data</button>
                 </div>
@@ -1294,7 +1303,7 @@ window.Studio = {
                                 <span>Project Copy</span>
                             </div>
                             <div style="background:#111; padding:12px; border-radius:var(--radius-sm); border:1px solid #222; font-family:var(--font-mono); font-size:11px; color:#aaa;">
-                                ${(S.currentProjectName || 'project').toLowerCase().replace(/[^a-z0-9]/g, '_')}_v6.ldp
+                                ${(S.currentProjectName || 'project').toLowerCase().replace(/[^a-z0-9]/g, '_')}.asta
                             </div>
                             <button class="btn-arena" onclick="Studio.exportProjectFile()" style="margin-top:auto; padding:12px; font-size:14px; font-weight:800; border-color:var(--accent-cyan); color:var(--accent-cyan);">
                                 Save a Copy
@@ -1397,7 +1406,7 @@ window.Studio = {
     },
 
     async deleteProjectFromLocal(pathToken) {
-        if (!confirm("Remove this file from the Recent Projects list? The .ldp file will not be deleted.")) return;
+        if (!confirm("Remove this file from the Recent Projects list? The project file will not be deleted.")) return;
         try {
             EngineState.savedProjectsList = await DesktopStorage.removeRecent(decodeURIComponent(pathToken));
             this.switchWordTab('recent');
@@ -1433,7 +1442,8 @@ window.Studio = {
     },
 
     openLegacyRecovery() {
-        window.open('legacy-recovery.html', 'LuckyDrawLegacyRecovery', 'width=820,height=680,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
+        const recoveryUrl = window.AstaRuntime ? AstaRuntime.withToken('legacy-recovery.html') : 'legacy-recovery.html';
+        window.open(recoveryUrl, 'AstaLegacyRecovery', 'width=820,height=680,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
     },
 
     async importProjectFile(event) {
@@ -2082,7 +2092,7 @@ window.Studio = {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = "Lucky_Draw_Participants_Template.csv";
+            a.download = "Asta_Studio_Participants_Template.csv";
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);

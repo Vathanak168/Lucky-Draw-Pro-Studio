@@ -6,8 +6,10 @@ window.ProjectorSync = {
 
     init() {
         if (this.socket && this.socket.readyState <= WebSocket.OPEN) return;
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        this.socket = new WebSocket(`${protocol}//${window.location.host}/api/desktop/projector/ws`);
+        const url = window.AstaRuntime
+            ? AstaRuntime.websocketUrl('/api/desktop/projector/ws')
+            : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/desktop/projector/ws`;
+        this.socket = new WebSocket(url);
         this.socket.onopen = () => {
             for (const payload of this.pending.values()) this.send(payload);
             this.pending.clear();
@@ -44,4 +46,3 @@ window.ProjectorSync = {
 };
 
 ProjectorSync.init();
-

@@ -26,6 +26,9 @@ window.DesktopStorage = {
         this.revision = this.recoveries.reduce((max, item) => Math.max(max, Number(item.revision) || 0), this.revision);
         this.currentPath = state.projectPath || null;
         this.workspaceId = state.workspaceId || null;
+        if (state.launchProject && state.launchProject.ok) {
+            this.captureProjectResult(state.launchProject);
+        }
         return state;
     },
 

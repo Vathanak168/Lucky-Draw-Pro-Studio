@@ -184,7 +184,7 @@ window.ZoneE = {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', 'lucky_draw_participants.csv');
+        link.setAttribute('download', 'asta_studio_participants.csv');
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

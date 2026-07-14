@@ -294,7 +294,7 @@ window.AstaLogin = {
         } catch (error) {
             console.warn('Desktop window resize was unavailable:', error);
         }
-        window.location.replace('index.html');
+        window.location.replace(window.AstaRuntime ? AstaRuntime.withToken('index.html') : 'index.html');
     },
 
     async waitForDesktopBridge(timeoutMs = 900) {

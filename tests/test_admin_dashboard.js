@@ -11,7 +11,7 @@ assert(!serverSource.includes('Quick Actions'), 'Email still contains duplicate 
 assert(!serverSource.includes('action === "approve"'), 'State-changing GET approve action remains');
 assert(!serverSource.includes('action === "reject"'), 'Reject action must not be available');
 assert(!serverSource.includes('XFrameOptionsMode.ALLOWALL'), 'Dashboard still allows unrestricted framing');
-assert(serverSource.includes('global_password_hash'), 'Cloud password hash response is missing');
+assert(!serverSource.includes('jsonOutput_({ status: "OK", ...getPasswordPayload_'), 'Public password-hash sync endpoint remains');
 assert(!/\bglobal_password\s*:/.test(serverSource), 'Plaintext cloud password response remains');
 assert(serverSource.includes('setRequestNotifications'), 'Super Admin notification control is missing');
 
@@ -140,8 +140,15 @@ const checkResponse = sandbox.doPost({
 });
 const checkPayload = JSON.parse(checkResponse.text);
 assert.strictEqual(checkPayload.approved, true);
-assert(/^[a-f0-9]{64}$/.test(checkPayload.global_password_hash));
+assert.strictEqual(Object.prototype.hasOwnProperty.call(checkPayload, 'global_password_hash'), false);
 assert.strictEqual(Object.prototype.hasOwnProperty.call(checkPayload, 'global_password'), false);
+
+const verifyResponse = sandbox.doPost({
+  postData: { contents: JSON.stringify({ action: 'verify_password', password: 'legacy-password' }) },
+});
+const verifyPayload = JSON.parse(verifyResponse.text);
+assert.strictEqual(verifyPayload.verified, true);
+assert.strictEqual(Object.prototype.hasOwnProperty.call(verifyPayload, 'global_password_hash'), false);
 
 dashboard = sandbox.runAdminAction(superToken, 'LDP-TEST-0001', 'block', 3600);
 assert.strictEqual(dashboard.requests[0].status, 'BLOCKED');
@@ -177,5 +184,14 @@ const adminDashboard = sandbox.getAdminDashboardState(adminToken);
 assert.strictEqual(adminDashboard.role, 'admin');
 assert.strictEqual(adminDashboard.administrators.length, 0);
 assert.throws(() => sandbox.setRequestNotifications(adminToken, false), /Super Admin/);
+
+properties.deleteProperty('GLOBAL_MASTER_PASSWORD_HASH');
+properties.deleteProperty('GLOBAL_MASTER_PASSWORD');
+const unconfiguredPasswordResponse = sandbox.doPost({
+  postData: { contents: JSON.stringify({ action: 'verify_password', password: 'anything' }) },
+});
+const unconfiguredPasswordPayload = JSON.parse(unconfiguredPasswordResponse.text);
+assert.strictEqual(unconfiguredPasswordPayload.status, 'ERROR');
+assert.match(unconfiguredPasswordPayload.message, /not configured/i);
 
 console.log('PASS_ADMIN_DASHBOARD_CONTRACT');

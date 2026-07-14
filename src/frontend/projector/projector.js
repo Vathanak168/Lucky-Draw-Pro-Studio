@@ -18,8 +18,10 @@ class StageProjectorSync {
     }
 
     connect() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        this.socket = new WebSocket(`${protocol}//${window.location.host}/api/desktop/projector/ws`);
+        const url = window.AstaRuntime
+            ? AstaRuntime.websocketUrl('/api/desktop/projector/ws')
+            : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/desktop/projector/ws`;
+        this.socket = new WebSocket(url);
         this.socket.onmessage = event => {
             try {
                 this.applyMessage(JSON.parse(event.data));

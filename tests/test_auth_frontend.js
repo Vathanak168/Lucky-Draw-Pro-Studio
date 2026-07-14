@@ -29,7 +29,7 @@ assert(!loginHtml.includes('Simulation Controls'), 'Simulator controls leaked in
 assert(!loginHtml.includes('Wi-Fi Password'), 'Sensitive Wi-Fi information leaked into production login');
 assert(indexHtml.indexOf('js/api.js') < indexHtml.indexOf('js/studio.js'), 'Auth API must load before Studio');
 assert(studioJs.includes('StudioAPI.getAuthSession()'), 'Workspace startup is missing the auth guard');
-assert(loginJs.includes("window.location.replace('index.html')"), 'Login does not enter the workspace');
+assert(loginJs.includes("AstaRuntime.withToken('index.html')"), 'Login does not preserve the desktop runtime session');
 assert(loginJs.includes('startApprovalPolling()'), 'Remote approval polling is missing');
 assert(loginJs.includes('startBlockCountdown('), 'Blocked-state countdown is missing');
 

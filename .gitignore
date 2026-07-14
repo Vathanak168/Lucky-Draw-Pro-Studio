@@ -7,4 +7,7 @@ __pycache__/
 .gemini/
 scratch/
 *.tmp
+build/
+dist/
+release/
 

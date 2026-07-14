@@ -1,5 +1,5 @@
 // src/frontend/js/api.js
-const API_BASE = window.location.protocol === 'file:' ? 'http://127.0.0.1:8926/api' : '/api';
+const API_BASE = '/api';
 
 class StudioAPI {
     static async request(path, options = {}) {
@@ -61,38 +61,6 @@ class StudioAPI {
         }
     }
 
-    static async getSavedProjectsFromDisk() {
-        try {
-            const res = await fetch(`${API_BASE}/core/projects/list`);
-            return await res.json();
-        } catch (e) {
-            return null;
-        }
-    }
-
-    static async saveProjectToDisk(snapshot) {
-        try {
-            const res = await fetch(`${API_BASE}/core/projects/save`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(snapshot)
-            });
-            return await res.json();
-        } catch (e) {
-            return null;
-        }
-    }
-
-    static async deleteProjectFromDisk(projectId) {
-        try {
-            const res = await fetch(`${API_BASE}/core/projects/delete/${encodeURIComponent(projectId)}`, {
-                method: "DELETE"
-            });
-            return await res.json();
-        } catch (e) {
-            return null;
-        }
-    }
 }
 
 window.StudioAPI = StudioAPI;

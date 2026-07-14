@@ -2,7 +2,9 @@ import hashlib
 import json
 import os
 import platform
+import shutil
 import time
+from pathlib import Path
 from typing import Any, Dict
 
 import requests
@@ -13,6 +15,7 @@ from src.backend.config import (
     DEFAULT_BLOCK_DURATION_SECONDS,
     DEFAULT_MASTER_PASSWORD_HASH,
     GOOGLE_APPS_SCRIPT_URL,
+    LEGACY_AUTH_FILES,
     MAX_FAILED_ATTEMPTS,
     MAX_REMOTE_REQUESTS,
     SYNC_PASSWORD_FILE,
@@ -28,6 +31,7 @@ class GatekeeperService:
     """Machine-bound authentication with online password sync and remote approval."""
 
     def __init__(self) -> None:
+        self._migrate_auth_files()
         self.machine_id = get_hardware_fingerprint()
         self.device_name = platform.node() or "Event Computer"
         self.is_unlocked = False
@@ -39,6 +43,17 @@ class GatekeeperService:
         self.remote_request_count = 0
         self._load_synced_password()
         self._discard_persisted_session()
+
+    def _migrate_auth_files(self) -> None:
+        for target_value, legacy_value in LEGACY_AUTH_FILES.items():
+            target = Path(target_value)
+            legacy = Path(legacy_value)
+            try:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if not target.exists() and legacy.is_file():
+                    shutil.copy2(legacy, target)
+            except OSError:
+                continue
 
     def is_blocked(self) -> tuple[bool, float, str]:
         if os.path.exists(BLOCK_STATE_FILE):
@@ -105,7 +120,7 @@ class GatekeeperService:
             password_hash = str(data.get("password_hash") or "")
             if password_hash:
                 self.current_password_hash = password_hash
-                self.password_version = int(data.get("version", 0))
+            self.password_version = int(data.get("version", 0))
         except Exception:
             pass
 
@@ -115,9 +130,20 @@ class GatekeeperService:
             "version": int(version),
             "timestamp": time.time(),
         }
+        Path(SYNC_PASSWORD_FILE).parent.mkdir(parents=True, exist_ok=True)
         with open(SYNC_PASSWORD_FILE, "w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2)
         self.current_password_hash = password_hash
+        self.password_version = int(version)
+
+    def _save_password_version(self, version: int) -> None:
+        payload = {
+            "version": int(version),
+            "timestamp": time.time(),
+        }
+        Path(SYNC_PASSWORD_FILE).parent.mkdir(parents=True, exist_ok=True)
+        with open(SYNC_PASSWORD_FILE, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2)
         self.password_version = int(version)
 
     def _apply_cloud_password(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -134,7 +160,19 @@ class GatekeeperService:
             # Backward compatibility while the current Apps Script deployment is replaced.
             new_hash = hashlib.sha256(global_password.encode("utf-8")).hexdigest()
         else:
-            return {"synced": False, "online": True, "message": "Global password is unavailable"}
+            if remote_version < self.password_version:
+                return {"synced": False, "online": True, "message": "Password version rollback rejected"}
+            updated = remote_version != self.password_version
+            if updated or os.path.exists(SYNC_PASSWORD_FILE):
+                self._save_password_version(remote_version)
+            return {
+                "synced": True,
+                "online": True,
+                "updated": updated,
+                "version": remote_version,
+                "password_available": bool(data.get("password_available", True)),
+                "server_verified": True,
+            }
         if remote_version < self.password_version:
             return {"synced": False, "online": True, "message": "Password version rollback rejected"}
 
@@ -159,9 +197,9 @@ class GatekeeperService:
             }
 
         try:
-            response = requests.get(
+            response = requests.post(
                 GOOGLE_APPS_SCRIPT_URL,
-                params={"action": "sync_password", "machine_id": self.machine_id},
+                json={"action": "service_status", "machine_id": self.machine_id},
                 timeout=3,
             )
             if response.status_code != 200:
@@ -170,7 +208,21 @@ class GatekeeperService:
                     "online": True,
                     "message": "Authorization service rejected the request",
                 }
-            return self._apply_cloud_password(response.json())
+            data = response.json()
+            if data.get("status") == "ERROR" and "Unknown POST action" in str(data.get("message") or ""):
+                legacy_response = requests.get(
+                    GOOGLE_APPS_SCRIPT_URL,
+                    params={"action": "sync_password", "machine_id": self.machine_id},
+                    timeout=3,
+                )
+                if legacy_response.status_code != 200:
+                    return {
+                        "synced": False,
+                        "online": True,
+                        "message": "Authorization service rejected the request",
+                    }
+                data = legacy_response.json()
+            return self._apply_cloud_password(data)
         except Exception:
             return {
                 "synced": False,
@@ -199,12 +251,38 @@ class GatekeeperService:
         if blocked:
             raise RuntimeError(f"Access blocked: {reason}. {int(remaining)} seconds remaining")
 
-        sync_info = self.sync_remote_password_from_super_admin()
-        if not sync_info.get("synced"):
-            raise AuthenticationUnavailableError("Internet connection required")
+        if "script.google.com" not in GOOGLE_APPS_SCRIPT_URL or "YOUR_SCRIPT_ID_HERE" in GOOGLE_APPS_SCRIPT_URL:
+            raise AuthenticationUnavailableError("Authorization service is not configured")
 
-        password_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
-        if password_hash == self.current_password_hash:
+        try:
+            response = requests.post(
+                GOOGLE_APPS_SCRIPT_URL,
+                json={
+                    "action": "verify_password",
+                    "machine_id": self.machine_id,
+                    "password": password,
+                },
+                timeout=5,
+            )
+            if response.status_code != 200:
+                raise AuthenticationUnavailableError("Authorization service rejected the request")
+            data = response.json()
+            if data.get("status") == "ERROR" and "Unknown POST action" in str(data.get("message") or ""):
+                sync_info = self.sync_remote_password_from_super_admin()
+                if not sync_info.get("synced"):
+                    raise AuthenticationUnavailableError("Internet connection required")
+                verified = hashlib.sha256(password.encode("utf-8")).hexdigest() == self.current_password_hash
+            else:
+                sync_info = self._apply_cloud_password(data)
+                if not sync_info.get("synced"):
+                    raise AuthenticationUnavailableError(sync_info.get("message") or "Authorization service unavailable")
+                verified = data.get("verified") is True
+        except AuthenticationUnavailableError:
+            raise
+        except Exception as exc:
+            raise AuthenticationUnavailableError("Internet connection required") from exc
+
+        if verified:
             self.failed_attempts = 0
             self._save_session("master_password")
             return True
