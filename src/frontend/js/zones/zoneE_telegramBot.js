@@ -30,25 +30,22 @@ window.ZoneETelegramBot = {
         const cfg = this.getSettings();
         const currentRoundIdx = S.currentRound || 0;
         const roundResult = S.roundResults[currentRoundIdx];
-        const category = (S.settings && S.settings.roundCategories) ? S.settings.roundCategories[currentRoundIdx] || `Column #${currentRoundIdx + 1}` : `Column #${currentRoundIdx + 1}`;
+        const category = (S.settings && S.settings.roundCategories) ? S.settings.roundCategories[currentRoundIdx] || `Round #${currentRoundIdx + 1}` : `Round #${currentRoundIdx + 1}`;
 
         let html = `
             <div style="background:var(--bg-surface); padding:8px 10px; border-radius:4px; border:1px solid var(--border-light); margin-bottom:10px;">
                 <div style="font-size:11px; font-weight:700; color:var(--accent-cyan); display:flex; justify-content:space-between; align-items:center;">
-                    <span>📲 Live Stage Telegram Hub</span>
-                    <span style="font-size:10px; color:#ffaa00;">Col #${currentRoundIdx + 1}: ${category}</span>
-                </div>
-                <div style="font-size:10px; color:var(--text-secondary); margin-top:3px;">
-                    Send instant congratulation cards to Group/Channel, or DM directly to User account when draws finish.
+                    <span>Telegram</span>
+                    <span style="font-size:10px; color:#ffaa00;">Round #${currentRoundIdx + 1} · ${category}</span>
                 </div>
             </div>
 
             <!-- Bot Token & Group ID Config -->
             <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-light); border-radius:4px; padding:8px; margin-bottom:12px; display:flex; flex-direction:column; gap:6px;">
-                <div style="font-size:10px; font-weight:700; color:#fff;">Bot Credentials & Group ID</div>
+                <div style="font-size:10px; font-weight:700; color:#fff;">Credentials</div>
                 <div style="display:flex; gap:6px;">
-                    <input id="tg_bot_token_input" type="password" value="${cfg.botToken || ''}" placeholder="Bot Token (from @BotFather)..." style="flex:2; background:#101018; border:1px solid var(--border-light); border-radius:3px; padding:4px 6px; color:#fff; font-size:10px;">
-                    <input id="tg_group_id_input" type="text" value="${cfg.groupChatId || ''}" placeholder="Group/Channel Chat ID (@or -100...)..." style="flex:1.5; background:#101018; border:1px solid var(--border-light); border-radius:3px; padding:4px 6px; color:#fff; font-size:10px;">
+                    <input id="tg_bot_token_input" type="password" value="${cfg.botToken || ''}" placeholder="Bot Token" style="flex:2; background:#101018; border:1px solid var(--border-light); border-radius:3px; padding:4px 6px; color:#fff; font-size:10px;">
+                    <input id="tg_group_id_input" type="text" value="${cfg.groupChatId || ''}" placeholder="Group Chat ID" style="flex:1.5; background:#101018; border:1px solid var(--border-light); border-radius:3px; padding:4px 6px; color:#fff; font-size:10px;">
                     <button onclick="ZoneETelegramBot.handleSaveConfig()" class="btn-arena btn-arena-primary" style="padding:4px 8px; font-size:10px; font-weight:700;">Save</button>
                 </div>
             </div>
@@ -57,9 +54,7 @@ window.ZoneETelegramBot = {
         // Check if there are winners in current draw round
         if (!roundResult || !roundResult.winners || roundResult.winners.length === 0) {
             html += `
-                <div style="border:1px dashed var(--border-light); border-radius:4px; padding:24px 10px; text-align:center; color:var(--text-muted); font-size:11px;">
-                    No winners drawn yet for Col #${currentRoundIdx + 1}.<br>Spin the deck to reveal winners instantly!
-                </div>
+                <div class="ui-empty-state" style="border:1px dashed var(--border-light); border-radius:4px; padding:24px 10px;">No Winners</div>
             `;
             return containerEl.innerHTML = html;
         }
@@ -67,9 +62,9 @@ window.ZoneETelegramBot = {
         // Bulk Actions Bar
         html += `
             <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,229,163,0.05); border:1px solid rgba(0,229,163,0.3); border-radius:4px; padding:6px 8px; margin-bottom:8px;">
-                <span style="font-size:10px; font-weight:700; color:#00e5a3;">${roundResult.winners.length} Winners Ready to Send</span>
+                <span style="font-size:10px; font-weight:700; color:#00e5a3;">${roundResult.winners.length} Winners</span>
                 <button onclick="ZoneETelegramBot.broadcastAllWinners(${currentRoundIdx})" class="btn-arena btn-arena-primary" style="padding:4px 10px; font-size:10px; font-weight:700;">
-                    📢 Send All to Group
+                    <i data-lucide="send"></i> Send All
                 </button>
             </div>
             <div style="display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto; padding-right:2px;">
@@ -85,21 +80,21 @@ window.ZoneETelegramBot = {
                 <div style="display:flex; flex-direction:column; gap:6px; padding:8px; background:rgba(255,255,255,0.02); border:1px solid var(--border-light); border-radius:4px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div style="display:flex; flex-direction:column; overflow:hidden;">
-                            <span style="font-size:12px; font-weight:700; color:#fff;">Slot #${idx + 1}: ${name}</span>
+                            <span style="font-size:12px; font-weight:700; color:#fff;">Winner #${idx + 1}: ${name}</span>
                             <span style="font-size:9px; color:var(--text-secondary);">ID: ${idStr}</span>
                         </div>
                         <div style="display:flex; gap:4px;">
-                            <button onclick="ZoneETelegramBot.sendSingleToGroup(${currentRoundIdx}, ${idx})" title="Send this winner announcement to Group/Channel" style="background:rgba(0,229,163,0.15); border:1px solid #00e5a3; color:#00e5a3; padding:4px 8px; border-radius:3px; font-size:10px; font-weight:700; cursor:pointer;">
-                                🚀 Group
+                            <button onclick="ZoneETelegramBot.sendSingleToGroup(${currentRoundIdx}, ${idx})" title="Send to Group" style="background:rgba(0,229,163,0.15); border:1px solid #00e5a3; color:#00e5a3; padding:4px 8px; border-radius:3px; font-size:10px; font-weight:700; cursor:pointer;">
+                                <i data-lucide="send"></i> Group
                             </button>
-                            <button onclick="ZoneETelegramBot.sendDirectToUser(${currentRoundIdx}, ${idx})" title="Direct DM/Chat directly to this user's personal Telegram Account ID" style="background:rgba(0,195,255,0.15); border:1px solid #00c3ff; color:#00c3ff; padding:4px 8px; border-radius:3px; font-size:10px; font-weight:700; cursor:pointer;">
-                                💬 Direct DM
+                            <button onclick="ZoneETelegramBot.sendDirectToUser(${currentRoundIdx}, ${idx})" title="Message Winner" style="background:rgba(0,195,255,0.15); border:1px solid #00c3ff; color:#00c3ff; padding:4px 8px; border-radius:3px; font-size:10px; font-weight:700; cursor:pointer;">
+                                <i data-lucide="message-circle"></i> Message
                             </button>
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:4px;">
-                        <span style="font-size:9px; color:var(--text-secondary);">User TG Account/ID:</span>
-                        <input type="text" id="tg_user_input_${currentRoundIdx}_${idx}" value="${tgAccount}" placeholder="@username or Chat ID..." style="flex:1; background:#101018; border:1px solid var(--border-light); border-radius:3px; padding:2px 6px; color:#fff; font-size:10px;" onchange="ZoneETelegramBot.updateUserTelegram(${currentRoundIdx}, ${idx}, this.value)">
+                        <span style="font-size:9px; color:var(--text-secondary);">Telegram Account</span>
+                        <input type="text" id="tg_user_input_${currentRoundIdx}_${idx}" value="${tgAccount}" placeholder="Username / Chat ID" style="flex:1; background:#101018; border:1px solid var(--border-light); border-radius:3px; padding:2px 6px; color:#fff; font-size:10px;" onchange="ZoneETelegramBot.updateUserTelegram(${currentRoundIdx}, ${idx}, this.value)">
                     </div>
                 </div>
             `;
@@ -114,7 +109,7 @@ window.ZoneETelegramBot = {
         const groupIn = document.getElementById('tg_group_id_input');
         if (!tokenIn || !groupIn) return;
         this.saveSettings(tokenIn.value, groupIn.value);
-        alert('✅ Telegram Bot configuration saved successfully!');
+        alert('Telegram settings saved.');
         if (window.ZoneE) ZoneE.render();
     },
 
@@ -131,11 +126,11 @@ window.ZoneETelegramBot = {
         const cfg = this.getSettings();
         const token = cfg.botToken;
         if (!token) {
-            alert('⚠️ Please enter and save your Telegram Bot Token first!');
+            alert('Telegram Bot Token is required.');
             return false;
         }
         if (!chatId) {
-            alert('⚠️ Missing Target Chat ID / Group ID!');
+            alert('Group Chat ID is required.');
             return false;
         }
 
@@ -155,12 +150,12 @@ window.ZoneETelegramBot = {
                 return true;
             } else {
                 console.error("Telegram API Error:", data);
-                alert(`⚠️ Telegram Error: ${data.description || 'Unknown error'}`);
+                alert(`Telegram error: ${data.description || 'Unknown error'}`);
                 return false;
             }
         } catch (err) {
             console.error("Network or CORS Error:", err);
-            alert(`⚠️ Network/CORS Error calling Telegram API. Make sure your PC has internet access and valid token.`);
+            alert('Telegram connection failed. Check the internet connection and Bot Token.');
             return false;
         }
     },
@@ -170,16 +165,16 @@ window.ZoneETelegramBot = {
         const r = S.roundResults[roundIdx];
         if (!r || !r.winners || !r.winners[winnerIdx]) return;
         const w = r.winners[winnerIdx];
-        const category = r.category || `Column #${roundIdx + 1}`;
+        const category = r.category || `Round ${roundIdx + 1}`;
         const cfg = this.getSettings();
         if (!cfg.groupChatId) {
-            alert("⚠️ Please enter your Group/Channel Chat ID first!");
+            alert("Group Chat ID is required.");
             return;
         }
 
         const msg = `🎉 <b>CONGRATULATIONS!</b> 🎉\n\n🏆 <b>Winner:</b> ${w.name || w.id}\n🆔 <b>ID:</b> ${w.id || 'N/A'}\n🎁 <b>Prize Category:</b> ${category}\n\n🚀 <i>Lucky Draw Pro Studio Live Stage</i>`;
         const success = await this.sendTelegramAPI(cfg.groupChatId, msg);
-        if (success) alert(`✅ Announcement for ${w.name} sent to Group successfully!`);
+        if (success) alert(`Announcement sent for ${w.name}.`);
     },
 
     async sendDirectToUser(roundIdx, winnerIdx) {
@@ -187,12 +182,12 @@ window.ZoneETelegramBot = {
         const r = S.roundResults[roundIdx];
         if (!r || !r.winners || !r.winners[winnerIdx]) return;
         const w = r.winners[winnerIdx];
-        const category = r.category || `Column #${roundIdx + 1}`;
+        const category = r.category || `Round ${roundIdx + 1}`;
         
         const inputEl = document.getElementById(`tg_user_input_${roundIdx}_${winnerIdx}`);
         const userChatId = inputEl ? inputEl.value.trim() : (w.telegram || w.phone || w.id);
         if (!userChatId) {
-            alert(`⚠️ Please enter a valid Telegram @username or Chat ID for ${w.name} first!`);
+            alert(`Telegram username or Chat ID is required for ${w.name}.`);
             return;
         }
 
@@ -205,10 +200,10 @@ window.ZoneETelegramBot = {
         const S = EngineState;
         const r = S.roundResults[roundIdx];
         if (!r || !r.winners || r.winners.length === 0) return;
-        const category = r.category || `Column #${roundIdx + 1}`;
+        const category = r.category || `Round ${roundIdx + 1}`;
         const cfg = this.getSettings();
         if (!cfg.groupChatId) {
-            alert("⚠️ Please enter your Group/Channel Chat ID first!");
+            alert("Group Chat ID is required.");
             return;
         }
 

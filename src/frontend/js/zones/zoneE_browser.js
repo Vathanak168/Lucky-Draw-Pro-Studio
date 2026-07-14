@@ -28,15 +28,15 @@ window.ZoneE = {
         el.innerHTML = `
             <div class="arena-panel-header">
                 <div class="arena-panel-title">
-                    <svg class="svg-icon highlight" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
-                    Pool · <span class="highlight">${activeCount} Active</span>
+                    <i data-lucide="users" class="highlight"></i>
+                    Participants · <span class="highlight">${activeCount} Eligible</span>
                 </div>
             </div>
 
             <!-- Resolume Browser Tabs -->
             <div class="arena-tab-bar">
                 <button class="arena-tab-btn ${this.activeTab === 'pool' ? 'active' : ''}" onclick="ZoneE.setTab('pool')">
-                    ⚡ Stage Controls
+                    Live Controls
                 </button>
                 <button class="arena-tab-btn ${this.activeTab === 'reports' ? 'active' : ''}" onclick="ZoneE.setTab('reports')">
                     Winners (${totalWinners})
@@ -58,18 +58,18 @@ window.ZoneE = {
                         <div style="display:flex; gap:6px;">
                             <button class="btn-arena btn-arena-primary" onclick="Studio.exportReportToExcel()" style="flex:1;">
                                 <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                                Export Excel
+                                Export
                             </button>
-                            <button class="btn-arena" onclick="Studio.showReport()" style="flex:1;">View Table</button>
+                            <button class="btn-arena" onclick="Studio.showReport()" style="flex:1;">Show Details</button>
                         </div>
 
                         <div style="overflow-y:auto; max-height:420px; border:1px solid var(--border-light); border-radius:var(--radius-sm); background:var(--bg-surface);">
                             ${results.length === 0 ? `
-                                <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:11px;">No winners yet.</div>
+                                <div class="ui-empty-state" style="padding:20px;">No Winners</div>
                             ` : results.map(r => `
                                 <div style="padding:8px 10px; border-bottom:1px solid var(--border-light);">
                                     <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--accent-cyan);">
-                                        <span>Col #${r.round} (${r.category})</span>
+                                        <span>Round #${r.round} (${r.category})</span>
                                         <span>${r.winners.length} Winners</span>
                                     </div>
                                     <div style="font-size:11px; color:#fff; margin-top:4px;">
@@ -140,7 +140,7 @@ window.ZoneE = {
     },
 
     clearAll() {
-        if (!confirm('Clear all participants from the pool?')) return;
+        if (!confirm('Remove all participants? This cannot be undone.')) return;
         EngineState.saveParticipantList([]);
         this.render();
         if (window.ZoneC) ZoneC.render();

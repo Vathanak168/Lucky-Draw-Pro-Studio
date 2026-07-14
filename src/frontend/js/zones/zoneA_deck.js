@@ -28,13 +28,13 @@ window.ZoneA = {
             tabsHtml += `
                 <button class="deck-tab-btn ${activeTab === cat ? 'active' : ''}" onclick="ZoneA.selectCategoryTab('${cat.replace(/'/g, "\\'")}')" style="display:inline-flex; align-items:center; gap:6px; ${isEmptyStyle}">
                     <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${badgeColor}; box-shadow:0 0 6px ${badgeColor};"></span>
-                    ${cat.toUpperCase()} (${count})
+                    ${cat} (${count})
                 </button>
             `;
         });
         tabsHtml += `
-            <button class="deck-tab-btn" onclick="Studio.openCategoryManager()" title="Manage Categories & Decks" style="border:1px dashed var(--accent-cyan); color:var(--accent-cyan); font-weight:800; display:inline-flex; align-items:center; gap:4px;">
-                ⚙️ Manage Decks
+            <button class="deck-tab-btn" onclick="Studio.openCategoryManager()" title="Prize Categories" style="border:1px dashed var(--accent-cyan); color:var(--accent-cyan); font-weight:800; display:inline-flex; align-items:center; gap:4px;">
+                <i data-lucide="tags"></i> Prize Categories
             </button>
         `;
 
@@ -56,11 +56,11 @@ window.ZoneA = {
             const winCount = roundResult ? roundResult.winners.length : 0;
             const targetWinCount = rc.winnerCount || 1;
 
-            let statusPill = `<span style="color:var(--success-color); background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:3px; font-size:9px;">READY</span>`;
+            let statusPill = `<span style="color:var(--success-color); background:rgba(48,209,88,0.12); padding:2px 6px; border-radius:999px; font-size:10px;">Ready</span>`;
             if (isDrawing) {
-                statusPill = `<span style="color:var(--accent-blue); background:rgba(0,180,216,0.2); padding:2px 6px; border-radius:3px; font-size:9px;">SPINNING...</span>`;
+                statusPill = `<span style="color:var(--accent-blue); background:rgba(100,210,255,0.12); padding:2px 6px; border-radius:999px; font-size:10px;">Drawing</span>`;
             } else if (isCompleted) {
-                statusPill = `<span style="color:var(--warning-color); background:rgba(245,158,11,0.2); padding:2px 6px; border-radius:3px; font-size:9px;">DONE (${winCount})</span>`;
+                statusPill = `<span style="color:var(--warning-color); background:rgba(255,159,10,0.12); padding:2px 6px; border-radius:999px; font-size:10px;">Completed (${winCount})</span>`;
             }
 
             columnsHtml += `
@@ -71,11 +71,11 @@ window.ZoneA = {
                      ondragleave="ZoneA.onDragLeave(event)"
                      ondrop="ZoneA.onDrop(event, ${i})"
                      onclick="ZoneA.selectSlot(${i})"
-                     title="Click to select · Drag to reorder column position">
+                     title="Reorder Round">
                     <div>
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
                             <span style="display:flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:10px; color:var(--text-secondary);">
-                                <span style="cursor:grab; opacity:0.6;">⠿</span> COL #${i + 1}
+                                <i data-lucide="grip-vertical" style="cursor:grab; opacity:0.6;"></i> Round #${i + 1}
                             </span>
                             ${statusPill}
                         </div>
@@ -87,21 +87,21 @@ window.ZoneA = {
                             ${targetWinCount} ${targetWinCount > 1 ? 'Winners' : 'Winner'}
                         </div>
                         <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">
-                            ${rc.dataSource === 'numeric' ? 'Number' : 'Name'} · ${rc.animationStyle}
+                            ${rc.dataSource === 'numeric' ? 'Number Range' : (rc.dataSource === 'id' ? 'ID Ticket' : 'Participant Name')} · ${rc.animationStyle}
                         </div>
                     </div>
 
                     <div style="margin-top:12px; padding-top:8px; border-top:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between;">
                         <span style="font-size:10px; color:var(--text-secondary);">
-                            Slot: <span style="color:#fff;">#${i + 1}</span>
+                             Round <span style="color:#fff;">#${i + 1}</span>
                         </span>
                         <div style="display:flex; gap:4px;">
-                            <button class="btn-arena" onclick="event.stopPropagation(); ZoneA.duplicateSlot(${i})" style="padding:2px 6px; font-size:10px;">
-                                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                            <button class="btn-arena" onclick="event.stopPropagation(); ZoneA.duplicateSlot(${i})" title="Duplicate Round" style="padding:2px 6px; font-size:10px;">
+                                <i data-lucide="copy"></i>
                             </button>
                             ${totalRounds > 1 ? `
-                            <button class="btn-arena btn-arena-danger" onclick="event.stopPropagation(); ZoneA.deleteSlot(${i})" style="padding:2px 6px; font-size:10px;">
-                                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                            <button class="btn-arena btn-arena-danger" onclick="event.stopPropagation(); ZoneA.deleteSlot(${i})" title="Delete Round" style="padding:2px 6px; font-size:10px;">
+                                <i data-lucide="trash-2"></i>
                             </button>
                             ` : ''}
                         </div>
@@ -111,19 +111,19 @@ window.ZoneA = {
         }
 
         if (displayedCount === 0) {
-            columnsHtml = `<div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:12px;">No slots created inside "${activeTab}". Click "Add Column" above.</div>`;
+            columnsHtml = `<div class="ui-empty-state" style="flex:1; display:flex; align-items:center; justify-content:center;">No Rounds</div>`;
         }
 
         el.innerHTML = `
             <div class="arena-panel-header">
                 <div class="arena-panel-title">
                     <svg class="svg-icon highlight" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                    Composition Matrix · <span class="highlight">${totalRounds} Columns</span>
+                    Draw Rounds · <span class="highlight">${totalRounds} ${totalRounds === 1 ? 'Round' : 'Rounds'}</span>
                 </div>
                 <div style="display:flex; gap:6px;">
                     <button class="btn-arena btn-arena-primary" onclick="ZoneA.addSlot()">
                         <svg class="svg-icon" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg>
-                        Add Column
+                        Add Round
                     </button>
                 </div>
             </div>
@@ -186,7 +186,7 @@ window.ZoneA = {
     deleteSlot(index) {
         const S = EngineState;
         if (S.totalRounds <= 1) return;
-        if (!confirm(`Delete Column #${index + 1}?`)) return;
+        if (!confirm(`Delete Round ${index + 1}?`)) return;
 
         S.roundConfigs.splice(index, 1);
         S.totalRounds--;

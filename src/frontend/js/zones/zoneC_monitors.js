@@ -15,7 +15,7 @@ window.ZoneC = {
         if (!el) return;
 
         const rc = S.roundConfigs[S.currentRound] || S.getDefaultRoundConfig(S.currentRound);
-        const category = rc.category || `Column #${S.currentRound + 1}`;
+        const category = rc.category || `Round ${S.currentRound + 1}`;
         const targetWinners = rc.winnerCount || 1;
         const dataSource = rc.dataSource || 'list';
 
@@ -42,19 +42,16 @@ window.ZoneC = {
                 <div class="monitor-box" id="outputMonitorBox" style="flex:1.4;">
                     <div class="arena-panel-header">
                         <div class="arena-panel-title">
-                            <svg class="svg-icon highlight" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                            Mini Screen · <span class="highlight">Live</span>
+                            <i data-lucide="monitor-play" class="highlight"></i>
+                            Stage Preview · <span class="highlight">Live</span>
                         </div>
                         <div style="display:flex; gap:4px;">
-                            <button class="btn-arena" onclick="ZoneC.zoomManual(2)" style="padding:1px 6px; font-size:10px;">A+</button>
-                            <button class="btn-arena" onclick="ZoneC.zoomManual(-2)" style="padding:1px 6px; font-size:10px;">A−</button>
+                            <button class="btn-arena" onclick="ZoneC.zoomManual(2)" title="Increase Text" style="padding:1px 6px; font-size:10px;"><i data-lucide="zoom-in"></i></button>
+                            <button class="btn-arena" onclick="ZoneC.zoomManual(-2)" title="Decrease Text" style="padding:1px 6px; font-size:10px;"><i data-lucide="zoom-out"></i></button>
                         </div>
                     </div>
                     <div class="monitor-screen" id="stageOutputScreen" style="position:relative;">
                         <div id="drawArea" class="draw-area">${existingDrawAreaHTML}</div>
-                        <div style="position:absolute; bottom:6px; right:8px; font-size:9px; font-family:var(--font-mono); color:var(--text-muted); opacity:0.65; pointer-events:none; letter-spacing:0.5px; text-transform:uppercase; z-index:10;">
-                            [ LIVE PROJECTOR PREVIEW · ${rc.layoutStyle || 'Grid Boxes'} ]
-                        </div>
                     </div>
                 </div>
 
@@ -62,28 +59,28 @@ window.ZoneC = {
                 <div class="monitor-box" id="previewMonitorBox" style="flex:0.8; border-bottom:none;">
                     <div class="arena-panel-header">
                         <div class="arena-panel-title">
-                            <svg class="svg-icon" style="color:var(--accent-blue);" viewBox="0 0 24 24"><path d="M2 12h20M2 12l4-4m-4 4 4 4"/></svg>
-                            Column Info
+                            <i data-lucide="info" style="color:var(--accent-blue);"></i>
+                            Round Details
                         </div>
                     </div>
                     <div style="padding:12px; font-size:11px; display:flex; flex-direction:column; justify-content:center; gap:8px; background:var(--bg-panel); flex:1;">
                         <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-light); padding-bottom:6px;">
-                            <span style="color:var(--text-secondary);">Col:</span>
+                            <span style="color:var(--text-secondary);">Round</span>
                             <span style="color:#fff;">#${S.currentRound + 1} (${category})</span>
                         </div>
                         <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-light); padding-bottom:6px;">
-                            <span style="color:var(--text-secondary);">Source:</span>
+                            <span style="color:var(--text-secondary);">Draw Source</span>
                             <span style="color:var(--accent-cyan);">
-                                ${dataSource === 'numeric' ? 'Number' : (dataSource === 'id' ? 'ID / Ticket #' : 'Name')} (${activePoolCount} active)
+                                ${dataSource === 'numeric' ? 'Number Range' : (dataSource === 'id' ? 'ID Ticket' : 'Participant Name')} (${activePoolCount} eligible)
                             </span>
                         </div>
                         <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-light); padding-bottom:6px;">
-                            <span style="color:var(--text-secondary);">Odds:</span>
+                            <span style="color:var(--text-secondary);">Odds</span>
                             <span style="font-family:var(--font-mono); color:var(--warning-color);">${oddsText}</span>
                         </div>
                         <div style="display:flex; justify-content:space-between;">
-                            <span style="color:var(--text-secondary);">Effect:</span>
-                            <span style="color:#ccc; text-transform:uppercase;">${rc.animationStyle} (${S.displaySettings.drawSpeed || 'normal'})</span>
+                            <span style="color:var(--text-secondary);">Reveal Style</span>
+                            <span style="color:#ccc;">${rc.animationStyle} (${S.displaySettings.drawSpeed || 'normal'})</span>
                         </div>
                     </div>
                 </div>

@@ -44,7 +44,7 @@ class VJConsoleMasterController {
         }
 
         if (!candidates.length) {
-            alert("No active candidates available in the pool! Please import participants first.");
+            alert("No eligible participants.");
             this.isDrawing = false;
             if (window.ZoneC_Monitors) window.ZoneC_Monitors.render();
             return;
