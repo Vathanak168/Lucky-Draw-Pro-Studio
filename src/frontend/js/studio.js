@@ -3,55 +3,6 @@
  * Connects all 5 Resolume Arena 7 zones to EngineState and DOM.
  */
 
-window.AudioSynth = {
-    playTick() {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(850, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.04);
-            gain.gain.setValueAtTime(0.12, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.04);
-        } catch(e) {}
-    },
-    playFanfare() {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-            notes.forEach((freq, i) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.12);
-                gain.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.12);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.12 + 0.45);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start(ctx.currentTime + i * 0.12);
-                osc.stop(ctx.currentTime + i * 0.12 + 0.45);
-            });
-        } catch(e) {}
-    },
-    triggerConfetti() {
-        if (window.confetti) {
-            window.confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-        }
-    },
-    playSound(soundName) {
-        if (soundName === 'victory' || soundName === 'fanfare' || soundName === 'celebration') {
-            this.playFanfare();
-        } else {
-            this.playTick();
-        }
-    }
-};
-
 window.Studio = {
     projectorState: {
         native: false,
@@ -2274,6 +2225,16 @@ window.Studio = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    Studio.init();
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const session = await StudioAPI.getAuthSession();
+        if (!session.unlocked || session.blocked) {
+            window.location.replace('login.html');
+            return;
+        }
+        document.documentElement.removeAttribute('data-auth-pending');
+        await Studio.init();
+    } catch (error) {
+        window.location.replace('login.html');
+    }
 });

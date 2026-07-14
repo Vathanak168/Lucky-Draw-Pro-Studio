@@ -1,5 +1,5 @@
 # src/backend/core/router.py
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 
 from src.backend.core.models import (
@@ -9,8 +9,13 @@ from src.backend.core.models import (
 from src.backend.core.pool_service import pool_service
 from src.backend.core.slots_service import slots_service
 from src.backend.core.projects_service import projects_service
+from src.backend.auth.dependencies import require_authenticated_session
 
-router = APIRouter(prefix="/api/core", tags=["Core VJ Console Engine"])
+router = APIRouter(
+    prefix="/api/core",
+    tags=["Core VJ Console Engine"],
+    dependencies=[Depends(require_authenticated_session)],
+)
 
 # ==================== POOL (CANDIDATES) ENDPOINTS ====================
 

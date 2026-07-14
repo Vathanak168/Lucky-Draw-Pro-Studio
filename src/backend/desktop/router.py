@@ -8,16 +8,21 @@ from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import quote
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from src.backend.desktop.history_report import build_history_workbook, safe_history_filename
 from src.backend.desktop.storage_service import desktop_storage
 from src.backend.desktop.telegram_service import TelegramApiError, telegram_service
+from src.backend.auth.dependencies import require_authenticated_session
 
 
-router = APIRouter(prefix="/api/desktop", tags=["Desktop Storage"])
+router = APIRouter(
+    prefix="/api/desktop",
+    tags=["Desktop Storage"],
+    dependencies=[Depends(require_authenticated_session)],
+)
 
 
 class DocumentRequest(BaseModel):

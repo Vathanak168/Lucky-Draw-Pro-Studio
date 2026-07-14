@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import wraps
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -9,6 +10,7 @@ from src.backend.desktop.history_report import safe_history_filename, write_hist
 from src.backend.desktop.projector_service import ProjectorOutputService, projector_output
 from src.backend.desktop.storage_service import DesktopStorageService, _safe_filename, desktop_storage
 from src.backend.desktop.telegram_service import TelegramService, telegram_service
+from src.backend.auth.gatekeeper import gatekeeper
 
 
 class DesktopBridge:
@@ -50,6 +52,25 @@ class DesktopBridge:
         if isinstance(result, (list, tuple)):
             return str(result[0]) if result else None
         return str(result)
+
+    def enter_workspace(self) -> Dict[str, Any]:
+        if not gatekeeper.is_unlocked:
+            raise PermissionError("Asta Studio is locked")
+        if self._window is None:
+            raise RuntimeError("Desktop window is not ready")
+
+        width, height = 1440, 900
+        self._window.resize(width, height)
+        try:
+            screens = list(webview.screens or [])
+            if screens:
+                screen = screens[0]
+                x = int(getattr(screen, "x", 0) + max(0, (getattr(screen, "width", width) - width) / 2))
+                y = int(getattr(screen, "y", 0) + max(0, (getattr(screen, "height", height) - height) / 2))
+                self._window.move(x, y)
+        except Exception:
+            pass
+        return {"ok": True}
 
     def get_startup_state(self) -> Dict[str, Any]:
         return self._storage.get_startup_state()
@@ -182,6 +203,21 @@ class DesktopBridge:
         if not selected:
             return {"ok": False, "cancelled": True}
         return {"ok": True, "asset": self._storage.import_asset(selected, "video" if is_video else "image")}
+
+def _authenticated_bridge_call(method):
+    @wraps(method)
+    def secured(self, *args, **kwargs):
+        if not gatekeeper.is_unlocked:
+            raise PermissionError("Asta Studio is locked")
+        return method(self, *args, **kwargs)
+
+    return secured
+
+
+for _method_name, _method in list(vars(DesktopBridge).items()):
+    if _method_name.startswith("_") or _method_name == "enter_workspace" or not callable(_method):
+        continue
+    setattr(DesktopBridge, _method_name, _authenticated_bridge_call(_method))
 
 
 desktop_bridge = DesktopBridge()

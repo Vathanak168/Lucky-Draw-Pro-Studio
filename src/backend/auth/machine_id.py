@@ -23,7 +23,10 @@ def get_hardware_fingerprint() -> str:
             try:
                 out = subprocess.check_output(
                     ['powershell', '-Command', '(Get-CimInstance Win32_ComputerSystemProduct).UUID'],
-                    universal_newlines=True, timeout=3
+                    universal_newlines=True,
+                    timeout=3,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                 ).strip()
                 if out:
                     raw_id += "_" + out

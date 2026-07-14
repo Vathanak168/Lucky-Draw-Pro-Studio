@@ -1,48 +1,61 @@
 // src/frontend/js/api.js
-const API_BASE = "http://127.0.0.1:8926/api";
+const API_BASE = window.location.protocol === 'file:' ? 'http://127.0.0.1:8926/api' : '/api';
 
 class StudioAPI {
+    static async request(path, options = {}) {
+        const res = await fetch(`${API_BASE}${path}`, options);
+        const contentType = res.headers.get('content-type') || '';
+        const payload = contentType.includes('application/json')
+            ? await res.json()
+            : { detail: await res.text() };
+
+        if (!res.ok) {
+            const detail = payload.detail;
+            const detailData = detail && typeof detail === 'object' ? detail : null;
+            const message = detailData?.message || (typeof detail === 'string' ? detail : '') || payload.message || 'Request Failed';
+            const error = new Error(message);
+            error.status = res.status;
+            error.data = detailData ? { ...payload, ...detailData } : payload;
+            throw error;
+        }
+        return payload;
+    }
+
     static async getAuthStatus() {
-        const res = await fetch(`${API_BASE}/auth/status`);
-        return await res.json();
+        return this.request('/auth/status');
+    }
+
+    static async getAuthSession() {
+        return this.request('/auth/session');
     }
 
     static async loginMasterPassword(password) {
-        const res = await fetch(`${API_BASE}/auth/login`, {
+        return this.request('/auth/login', {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ password })
         });
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.detail || "Authentication Failed");
-        }
-        return await res.json();
     }
 
     static async requestRemoteGmailUnlock(clientName) {
-        const res = await fetch(`${API_BASE}/auth/request-remote`, {
+        return this.request('/auth/request-remote', {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ client_name: clientName })
         });
-        return await res.json();
     }
 
     static async checkRemoteGmailUnlock() {
-        const res = await fetch(`${API_BASE}/auth/check-remote`);
-        return await res.json();
+        return this.request('/auth/check-remote');
     }
 
     static async logoutConsole() {
-        const res = await fetch(`${API_BASE}/auth/logout`, { method: "POST" });
-        return await res.json();
+        return this.request('/auth/logout', { method: "POST" });
     }
 
     static async syncSuperAdminPassword() {
         try {
-            const res = await fetch(`${API_BASE}/auth/sync-password`);
-            return await res.json();
+            return await this.request('/auth/sync-password');
         } catch (e) {
             return { synced: false, offline: true };
         }

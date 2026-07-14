@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-auth-pending>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asta Studio</title>
     <link rel="icon" type="image/svg+xml" href="assets/asta-mark.svg">
+    <style>html[data-auth-pending] body { visibility: hidden; }</style>
     <!-- Google Fonts: Modern Geometric UI & Broadcast Khmer Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -418,8 +419,10 @@
     <script src="js/macos_ui.js?v=7.1.0"></script>
 
     <!-- Engine Scripts -->
+    <script src="js/api.js?v=8.0.0"></script>
     <script src="js/desktop_storage.js?v=7.5.0"></script>
     <script src="js/projector_sync.js?v=7.0.0"></script>
+    <script src="js/core/audioSynth.js?v=7.5.1"></script>
     <script src="js/engine/state.js?v=7.4.0"></script>
     <script src="js/engine/virtual_scaler.js?v=6.0.1"></script>
     <script src="js/engine/animations.js?v=6.0.1"></script>

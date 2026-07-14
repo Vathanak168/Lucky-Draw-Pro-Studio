@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unlock Asta Studio</title>
+    <link rel="icon" type="image/svg+xml" href="assets/asta-mark.svg">
+    <link rel="stylesheet" href="styles/login.css?v=8.0.0">
+</head>
+<body>
+    <main class="login-shell">
+        <section class="login-panel" aria-labelledby="loginTitle">
+            <header class="login-brand">
+                <img src="assets/asta-mark.svg" alt="" class="login-brand-mark">
+                <h1 id="loginTitle">Asta Studio</h1>
+            </header>
+
+            <div class="auth-segmented" role="tablist" aria-label="Unlock method">
+                <button type="button" id="passwordTab" class="auth-segment active" role="tab" aria-selected="true" data-mode="password">
+                    Password
+                </button>
+                <button type="button" id="requestTab" class="auth-segment" role="tab" aria-selected="false" data-mode="request">
+                    Request Access
+                </button>
+            </div>
+
+            <div class="auth-content">
+                <form id="passwordForm" class="auth-form" autocomplete="on">
+                    <label for="passwordInput">Password</label>
+                    <div class="secure-field">
+                        <input id="passwordInput" name="password" type="password" autocomplete="current-password" spellcheck="false">
+                        <button type="button" id="passwordVisibilityButton" class="icon-button" title="Show Password" aria-label="Show Password">
+                            <i data-lucide="eye"></i>
+                        </button>
+                    </div>
+                    <button type="submit" id="unlockButton" class="primary-button">
+                        <span>Unlock</span>
+                        <i data-lucide="arrow-right"></i>
+                    </button>
+                </form>
+
+                <form id="requestForm" class="auth-form" hidden>
+                    <label for="deviceNameInput">Device Name</label>
+                    <input id="deviceNameInput" name="deviceName" type="text" autocomplete="off" maxlength="80">
+                    <button type="submit" id="requestAccessButton" class="primary-button">
+                        <span>Request Access</span>
+                        <i data-lucide="send"></i>
+                    </button>
+                </form>
+
+                <div id="pendingView" class="pending-view" hidden>
+                    <span class="activity-spinner" aria-hidden="true"></span>
+                    <strong>Waiting for Approval</strong>
+                    <button type="button" id="cancelRequestButton" class="secondary-button">Cancel Request</button>
+                </div>
+
+                <div id="authStatus" class="auth-status" data-state="idle" role="status" aria-live="polite">
+                    <span id="authStatusIcon" class="auth-status-icon"><i data-lucide="circle"></i></span>
+                    <span id="authStatusText"></span>
+                </div>
+            </div>
+
+            <div class="device-row">
+                <div class="device-label">
+                    <i data-lucide="monitor"></i>
+                    <span>Machine ID</span>
+                </div>
+                <code id="machineIdDisplay">Checking</code>
+                <button type="button" id="copyMachineIdButton" class="icon-button" title="Copy Machine ID" aria-label="Copy Machine ID" disabled>
+                    <i data-lucide="copy"></i>
+                </button>
+            </div>
+
+            <footer class="connection-row">
+                <span id="connectionDot" class="connection-dot" data-state="checking"></span>
+                <span id="connectionText">Checking Connection</span>
+                <button type="button" id="retryConnectionButton" class="icon-button connection-retry" title="Retry Connection" aria-label="Retry Connection" hidden>
+                    <i data-lucide="refresh-cw"></i>
+                </button>
+            </footer>
+        </section>
+    </main>
+
+    <script src="vendor/lucide.js?v=1.24.0"></script>
+    <script src="js/api.js?v=8.0.0"></script>
+    <script src="js/auth/login.js?v=8.0.0"></script>
+</body>
+</html>

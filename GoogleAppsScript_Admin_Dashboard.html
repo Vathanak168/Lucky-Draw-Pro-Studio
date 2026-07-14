@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Asta Studio Admin</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #05080d;
+      --surface: #081019;
+      --surface-raised: #0c1621;
+      --surface-active: #102333;
+      --border: #213244;
+      --border-strong: #31506a;
+      --text: #f4f8ff;
+      --text-secondary: #91a6bb;
+      --text-muted: #60758a;
+      --cyan: #12cfff;
+      --cyan-dark: #087d9c;
+      --green: #30d158;
+      --orange: #ffb340;
+      --red: #ff5a5f;
+      --blue: #4d9fff;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Arial, sans-serif;
+      --mono: "SF Mono", "Cascadia Mono", Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      letter-spacing: 0;
+    }
+
+    html,
+    body {
+      min-width: 320px;
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid rgba(18, 207, 255, 0.82);
+      outline-offset: 2px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .loading-screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid rgba(145, 166, 187, 0.28);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: 58px 42px minmax(0, 1fr);
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 18px;
+      background: rgba(8, 16, 25, 0.96);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .brand {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 34px;
+      display: block;
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-title {
+      overflow: hidden;
+      font-size: 14px;
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .brand-subtitle {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .topbar-spacer {
+      flex: 1;
+    }
+
+    .role-badge,
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      padding: 4px 8px;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 650;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .role-badge[data-role="superadmin"] {
+      border-color: rgba(18, 207, 255, 0.55);
+      color: var(--cyan);
+    }
+
+    .status-badge::before {
+      width: 6px;
+      height: 6px;
+      flex: 0 0 6px;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+
+    .status-badge[data-status="PENDING"] {
+      border-color: rgba(255, 179, 64, 0.38);
+      color: var(--orange);
+    }
+
+    .status-badge[data-status="CONFIRMED"] {
+      border-color: rgba(48, 209, 88, 0.38);
+      color: var(--green);
+    }
+
+    .status-badge[data-status="BLOCKED"] {
+      border-color: rgba(255, 90, 95, 0.42);
+      color: var(--red);
+    }
+
+    .icon-button {
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 34px;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .icon-button:hover:not(:disabled) {
+      border-color: var(--border);
+      background: var(--surface-raised);
+      color: var(--text);
+    }
+
+    .icon-button:disabled {
+      cursor: default;
+      opacity: 0.45;
+    }
+
+    .icon-button svg,
+    .button svg,
+    .nav-tab svg,
+    .notification-toggle svg,
+    .section-title svg {
+      width: 15px;
+      height: 15px;
+      stroke-width: 1.8;
+    }
+
+    .notification-toggle {
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .notification-toggle[data-enabled="true"] {
+      border-color: rgba(48, 209, 88, 0.4);
+      color: var(--green);
+    }
+
+    .notification-toggle:disabled {
+      cursor: default;
+      opacity: 0.55;
+    }
+
+    .primary-nav {
+      position: sticky;
+      top: 58px;
+      z-index: 20;
+      display: flex;
+      align-items: stretch;
+      gap: 2px;
+      padding: 0 18px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-tab {
+      height: 41px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 14px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .nav-tab:hover {
+      color: var(--text);
+    }
+
+    .nav-tab.active {
+      border-bottom-color: var(--cyan);
+      color: var(--text);
+    }
+
+    .view {
+      min-height: 0;
+    }
+
+    .requests-layout {
+      min-height: calc(100vh - 100px);
+      display: grid;
+      grid-template-columns: minmax(300px, 370px) minmax(0, 1fr);
+    }
+
+    .request-sidebar {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+    }
+
+    .filter-bar {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 3px;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .filter-button {
+      min-width: 0;
+      height: 32px;
+      padding: 0 5px;
+      overflow: hidden;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 11px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .filter-button:hover {
+      color: var(--text-secondary);
+      background: var(--surface-raised);
+    }
+
+    .filter-button.active {
+      border-color: var(--border-strong);
+      background: var(--surface-active);
+      color: var(--text);
+    }
+
+    .search-row {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .search-field {
+      position: relative;
+    }
+
+    .search-field svg {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 14px;
+      height: 14px;
+      color: var(--text-muted);
+    }
+
+    .search-field input,
+    .form-control {
+      width: 100%;
+      height: 36px;
+      min-width: 0;
+      padding: 0 11px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #06101a;
+      color: var(--text);
+    }
+
+    .search-field input {
+      padding-left: 32px;
+    }
+
+    .search-field input:focus,
+    .form-control:focus {
+      border-color: var(--cyan);
+      outline: 0;
+    }
+
+    .request-list {
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .request-item {
+      width: 100%;
+      min-height: 78px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 13px 14px;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      border-left: 3px solid transparent;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .request-item:hover {
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .request-item.active {
+      border-left-color: var(--cyan);
+      background: var(--surface-active);
+    }
+
+    .request-item-main {
+      min-width: 0;
+    }
+
+    .request-name,
+    .request-machine,
+    .request-time {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .request-name {
+      margin-bottom: 5px;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .request-machine {
+      color: var(--text-secondary);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .request-time {
+      color: var(--text-muted);
+      font-size: 10px;
+      text-align: right;
+    }
+
+    .empty-list {
+      padding: 32px 18px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .request-detail {
+      min-width: 0;
+      padding: 26px clamp(20px, 4vw, 50px);
+      overflow-y: auto;
+    }
+
+    .detail-empty {
+      min-height: 420px;
+      display: grid;
+      place-items: center;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .detail-empty svg {
+      width: 30px;
+      height: 30px;
+      margin-bottom: 10px;
+      stroke-width: 1.4;
+    }
+
+    .detail-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-heading {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .detail-heading h1 {
+      margin: 0 0 6px;
+      overflow-wrap: anywhere;
+      font-size: 20px;
+      font-weight: 680;
+      line-height: 1.25;
+    }
+
+    .detail-heading code {
+      color: var(--orange);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin: 22px 0;
+      border-top: 1px solid var(--border);
+      border-left: 1px solid var(--border);
+    }
+
+    .detail-field {
+      min-width: 0;
+      padding: 15px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-label {
+      margin-bottom: 5px;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .detail-value {
+      overflow-wrap: anywhere;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 2px;
+    }
+
+    .button {
+      min-width: 0;
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface-raised);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .button:hover:not(:disabled) {
+      border-color: var(--border-strong);
+      background: #122130;
+    }
+
+    .button:disabled {
+      cursor: default;
+      opacity: 0.45;
+    }
+
+    .button-primary {
+      border-color: #49d8ff;
+      background: var(--cyan-dark);
+      color: #ffffff;
+    }
+
+    .button-primary:hover:not(:disabled) {
+      background: #0a8daf;
+    }
+
+    .button-danger {
+      border-color: rgba(255, 90, 95, 0.58);
+      background: rgba(255, 90, 95, 0.1);
+      color: #ff9498;
+    }
+
+    .button-danger:hover:not(:disabled) {
+      border-color: var(--red);
+      background: rgba(255, 90, 95, 0.16);
+    }
+
+    .settings-view {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 28px 22px 48px;
+    }
+
+    .settings-header {
+      margin-bottom: 22px;
+    }
+
+    .settings-header h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 680;
+    }
+
+    .settings-section {
+      display: grid;
+      grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
+      gap: 28px;
+      padding: 24px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .settings-content {
+      min-width: 0;
+      max-width: 620px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .form-field {
+      min-width: 0;
+      display: grid;
+      gap: 6px;
+    }
+
+    .form-field label {
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .admin-list,
+    .audit-list {
+      border-top: 1px solid var(--border);
+    }
+
+    .admin-row,
+    .audit-row {
+      min-width: 0;
+      display: grid;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-row {
+      grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+
+    .admin-email,
+    .audit-target {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .audit-row {
+      grid-template-columns: 130px minmax(120px, 0.8fr) minmax(100px, 0.7fr) minmax(120px, 1fr);
+      color: var(--text-secondary);
+      font-size: 11px;
+    }
+
+    .audit-action {
+      color: var(--text);
+      font-family: var(--mono);
+    }
+
+    .text-button {
+      padding: 5px 7px;
+      border: 0;
+      border-radius: 5px;
+      background: transparent;
+      color: var(--red);
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .text-button:hover {
+      background: rgba(255, 90, 95, 0.1);
+    }
+
+    dialog {
+      width: min(92vw, 420px);
+      padding: 0;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--surface-raised);
+      color: var(--text);
+      box-shadow: 0 22px 70px rgba(0, 0, 0, 0.58);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.68);
+    }
+
+    .dialog-header,
+    .dialog-body,
+    .dialog-actions {
+      padding: 16px 18px;
+    }
+
+    .dialog-header {
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 100;
+      max-width: min(420px, calc(100vw - 36px));
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 11px 13px;
+      border: 1px solid var(--border-strong);
+      border-radius: 7px;
+      background: #0d1823;
+      color: var(--text);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42);
+      font-size: 12px;
+    }
+
+    .toast[data-state="success"] {
+      border-color: rgba(48, 209, 88, 0.5);
+    }
+
+    .toast[data-state="error"] {
+      border-color: rgba(255, 90, 95, 0.58);
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        gap: 9px;
+        padding: 0 12px;
+      }
+
+      .brand-subtitle,
+      .role-badge span,
+      .notification-toggle span {
+        display: none;
+      }
+
+      .notification-toggle {
+        width: 34px;
+        justify-content: center;
+        padding: 0;
+      }
+
+      .primary-nav {
+        padding: 0 10px;
+      }
+
+      .requests-layout {
+        display: block;
+      }
+
+      .request-sidebar {
+        max-height: 48vh;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .request-list {
+        max-height: 34vh;
+      }
+
+      .request-detail {
+        min-height: 52vh;
+        padding: 22px 16px 42px;
+      }
+
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .settings-view {
+        padding: 22px 16px 40px;
+      }
+
+      .settings-section {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row .button {
+        width: 100%;
+      }
+
+      .audit-row {
+        grid-template-columns: minmax(100px, 0.7fr) minmax(0, 1fr);
+      }
+
+      .audit-actor,
+      .audit-target {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .loading-spinner {
+        animation-duration: 1.6s;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section id="loadingScreen" class="loading-screen">
+    <div class="loading-state">
+      <span class="loading-spinner" aria-hidden="true"></span>
+      <span id="loadingText">Loading Asta Studio Admin</span>
+    </div>
+  </section>
+
+  <main id="appShell" class="app-shell" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 64 64" role="img" aria-label="Asta Studio">
+          <rect x="2" y="2" width="60" height="60" rx="8" fill="#08111b"></rect>
+          <rect x="2.5" y="2.5" width="59" height="59" rx="7.5" fill="none" stroke="#263747"></rect>
+          <g fill="#f5f8fb">
+            <path d="M31 8 17 13.8l7.4 14.4 7.8-8.4z"></path>
+            <path d="M35 8.8 50 16.5 38.5 29l-2.1-11.3z"></path>
+            <path d="M52 20.5V38l-15.9-3.4 8.3-7z"></path>
+            <path d="M48.8 42 34 54l-6.4-15.2 11.7 4.7z"></path>
+            <path d="M29.4 55 14.7 46.2 27.2 36l.5 12.1z"></path>
+            <path d="M12 41.5V23.8l15.7 7.3-8.4 6.6z"></path>
+          </g>
+          <path fill="#12cfff" d="M32 20.5c1.15 6.9 2.6 8.35 9.5 9.5-6.9 1.15-8.35 2.6-9.5 9.5-1.15-6.9-2.6-8.35-9.5-9.5 6.9-1.15 8.35-2.6 9.5-9.5z"></path>
+        </svg>
+        <div class="brand-copy">
+          <div class="brand-title">Asta Studio</div>
+          <div class="brand-subtitle">Admin Dashboard</div>
+        </div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <button id="notificationToggle" class="notification-toggle" type="button" title="Request Notifications" hidden>
+        <i data-lucide="bell"></i>
+        <span>Notifications</span>
+      </button>
+      <span id="roleBadge" class="role-badge"><span>Admin</span></span>
+      <button id="refreshButton" class="icon-button" type="button" title="Refresh" aria-label="Refresh">
+        <i data-lucide="refresh-cw"></i>
+      </button>
+    </header>
+
+    <nav class="primary-nav" aria-label="Dashboard views">
+      <button class="nav-tab active" type="button" data-view="requests">
+        <i data-lucide="inbox"></i>
+        <span>Requests</span>
+      </button>
+      <button id="settingsTab" class="nav-tab" type="button" data-view="settings" hidden>
+        <i data-lucide="shield-check"></i>
+        <span>Super Admin</span>
+      </button>
+    </nav>
+
+    <section id="requestsView" class="view requests-layout">
+      <aside class="request-sidebar">
+        <div class="filter-bar" aria-label="Request filters">
+          <button class="filter-button active" type="button" data-filter="all">All <span id="countAll">0</span></button>
+          <button class="filter-button" type="button" data-filter="pending">Pending <span id="countPending">0</span></button>
+          <button class="filter-button" type="button" data-filter="confirmed">Confirmed <span id="countConfirmed">0</span></button>
+          <button class="filter-button" type="button" data-filter="blocked">Blocked <span id="countBlocked">0</span></button>
+        </div>
+        <div class="search-row">
+          <div class="search-field">
+            <i data-lucide="search"></i>
+            <input id="requestSearch" type="search" placeholder="Search" autocomplete="off" aria-label="Search requests">
+          </div>
+        </div>
+        <div id="requestList" class="request-list"></div>
+      </aside>
+      <section id="requestDetail" class="request-detail" aria-live="polite"></section>
+    </section>
+
+    <section id="settingsView" class="view settings-view" hidden>
+      <header class="settings-header">
+        <h1>Super Admin</h1>
+      </header>
+
+      <section class="settings-section">
+        <div class="section-title"><i data-lucide="key-round"></i><span>Security</span></div>
+        <div class="settings-content">
+          <form id="passwordForm" class="form-grid" autocomplete="off">
+            <div class="form-field">
+              <label for="newPasswordInput">New Password</label>
+              <input id="newPasswordInput" class="form-control" type="password" minlength="6" maxlength="128" required autocomplete="new-password">
+            </div>
+            <div class="form-field">
+              <label for="confirmPasswordInput">Confirm Password</label>
+              <input id="confirmPasswordInput" class="form-control" type="password" minlength="6" maxlength="128" required autocomplete="new-password">
+            </div>
+            <div>
+              <button class="button button-primary" type="submit">
+                <i data-lucide="save"></i>
+                <span>Change Password</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <div class="section-title"><i data-lucide="users"></i><span>Administrators</span></div>
+        <div class="settings-content">
+          <form id="adminForm" class="form-row" autocomplete="off">
+            <div class="form-field">
+              <label for="adminEmailInput">Admin Email</label>
+              <input id="adminEmailInput" class="form-control" type="email" required autocomplete="off">
+            </div>
+            <button class="button" type="submit">
+              <i data-lucide="user-plus"></i>
+              <span>Add Admin</span>
+            </button>
+          </form>
+          <div id="adminList" class="admin-list"></div>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <div class="section-title"><i data-lucide="history"></i><span>Audit Log</span></div>
+        <div class="settings-content">
+          <div id="auditList" class="audit-list"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="blockDialog">
+    <form id="blockForm" method="dialog">
+      <div class="dialog-header">Block Access</div>
+      <div class="dialog-body">
+        <div class="form-field">
+          <label for="blockDuration">Duration</label>
+          <select id="blockDuration" class="form-control">
+            <option value="900">15 Minutes</option>
+            <option value="3600">1 Hour</option>
+            <option value="86400">24 Hours</option>
+          </select>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button id="cancelBlockButton" class="button" type="button">Cancel</button>
+        <button class="button button-danger" type="submit">
+          <i data-lucide="ban"></i>
+          <span>Block</span>
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden>
+    <i id="toastIcon" data-lucide="circle-check"></i>
+    <span id="toastText"></span>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script>
+    (function() {
+      "use strict";
+
+      const hashParams = new URLSearchParams(window.location.hash.slice(1));
+      const state = {
+        accessToken: hashParams.get("access_token") || "",
+        initialMachineId: hashParams.get("machine_id") || "",
+        dashboard: null,
+        selectedMachineId: "",
+        filter: "all",
+        search: "",
+        currentView: "requests",
+        busy: false,
+        toastTimer: null,
+      };
+
+      const elements = {};
+
+      document.addEventListener("DOMContentLoaded", init);
+
+      function init() {
+        [
+          "loadingScreen", "loadingText", "appShell", "notificationToggle", "roleBadge",
+          "refreshButton", "settingsTab", "requestsView", "settingsView", "requestSearch",
+          "requestList", "requestDetail", "countAll", "countPending", "countConfirmed",
+          "countBlocked", "passwordForm", "newPasswordInput", "confirmPasswordInput",
+          "adminForm", "adminEmailInput", "adminList", "auditList", "blockDialog",
+          "blockForm", "blockDuration", "cancelBlockButton", "toast", "toastIcon", "toastText"
+        ].forEach(function(id) {
+          elements[id] = document.getElementById(id);
+        });
+
+        document.querySelectorAll("[data-view]").forEach(function(button) {
+          button.addEventListener("click", function() { setView(button.dataset.view); });
+        });
+        document.querySelectorAll("[data-filter]").forEach(function(button) {
+          button.addEventListener("click", function() { setFilter(button.dataset.filter); });
+        });
+
+        elements.refreshButton.addEventListener("click", refreshDashboard);
+        elements.notificationToggle.addEventListener("click", toggleNotifications);
+        elements.requestSearch.addEventListener("input", function(event) {
+          state.search = event.target.value.trim().toLowerCase();
+          renderRequestList();
+        });
+        elements.passwordForm.addEventListener("submit", changePassword);
+        elements.adminForm.addEventListener("submit", addAdmin);
+        elements.blockForm.addEventListener("submit", confirmBlock);
+        elements.cancelBlockButton.addEventListener("click", function() { elements.blockDialog.close(); });
+
+        renderIcons();
+        if (!state.accessToken) {
+          showLoadingError("Access link required");
+          return;
+        }
+
+        refreshDashboard();
+        window.setInterval(function() {
+          if (!state.busy && document.visibilityState === "visible") refreshDashboard(true);
+        }, 15000);
+      }
+
+      function callServer(method) {
+        const args = Array.prototype.slice.call(arguments, 1);
+        return new Promise(function(resolve, reject) {
+          try {
+            const runner = google.script.run
+              .withSuccessHandler(resolve)
+              .withFailureHandler(function(error) {
+                reject(new Error(error && error.message ? error.message : String(error || "Request failed")));
+              });
+            runner[method].apply(runner, args);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      }
+
+      async function refreshDashboard(silent) {
+        if (state.busy) return;
+        setBusy(true);
+        try {
+          const dashboard = await callServer("getAdminDashboardState", state.accessToken);
+          applyDashboard(dashboard);
+          if (!silent) showToast("Dashboard refreshed", "success");
+        } catch (error) {
+          if (!state.dashboard) showLoadingError(error.message);
+          else showToast(error.message, "error");
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      function applyDashboard(dashboard) {
+        state.dashboard = dashboard;
+        const requests = dashboard.requests || [];
+        if (!state.selectedMachineId || !requests.some(function(item) { return item.machine_id === state.selectedMachineId; })) {
+          const preferred = state.initialMachineId && requests.find(function(item) { return item.machine_id === state.initialMachineId; });
+          state.selectedMachineId = preferred ? preferred.machine_id : (requests[0] ? requests[0].machine_id : "");
+          state.initialMachineId = "";
+        }
+
+        elements.loadingScreen.hidden = true;
+        elements.appShell.hidden = false;
+        elements.roleBadge.dataset.role = dashboard.role;
+        elements.roleBadge.querySelector("span").textContent = dashboard.role === "superadmin" ? "Super Admin" : "Admin";
+
+        const isSuperAdmin = dashboard.role === "superadmin";
+        elements.settingsTab.hidden = !isSuperAdmin;
+        elements.notificationToggle.hidden = !isSuperAdmin;
+        elements.notificationToggle.dataset.enabled = String(Boolean(dashboard.notifications_enabled));
+        elements.notificationToggle.title = dashboard.notifications_enabled ? "Turn Off Notifications" : "Turn On Notifications";
+        elements.notificationToggle.innerHTML = `<i data-lucide="${dashboard.notifications_enabled ? "bell" : "bell-off"}"></i><span>Notifications</span>`;
+
+        const counts = dashboard.counts || {};
+        elements.countAll.textContent = counts.all || 0;
+        elements.countPending.textContent = counts.pending || 0;
+        elements.countConfirmed.textContent = counts.confirmed || 0;
+        elements.countBlocked.textContent = counts.blocked || 0;
+
+        renderRequestList();
+        renderRequestDetail();
+        if (isSuperAdmin) renderSuperAdmin();
+        renderIcons();
+      }
+
+      function setView(view) {
+        if (view === "settings" && state.dashboard && state.dashboard.role !== "superadmin") return;
+        state.currentView = view;
+        elements.requestsView.hidden = view !== "requests";
+        elements.settingsView.hidden = view !== "settings";
+        document.querySelectorAll("[data-view]").forEach(function(button) {
+          button.classList.toggle("active", button.dataset.view === view);
+        });
+        renderIcons();
+      }
+
+      function setFilter(filter) {
+        state.filter = filter;
+        document.querySelectorAll("[data-filter]").forEach(function(button) {
+          button.classList.toggle("active", button.dataset.filter === filter);
+        });
+        renderRequestList();
+      }
+
+      function filteredRequests() {
+        if (!state.dashboard) return [];
+        return (state.dashboard.requests || []).filter(function(request) {
+          const filterMatches = state.filter === "all" || request.status.toLowerCase() === state.filter;
+          const haystack = `${request.client_name} ${request.machine_id}`.toLowerCase();
+          return filterMatches && (!state.search || haystack.indexOf(state.search) >= 0);
+        });
+      }
+
+      function renderRequestList() {
+        const requests = filteredRequests();
+        if (!requests.length) {
+          elements.requestList.innerHTML = '<div class="empty-list">No Requests</div>';
+          return;
+        }
+
+        elements.requestList.innerHTML = requests.map(function(request) {
+          const active = request.machine_id === state.selectedMachineId ? " active" : "";
+          return `
+            <button class="request-item${active}" type="button" data-machine-id="${escapeHtml(request.machine_id)}">
+              <span class="request-item-main">
+                <span class="request-name">${escapeHtml(request.client_name)}</span>
+                <span class="request-machine">${escapeHtml(request.machine_id)}</span>
+              </span>
+              <span>
+                <span class="status-badge" data-status="${escapeHtml(request.status)}">${escapeHtml(statusLabel(request.status))}</span>
+                <span class="request-time">${escapeHtml(formatShortTime(request.timestamp))}</span>
+              </span>
+            </button>`;
+        }).join("");
+
+        elements.requestList.querySelectorAll("[data-machine-id]").forEach(function(button) {
+          button.addEventListener("click", function() {
+            selectRequest(button.dataset.machineId);
+          });
+        });
+      }
+
+      function selectRequest(machineId) {
+        state.selectedMachineId = machineId;
+        const nextHash = new URLSearchParams(window.location.hash.slice(1));
+        nextHash.set("machine_id", machineId);
+        history.replaceState(null, "", `#${nextHash.toString()}`);
+        renderRequestList();
+        renderRequestDetail();
+        if (window.innerWidth <= 760) elements.requestDetail.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function selectedRequest() {
+        if (!state.dashboard) return null;
+        return (state.dashboard.requests || []).find(function(request) {
+          return request.machine_id === state.selectedMachineId;
+        }) || null;
+      }
+
+      function renderRequestDetail() {
+        const request = selectedRequest();
+        if (!request) {
+          elements.requestDetail.innerHTML = `
+            <div class="detail-empty">
+              <div><i data-lucide="inbox"></i><div>No Request Selected</div></div>
+            </div>`;
+          renderIcons();
+          return;
+        }
+
+        const blocked = request.status === "BLOCKED";
+        const pending = request.status === "PENDING";
+        elements.requestDetail.innerHTML = `
+          <div class="detail-header">
+            <div class="detail-heading">
+              <h1>${escapeHtml(request.client_name)}</h1>
+              <code>${escapeHtml(request.machine_id)}</code>
+            </div>
+            <span class="status-badge" data-status="${escapeHtml(request.status)}">${escapeHtml(statusLabel(request.status))}</span>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-field"><div class="detail-label">Requested</div><div class="detail-value">${escapeHtml(formatFullTime(request.timestamp))}</div></div>
+            <div class="detail-field"><div class="detail-label">Updated</div><div class="detail-value">${escapeHtml(formatFullTime(request.updated_at))}</div></div>
+            <div class="detail-field"><div class="detail-label">Machine ID</div><div class="detail-value">${escapeHtml(request.machine_id)}</div></div>
+            <div class="detail-field"><div class="detail-label">Status</div><div class="detail-value">${escapeHtml(statusLabel(request.status))}</div></div>
+          </div>
+          <div class="action-bar">
+            ${pending ? '<button id="confirmButton" class="button button-primary" type="button"><i data-lucide="check"></i><span>Confirm</span></button>' : ''}
+            ${!blocked ? '<button id="blockButton" class="button button-danger" type="button"><i data-lucide="ban"></i><span>Block</span></button>' : ''}
+            ${blocked ? '<button id="unblockButton" class="button" type="button"><i data-lucide="lock-open"></i><span>Unblock</span></button>' : ''}
+          </div>`;
+
+        const confirmButton = document.getElementById("confirmButton");
+        const blockButton = document.getElementById("blockButton");
+        const unblockButton = document.getElementById("unblockButton");
+        if (confirmButton) confirmButton.addEventListener("click", function() { executeAdminAction("confirm"); });
+        if (blockButton) blockButton.addEventListener("click", openBlockDialog);
+        if (unblockButton) unblockButton.addEventListener("click", function() { executeAdminAction("unblock"); });
+        renderIcons();
+      }
+
+      function openBlockDialog() {
+        if (!selectedRequest()) return;
+        elements.blockDuration.value = "900";
+        elements.blockDialog.showModal();
+      }
+
+      function confirmBlock(event) {
+        event.preventDefault();
+        elements.blockDialog.close();
+        executeAdminAction("block", Number(elements.blockDuration.value));
+      }
+
+      async function executeAdminAction(action, duration) {
+        const request = selectedRequest();
+        if (!request || state.busy) return;
+        setBusy(true);
+        try {
+          const dashboard = await callServer(
+            "runAdminAction",
+            state.accessToken,
+            request.machine_id,
+            action,
+            duration || 0
+          );
+          applyDashboard(dashboard);
+          showToast(action === "confirm" ? "Access confirmed" : action === "block" ? "Access blocked" : "Access unblocked", "success");
+        } catch (error) {
+          showToast(error.message, "error");
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      async function toggleNotifications() {
+        if (!state.dashboard || state.dashboard.role !== "superadmin" || state.busy) return;
+        setBusy(true);
+        try {
+          const dashboard = await callServer(
+            "setRequestNotifications",
+            state.accessToken,
+            !state.dashboard.notifications_enabled
+          );
+          applyDashboard(dashboard);
+          showToast(dashboard.notifications_enabled ? "Notifications on" : "Notifications off", "success");
+        } catch (error) {
+          showToast(error.message, "error");
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      async function changePassword(event) {
+        event.preventDefault();
+        if (state.busy) return;
+        const password = elements.newPasswordInput.value;
+        if (password !== elements.confirmPasswordInput.value) {
+          showToast("Passwords do not match", "error");
+          elements.confirmPasswordInput.focus();
+          return;
+        }
+
+        setBusy(true);
+        try {
+          const result = await callServer("changeGlobalPassword", state.accessToken, password);
+          elements.passwordForm.reset();
+          applyDashboard(result.dashboard);
+          showToast("Password changed", "success");
+        } catch (error) {
+          showToast(error.message, "error");
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      async function addAdmin(event) {
+        event.preventDefault();
+        if (state.busy) return;
+        const email = elements.adminEmailInput.value.trim();
+        setBusy(true);
+        try {
+          const dashboard = await callServer("addAuthorizedAdmin", state.accessToken, email);
+          elements.adminForm.reset();
+          applyDashboard(dashboard);
+          showToast("Admin added", "success");
+        } catch (error) {
+          showToast(error.message, "error");
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      async function removeAdmin(email) {
+        if (state.busy) return;
+        setBusy(true);
+        try {
+          const dashboard = await callServer("removeAuthorizedAdmin", state.accessToken, email);
+          applyDashboard(dashboard);
+          showToast("Admin removed", "success");
+        } catch (error) {
+          showToast(error.message, "error");
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      function renderSuperAdmin() {
+        const admins = state.dashboard.administrators || [];
+        elements.adminList.innerHTML = admins.map(function(admin) {
+          const removable = admin.role !== "superadmin";
+          return `
+            <div class="admin-row">
+              <span class="admin-email">${escapeHtml(admin.email)}</span>
+              <span class="role-badge" data-role="${escapeHtml(admin.role)}"><span>${admin.role === "superadmin" ? "Super Admin" : "Admin"}</span></span>
+              ${removable ? `<button class="text-button" type="button" data-remove-admin="${escapeHtml(admin.email)}">Remove</button>` : '<span></span>'}
+            </div>`;
+        }).join("");
+
+        elements.adminList.querySelectorAll("[data-remove-admin]").forEach(function(button) {
+          button.addEventListener("click", function() { removeAdmin(button.dataset.removeAdmin); });
+        });
+
+        const events = state.dashboard.audit_log || [];
+        elements.auditList.innerHTML = events.length ? events.map(function(event) {
+          return `
+            <div class="audit-row">
+              <span>${escapeHtml(formatShortTime(event.timestamp))}</span>
+              <span class="audit-actor">${escapeHtml(event.actor)}</span>
+              <span class="audit-action">${escapeHtml(event.action)}</span>
+              <span class="audit-target">${escapeHtml(event.target)}</span>
+            </div>`;
+        }).join("") : '<div class="empty-list">No Activity</div>';
+      }
+
+      function setBusy(busy) {
+        state.busy = busy;
+        elements.refreshButton.disabled = busy;
+        elements.notificationToggle.disabled = busy;
+        document.querySelectorAll("button, input, select").forEach(function(control) {
+          if (control.id !== "refreshButton" && control.id !== "notificationToggle") {
+            control.disabled = busy;
+          }
+        });
+      }
+
+      function showLoadingError(message) {
+        elements.loadingText.textContent = message || "Access unavailable";
+        const spinner = elements.loadingScreen.querySelector(".loading-spinner");
+        if (spinner) spinner.hidden = true;
+      }
+
+      function showToast(message, status) {
+        if (state.toastTimer) window.clearTimeout(state.toastTimer);
+        elements.toast.dataset.state = status || "success";
+        elements.toastText.textContent = message;
+        elements.toastIcon.setAttribute("data-lucide", status === "error" ? "circle-alert" : "circle-check");
+        elements.toast.hidden = false;
+        renderIcons();
+        state.toastTimer = window.setTimeout(function() {
+          elements.toast.hidden = true;
+        }, 3200);
+      }
+
+      function statusLabel(status) {
+        if (status === "CONFIRMED") return "Confirmed";
+        if (status === "BLOCKED") return "Blocked";
+        return "Pending";
+      }
+
+      function formatFullTime(timestamp) {
+        return new Intl.DateTimeFormat(undefined, {
+          year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit"
+        }).format(new Date(timestamp));
+      }
+
+      function formatShortTime(timestamp) {
+        return new Intl.DateTimeFormat(undefined, {
+          month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit"
+        }).format(new Date(timestamp));
+      }
+
+      function escapeHtml(value) {
+        return String(value == null ? "" : value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderIcons() {
+        if (window.lucide) window.lucide.createIcons();
+      }
+    })();
+  </script>
+</body>
+</html>
