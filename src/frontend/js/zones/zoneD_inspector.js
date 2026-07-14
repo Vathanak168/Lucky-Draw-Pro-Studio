@@ -226,7 +226,7 @@ window.ZoneD = {
                     <div class="inspector-section" style="border-left: 3px solid var(--accent-cyan); background: rgba(18, 207, 255, 0.035);">
                         <div class="inspector-section-title" style="display:flex; justify-content:space-between; align-items:center;">
                             <span style="color:var(--accent-cyan);">Telegram · Round #${S.currentRound + 1}</span>
-                            <button class="btn-arena" onclick="if(window.ZoneE) { ZoneE.setTab('pool'); ZoneEStageControls.activeTab = 'telegram'; ZoneE.render(); }" style="padding:2px 7px; font-size:10px;">Settings</button>
+                            <button class="btn-arena" onclick="if(window.ZoneE) { ZoneEStageControls.activeSubTab = 'telegram'; ZoneE.setTab('pool'); }" style="padding:2px 7px; font-size:10px;">Settings</button>
                         </div>
                         
                         <div class="inspector-row" style="justify-content: flex-start; gap: 12px;">
@@ -342,6 +342,15 @@ window.ZoneD = {
         S.roundConfigs[S.currentRound].presets[slotIndex] = value ? value.trim() : null;
         S.syncSettingsFromConfigs();
         S.autoSaveAllSettings();
+    },
+
+    updateRoundConfig(field, value) {
+        const S = EngineState;
+        if (!S.roundConfigs[S.currentRound]) S.roundConfigs[S.currentRound] = S.getDefaultRoundConfig(S.currentRound);
+        S.roundConfigs[S.currentRound][field] = value;
+        S.syncSettingsFromConfigs();
+        S.autoSaveAllSettings();
+        this.render();
     },
 
     updateGlobal(field, value) {

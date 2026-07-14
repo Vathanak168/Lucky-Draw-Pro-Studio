@@ -7,11 +7,17 @@ import webview
 
 from src.backend.desktop.history_report import safe_history_filename, write_history_workbook
 from src.backend.desktop.storage_service import DesktopStorageService, _safe_filename, desktop_storage
+from src.backend.desktop.telegram_service import TelegramService, telegram_service
 
 
 class DesktopBridge:
-    def __init__(self, storage: DesktopStorageService = desktop_storage):
+    def __init__(
+        self,
+        storage: DesktopStorageService = desktop_storage,
+        telegram: TelegramService = telegram_service,
+    ):
         self._storage = storage
+        self._telegram = telegram
         self._window: Optional[Any] = None
 
     def _bind_window(self, window: Any) -> None:
@@ -115,6 +121,33 @@ class DesktopBridge:
         result = write_history_workbook(path, report)
         self._storage.update_settings({"lastProjectDirectory": str(path.parent)})
         return result
+
+    def telegram_status(self, project_id: str = "") -> Dict[str, Any]:
+        return self._telegram.status(project_id)
+
+    def telegram_connect(self, token: str, group_chat_id: str = "") -> Dict[str, Any]:
+        return self._telegram.connect(token, group_chat_id)
+
+    def telegram_disconnect(self) -> Dict[str, Any]:
+        return self._telegram.disconnect()
+
+    def telegram_test_connection(self) -> Dict[str, Any]:
+        return self._telegram.test_connection()
+
+    def telegram_save_preferences(self, preferences: Dict[str, Any], validate_group: bool = False) -> Dict[str, Any]:
+        return self._telegram.save_preferences(preferences, validate_group)
+
+    def telegram_enqueue(self, jobs: list[Dict[str, Any]]) -> Dict[str, Any]:
+        return self._telegram.enqueue_batch(jobs)
+
+    def telegram_jobs(self, project_id: str = "", limit: int = 100) -> Dict[str, Any]:
+        return {"ok": True, "jobs": self._telegram.list_jobs(project_id, limit)}
+
+    def telegram_retry(self, job_id: str) -> Dict[str, Any]:
+        return self._telegram.retry_job(job_id)
+
+    def telegram_handle_redraw(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        return self._telegram.handle_redraw(payload)
 
     def select_background_asset(self, kind: str) -> Dict[str, Any]:
         is_video = kind == "video"

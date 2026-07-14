@@ -21,7 +21,7 @@ window.Draw = {
             S.masterListPool = S.getParticipantList()
                 .map((p, i) => ({ ...p, originalIndex: i + 1 }))
                 .filter(p => !p.hidden)
-                .map(p => ({ id: `l_${p.originalIndex.toString()}`, name: p.name.trim(), type: 'list' }));
+                .map(p => ({ id: `l_${p.originalIndex.toString()}`, name: p.name.trim(), type: 'list', originalParticipant: p }));
 
             S.masterListPool.forEach(p => { validIdentifiers.add(p.name); validIdentifiers.add(p.id.substring(2)); });
         }
@@ -193,7 +193,7 @@ window.Draw = {
             lastDrawnAt: new Date().toISOString()
         };
 
-        S.recordHistoryEvent({
+        const historyEvent = S.recordHistoryEvent({
             type: options.historyType || 'draw',
             roundIndex: S.currentRound,
             round: S.currentRound + 1,
@@ -202,6 +202,7 @@ window.Draw = {
             winners: roundWinnerObjects,
             previousWinners: options.previousWinners || []
         });
+        S.roundResults[S.currentRound].lastEventId = historyEvent.id;
         S.saveDrawState();
 
         // Pre-render exact geometric virtual stage cards before animation so size & font are 100% identical!
@@ -229,7 +230,7 @@ window.Draw = {
                 Display.finalizeDraw(winners);
             });
         } else {
-            Display.showWinnersInstantly(roundWinnerObjects);
+            Display.finalizeDraw(roundWinnerObjects);
         }
     },
 
@@ -273,7 +274,7 @@ window.Draw = {
         roundResult.winners[winnerIdx] = newWinner;
         roundResult.type = currentDataSource;
         roundResult.category = rc.category || S.settings.roundCategories[roundIdx] || 'Regular Draw';
-        S.recordHistoryEvent({
+        const historyEvent = S.recordHistoryEvent({
             type: 'redraw',
             roundIndex: roundIdx,
             round: roundIdx + 1,
@@ -284,6 +285,7 @@ window.Draw = {
             newWinner,
             winners: [newWinner]
         });
+        roundResult.lastEventId = historyEvent.id;
         S.saveDrawState();
 
         const isStartEnabled = (rc.audioSpinStart !== undefined) ? rc.audioSpinStart : (S.audioSettings && S.audioSettings.autoSpinStart);
@@ -328,14 +330,8 @@ window.Draw = {
             if (isLiveRound && window.AudioSynth && isStopEnabled) {
                 AudioSynth.playSound(rc.soundSpinStop || 'victory');
             }
-            if (window.ZoneETelegramBot && newWinner) {
-                const category = roundResult.category;
-                if (rc.telegramAutoGroup) {
-                    ZoneETelegramBot.executeAutoRoundBroadcast([newWinner], category);
-                }
-                if (rc.telegramAutoDirect) {
-                    ZoneETelegramBot.executeAutoDirectMessages([newWinner], category);
-                }
+            if (window.ZoneETelegramBot && newWinner && historyEvent) {
+                ZoneETelegramBot.handleRedraw(roundIdx, winnerIdx, oldWinner, newWinner, historyEvent.id);
             }
 
             refreshOperatorUI();

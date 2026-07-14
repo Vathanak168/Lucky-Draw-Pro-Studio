@@ -157,13 +157,8 @@ window.Display = {
         if (window.ZoneE) ZoneE.render();
 
         if (window.ZoneETelegramBot) {
-            const category = S.settings.roundCategories[S.currentRound] || `Column #${S.currentRound + 1}`;
-            if (rcStop.telegramAutoGroup) {
-                ZoneETelegramBot.executeAutoRoundBroadcast(winners, category);
-            }
-            if (rcStop.telegramAutoDirect) {
-                ZoneETelegramBot.executeAutoDirectMessages(winners, category);
-            }
+            const result = S.roundResults[S.currentRound];
+            ZoneETelegramBot.handleDrawComplete(S.currentRound, result?.lastEventId || `draw_${Date.now()}`);
         }
     },
 

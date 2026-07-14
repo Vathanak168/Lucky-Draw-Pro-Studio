@@ -141,7 +141,7 @@ class DesktopStorageService:
         defaults = {
             "ribbonMode": "all",
             "poolRibbonMode": "all",
-            "telegramSettings": {"botToken": "", "groupChatId": ""},
+            "telegramSettings": {"groupChatId": "", "botIdentity": {}, "templates": {}},
             "lastProjectDirectory": "",
         }
         saved = self._read_json(self.settings_file, {})
@@ -150,10 +150,25 @@ class DesktopStorageService:
     def update_settings(self, patch: Dict[str, Any]) -> Dict[str, Any]:
         if not isinstance(patch, dict):
             raise ValueError("Settings patch must be an object")
+        patch = copy.deepcopy(patch)
+        telegram_patch = patch.get("telegramSettings")
+        if isinstance(telegram_patch, dict):
+            telegram_patch.pop("botToken", None)
         with self._lock:
             settings = _deep_merge(self.load_settings(), patch)
             self._atomic_write_json(self.settings_file, settings)
             return settings
+
+    def replace_telegram_settings(self, telegram_settings: Dict[str, Any]) -> Dict[str, Any]:
+        if not isinstance(telegram_settings, dict):
+            raise ValueError("Telegram settings must be an object")
+        sanitized = copy.deepcopy(telegram_settings)
+        sanitized.pop("botToken", None)
+        with self._lock:
+            settings = self.load_settings()
+            settings["telegramSettings"] = sanitized
+            self._atomic_write_json(self.settings_file, settings)
+            return copy.deepcopy(sanitized)
 
     def list_recent(self) -> list[Dict[str, Any]]:
         raw = self._read_json(self.recent_file, [])

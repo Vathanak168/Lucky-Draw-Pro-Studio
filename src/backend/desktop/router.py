@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from src.backend.desktop.history_report import build_history_workbook, safe_history_filename
 from src.backend.desktop.storage_service import desktop_storage
+from src.backend.desktop.telegram_service import TelegramApiError, telegram_service
 
 
 router = APIRouter(prefix="/api/desktop", tags=["Desktop Storage"])
@@ -41,6 +42,24 @@ class LegacyMigrationRequest(BaseModel):
 
 class HistoryExportRequest(BaseModel):
     report: Dict[str, Any]
+
+
+class TelegramConnectRequest(BaseModel):
+    token: str
+    groupChatId: str = ""
+
+
+class TelegramPreferencesRequest(BaseModel):
+    preferences: Dict[str, Any]
+    validateGroup: bool = False
+
+
+class TelegramJobsRequest(BaseModel):
+    jobs: list[Dict[str, Any]]
+
+
+class TelegramPayloadRequest(BaseModel):
+    payload: Dict[str, Any]
 
 
 class ProjectorHub:
@@ -81,6 +100,9 @@ def _raise_http_error(exc: Exception) -> None:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     if isinstance(exc, PermissionError):
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+    if isinstance(exc, TelegramApiError):
+        status_code = 429 if exc.retry_after or exc.status_code == 429 else 502
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
     raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
@@ -214,6 +236,78 @@ def export_history(request: HistoryExportRequest):
                 "X-Export-Filename": encoded_filename,
             },
         )
+    except Exception as exc:
+        _raise_http_error(exc)
+
+
+@router.get("/telegram/status")
+def telegram_status(project_id: str = ""):
+    try:
+        return telegram_service.status(project_id)
+    except Exception as exc:
+        _raise_http_error(exc)
+
+
+@router.post("/telegram/connect")
+def telegram_connect(request: TelegramConnectRequest):
+    try:
+        return telegram_service.connect(request.token, request.groupChatId)
+    except Exception as exc:
+        _raise_http_error(exc)
+
+
+@router.post("/telegram/disconnect")
+def telegram_disconnect():
+    try:
+        return telegram_service.disconnect()
+    except Exception as exc:
+        _raise_http_error(exc)
+
+
+@router.post("/telegram/test")
+def telegram_test_connection():
+    try:
+        return telegram_service.test_connection()
+    except Exception as exc:
+        _raise_http_error(exc)
+
+
+@router.post("/telegram/preferences")
+def telegram_save_preferences(request: TelegramPreferencesRequest):
+    try:
+        return telegram_service.save_preferences(request.preferences, request.validateGroup)
+    except Exception as exc:
+        _raise_http_error(exc)
+
+
+@router.post("/telegram/enqueue")
+def telegram_enqueue(request: TelegramJobsRequest):
+    try:
+        return telegram_service.enqueue_batch(request.jobs)
+    except Exception as exc:
+        _raise_http_error(exc)
+
+
+@router.get("/telegram/jobs")
+def telegram_jobs(project_id: str = "", limit: int = 100):
+    try:
+        return {"ok": True, "jobs": telegram_service.list_jobs(project_id, limit)}
+    except Exception as exc:
+        _raise_http_error(exc)
+
+
+@router.post("/telegram/jobs/{job_id}/retry")
+def telegram_retry(job_id: str):
+    try:
+        return telegram_service.retry_job(job_id)
+    except Exception as exc:
+        _raise_http_error(exc)
+
+
+@router.post("/telegram/redraw")
+def telegram_handle_redraw(request: TelegramPayloadRequest):
+    try:
+        return telegram_service.handle_redraw(request.payload)
     except Exception as exc:
         _raise_http_error(exc)
 

@@ -2052,6 +2052,7 @@ window.Studio = {
                         const nameVal = row["Full_Name"] || row["Name"] || row["Participant"] || row["Guest"] || row["Full Name"] || row["Participant_Name"] || '';
                         const deptVal = row["Department_Company"] || row["Department"] || row["Company"] || row["Branch"] || row["Dept"] || row["Note"] || '';
                         const phoneVal = row["Phone_Number"] || row["Phone"] || row["Tel"] || row["Mobile"] || '';
+                        const telegramVal = row["Telegram_Chat_ID"] || row["Telegram Chat ID"] || row["TelegramChatId"] || row["Telegram_ID"] || row["Telegram"] || '';
                         const eligVal = row["Category_Eligibility"] || row["Eligibility"] || row["Tier"] || 'All';
 
                         const finalName = nameVal.toString().trim();
@@ -2065,6 +2066,7 @@ window.Studio = {
                             name: finalName || finalId,
                             dept: deptVal.toString().trim(),
                             phone: phoneVal.toString().trim(),
+                            telegramChatId: telegramVal.toString().trim(),
                             eligibility: eligVal.toString().trim() || 'All',
                             status: 'ELIGIBLE',
                             hidden: false
@@ -2090,6 +2092,7 @@ window.Studio = {
                                     dept: cols[2] || '',
                                     phone: cols[3] || '',
                                     eligibility: cols[4] || 'All',
+                                    telegramChatId: cols[5] || '',
                                     status: 'ELIGIBLE',
                                     hidden: false
                                 });
@@ -2097,7 +2100,7 @@ window.Studio = {
                                 parsedList.push({
                                     id: (i + 1).toString(),
                                     name: cols[0],
-                                    dept: '', phone: '', eligibility: 'All', status: 'ELIGIBLE', hidden: false
+                                    dept: '', phone: '', telegramChatId: '', eligibility: 'All', status: 'ELIGIBLE', hidden: false
                                 });
                             }
                         }

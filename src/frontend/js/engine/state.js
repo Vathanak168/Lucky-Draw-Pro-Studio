@@ -35,7 +35,7 @@ window.EngineState = {
     activeCategoryTab: "All", // "All" or a specific category
     categoryQuotas: { "Grand Prizes": 2, "VIP Rounds": 10, "Regular Draw": 50, "Consolation": 20 },
     audioSettings: { autoSpinStart: false, autoSpinStop: false },
-    telegramSettings: { botToken: "", groupChatId: "" },
+    telegramSettings: { groupChatId: "", botIdentity: {}, templates: {} },
 
     // Active draw status
     isDrawing: false,
@@ -119,6 +119,7 @@ window.EngineState = {
                 dept: p.dept || p.department || p.company || 'General',
                 category: p.category || p.eligibility || 'General',
                 phone: p.phone || '',
+                telegramChatId: p.telegramChatId || p.telegram || p.chat_id || p.telegram_id || '',
                 eligibility: p.eligibility || p.category || 'All',
                 status: p.status || 'ELIGIBLE',
                 hidden: !!p.hidden

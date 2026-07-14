@@ -262,5 +262,82 @@ window.DesktopStorage = {
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
         return { ok: true, filename };
+    },
+
+    async telegramStatus(projectId = '') {
+        if (this.bridge && typeof this.bridge.telegram_status === 'function') {
+            return this.bridge.telegram_status(projectId);
+        }
+        return this.request(`/api/desktop/telegram/status?project_id=${encodeURIComponent(projectId)}`);
+    },
+
+    async telegramConnect(token, groupChatId = '') {
+        if (this.bridge && typeof this.bridge.telegram_connect === 'function') {
+            return this.bridge.telegram_connect(token, groupChatId);
+        }
+        return this.request('/api/desktop/telegram/connect', {
+            method: 'POST',
+            body: JSON.stringify({ token, groupChatId })
+        });
+    },
+
+    async telegramDisconnect() {
+        if (this.bridge && typeof this.bridge.telegram_disconnect === 'function') {
+            return this.bridge.telegram_disconnect();
+        }
+        return this.request('/api/desktop/telegram/disconnect', { method: 'POST', body: '{}' });
+    },
+
+    async telegramTestConnection() {
+        if (this.bridge && typeof this.bridge.telegram_test_connection === 'function') {
+            return this.bridge.telegram_test_connection();
+        }
+        return this.request('/api/desktop/telegram/test', { method: 'POST', body: '{}' });
+    },
+
+    async telegramSavePreferences(preferences, validateGroup = false) {
+        if (this.bridge && typeof this.bridge.telegram_save_preferences === 'function') {
+            return this.bridge.telegram_save_preferences(preferences, validateGroup);
+        }
+        return this.request('/api/desktop/telegram/preferences', {
+            method: 'POST',
+            body: JSON.stringify({ preferences, validateGroup })
+        });
+    },
+
+    async telegramEnqueue(jobs) {
+        if (this.bridge && typeof this.bridge.telegram_enqueue === 'function') {
+            return this.bridge.telegram_enqueue(jobs);
+        }
+        return this.request('/api/desktop/telegram/enqueue', {
+            method: 'POST',
+            body: JSON.stringify({ jobs })
+        });
+    },
+
+    async telegramJobs(projectId = '', limit = 100) {
+        if (this.bridge && typeof this.bridge.telegram_jobs === 'function') {
+            return this.bridge.telegram_jobs(projectId, limit);
+        }
+        return this.request(`/api/desktop/telegram/jobs?project_id=${encodeURIComponent(projectId)}&limit=${encodeURIComponent(limit)}`);
+    },
+
+    async telegramRetry(jobId) {
+        if (this.bridge && typeof this.bridge.telegram_retry === 'function') {
+            return this.bridge.telegram_retry(jobId);
+        }
+        return this.request(`/api/desktop/telegram/jobs/${encodeURIComponent(jobId)}/retry`, {
+            method: 'POST', body: '{}'
+        });
+    },
+
+    async telegramHandleRedraw(payload) {
+        if (this.bridge && typeof this.bridge.telegram_handle_redraw === 'function') {
+            return this.bridge.telegram_handle_redraw(payload);
+        }
+        return this.request('/api/desktop/telegram/redraw', {
+            method: 'POST',
+            body: JSON.stringify({ payload })
+        });
     }
 };
