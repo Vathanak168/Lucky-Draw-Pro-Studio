@@ -53,6 +53,20 @@ window.AudioSynth = {
 };
 
 window.Studio = {
+    projectorState: {
+        native: false,
+        active: false,
+        canOpen: false,
+        selectedDisplayId: '',
+        activeDisplayId: '',
+        externalDisplayCount: 0,
+        displays: []
+    },
+    projectorBusy: false,
+    projectorMenuOpen: false,
+    projectorRefreshPending: false,
+    projectorPollTimer: null,
+
     async init() {
         console.log("Initializing Lucky Draw Pro Studio...");
 
@@ -96,6 +110,8 @@ window.Studio = {
         if (window.ZoneC) ZoneC.init();
         if (window.ZoneD) ZoneD.init();
         if (window.ZoneE) ZoneE.init();
+        await this.refreshProjectorStatus();
+        this.startProjectorStatusPolling();
 
         // 3. Restore an approved disk recovery or initialize a clean draw session.
         if (resumedFromRecovery && EngineState.drawState) {
@@ -185,10 +201,10 @@ window.Studio = {
                 return;
             }
 
-            // Key P: Projector Pop-Out
+            // Key P: Toggle external program output
             if (e.code === 'KeyP' || e.key === 'p' || e.key === 'P') {
                 e.preventDefault();
-                Studio.openProjector();
+                Studio.toggleProjectorOutput();
                 return;
             }
 
@@ -218,6 +234,7 @@ window.Studio = {
                 Studio.closeRibbonDisplayMenu();
             }
             if (!e.target.closest('.history-menu-wrap')) Studio.closeHistoryMenus();
+            if (!e.target.closest('.projector-output-wrap')) Studio.closeProjectorMenu();
         });
 
         window.addEventListener('beforeunload', (event) => {
@@ -322,16 +339,130 @@ window.Studio = {
         }
     },
 
+    getProjectorUiState() {
+        const state = this.projectorState || {};
+        const externalDisplays = (state.displays || []).filter(display => display && display.isExternal);
+        const selectedId = state.active ? state.activeDisplayId : state.selectedDisplayId;
+        const selectedDisplay = externalDisplays.find(display => display.id === selectedId)
+            || externalDisplays[0]
+            || null;
+        return { ...state, externalDisplays, selectedDisplay };
+    },
+
+    async refreshProjectorStatus(render = true) {
+        if (this.projectorRefreshPending) return this.projectorState;
+        this.projectorRefreshPending = true;
+        try {
+            const previous = this.projectorState || {};
+            const next = await DesktopStorage.projectorStatus();
+            this.projectorState = { ...previous, ...next };
+            const previousKey = JSON.stringify([
+                !!previous.native,
+                !!previous.active,
+                previous.selectedDisplayId || '',
+                previous.activeDisplayId || '',
+                previous.externalDisplayCount || 0,
+                (previous.displays || []).map(display => [
+                    display.id,
+                    display.label,
+                    !!display.isExternal
+                ])
+            ]);
+            const nextKey = JSON.stringify([
+                !!this.projectorState.native,
+                !!this.projectorState.active,
+                this.projectorState.selectedDisplayId || '',
+                this.projectorState.activeDisplayId || '',
+                this.projectorState.externalDisplayCount || 0,
+                (this.projectorState.displays || []).map(display => [
+                    display.id,
+                    display.label,
+                    !!display.isExternal
+                ])
+            ]);
+            if (render && previousKey !== nextKey && window.ZoneB) ZoneB.render();
+            return this.projectorState;
+        } catch (error) {
+            console.error('Projector status refresh failed:', error);
+            return this.projectorState;
+        } finally {
+            this.projectorRefreshPending = false;
+        }
+    },
+
+    startProjectorStatusPolling() {
+        if (this.projectorPollTimer) return;
+        this.projectorPollTimer = setInterval(() => this.refreshProjectorStatus(), 2500);
+    },
+
+    syncProjectorFrame() {
+        if (window.Display && typeof Display.syncToProjectorMirror === 'function') {
+            Display.syncToProjectorMirror();
+        }
+        if (window.ProjectorSync) {
+            ProjectorSync.publish({ type: 'draw_status', isDrawing: !!EngineState.isDrawing });
+        }
+    },
+
+    async toggleProjectorOutput() {
+        if (this.projectorBusy) return;
+        this.projectorBusy = true;
+        this.projectorMenuOpen = false;
+        if (window.ZoneB) ZoneB.render();
+        try {
+            const state = this.getProjectorUiState();
+            const result = await DesktopStorage.projectorToggle(state.selectedDisplay?.id || '');
+            this.projectorState = { ...this.projectorState, ...result };
+            if (result?.active) {
+                this.syncProjectorFrame();
+                setTimeout(() => this.syncProjectorFrame(), 250);
+            }
+        } catch (error) {
+            alert(error.message || 'Projector Output could not be changed.');
+        } finally {
+            this.projectorBusy = false;
+            await this.refreshProjectorStatus(false);
+            if (window.ZoneB) ZoneB.render();
+        }
+    },
+
     openProjector() {
-        const width = 1280;
-        const height = 720;
-        const left = (screen.width - width) / 2;
-        const top = (screen.height - height) / 2;
-        window.open(
-            'projector/projector.html',
-            'LuckyDrawProjector',
-            `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes`
-        );
+        return this.toggleProjectorOutput();
+    },
+
+    async selectProjectorDisplay(displayId) {
+        if (this.projectorBusy || !displayId) return;
+        this.projectorBusy = true;
+        this.projectorMenuOpen = false;
+        if (window.ZoneB) ZoneB.render();
+        try {
+            const result = await DesktopStorage.projectorSelectDisplay(displayId);
+            this.projectorState = { ...this.projectorState, ...result };
+            if (result?.active) {
+                this.syncProjectorFrame();
+                setTimeout(() => this.syncProjectorFrame(), 250);
+            }
+        } catch (error) {
+            alert(error.message || 'External Display could not be selected.');
+        } finally {
+            this.projectorBusy = false;
+            await this.refreshProjectorStatus(false);
+            if (window.ZoneB) ZoneB.render();
+        }
+    },
+
+    async toggleProjectorMenu(event) {
+        if (event) event.stopPropagation();
+        if (this.projectorBusy) return;
+        if (!this.projectorMenuOpen) await this.refreshProjectorStatus(false);
+        this.projectorMenuOpen = !this.projectorMenuOpen;
+        if (window.ZoneB) ZoneB.render();
+    },
+
+    closeProjectorMenu() {
+        if (!this.projectorMenuOpen) return;
+        this.projectorMenuOpen = false;
+        if (window.ZoneB) ZoneB.render();
     },
 
     historyView: 'results',

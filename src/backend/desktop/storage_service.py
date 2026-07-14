@@ -142,6 +142,7 @@ class DesktopStorageService:
             "ribbonMode": "all",
             "poolRibbonMode": "all",
             "telegramSettings": {"groupChatId": "", "botIdentity": {}, "templates": {}},
+            "projectorDisplayId": "",
             "lastProjectDirectory": "",
         }
         saved = self._read_json(self.settings_file, {})

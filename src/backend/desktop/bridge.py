@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 import webview
 
 from src.backend.desktop.history_report import safe_history_filename, write_history_workbook
+from src.backend.desktop.projector_service import ProjectorOutputService, projector_output
 from src.backend.desktop.storage_service import DesktopStorageService, _safe_filename, desktop_storage
 from src.backend.desktop.telegram_service import TelegramService, telegram_service
 
@@ -15,13 +16,19 @@ class DesktopBridge:
         self,
         storage: DesktopStorageService = desktop_storage,
         telegram: TelegramService = telegram_service,
+        projector: ProjectorOutputService = projector_output,
     ):
         self._storage = storage
         self._telegram = telegram
+        self._projector = projector
         self._window: Optional[Any] = None
 
     def _bind_window(self, window: Any) -> None:
         self._window = window
+        self._projector.bind_main_window(
+            window,
+            "http://127.0.0.1:8926/projector/projector.html",
+        )
 
     def _dialog_type(self, mode: str) -> Any:
         dialog_enum = getattr(webview, "FileDialog", None)
@@ -148,6 +155,18 @@ class DesktopBridge:
 
     def telegram_handle_redraw(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         return self._telegram.handle_redraw(payload)
+
+    def projector_status(self) -> Dict[str, Any]:
+        return self._projector.status()
+
+    def projector_toggle(self, display_id: str = "") -> Dict[str, Any]:
+        return self._projector.toggle(display_id)
+
+    def projector_select_display(self, display_id: str) -> Dict[str, Any]:
+        return self._projector.select_display(display_id)
+
+    def projector_close(self) -> Dict[str, Any]:
+        return self._projector.close()
 
     def select_background_asset(self, kind: str) -> Dict[str, Any]:
         is_video = kind == "video"

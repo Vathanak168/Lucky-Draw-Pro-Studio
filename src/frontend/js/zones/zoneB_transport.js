@@ -17,6 +17,19 @@ window.ZoneB = {
         const hasWinners = !!roundResult;
         const currentCategory = S.roundConfigs[S.currentRound]?.category || `Round #${S.currentRound + 1}`;
         const currentSpeed = S.displaySettings.drawSpeed || 'normal';
+        const projector = Studio.getProjectorUiState();
+        const projectorTitle = projector.selectedDisplay
+            ? projector.selectedDisplay.label
+            : (projector.native ? 'External Display Not Found' : 'Desktop App Output');
+        const projectorOptions = projector.externalDisplays.length
+            ? projector.externalDisplays.map(display => `
+                <button type="button" class="${display.id === projector.selectedDisplay?.id ? 'selected' : ''}" onclick="Studio.selectProjectorDisplay('${Studio.escapeHtml(display.id)}')">
+                    <i data-lucide="monitor"></i>
+                    <span>${Studio.escapeHtml(display.label)}</span>
+                    ${display.id === projector.selectedDisplay?.id ? '<i data-lucide="check"></i>' : ''}
+                </button>
+            `).join('')
+            : '<div class="projector-output-empty">No External Display</div>';
 
         el.innerHTML = `
             <div style="display:flex; align-items:center; gap:12px;">
@@ -85,10 +98,19 @@ window.ZoneB = {
                     <i data-lucide="keyboard"></i>
                     Shortcuts
                 </button>
-                <button class="btn-arena" onclick="Studio.openProjector()">
-                    <i data-lucide="airplay"></i>
-                    Projector
-                </button>
+                <div class="projector-output-wrap">
+                    <div class="projector-split-control" data-active="${!!projector.active}">
+                        <button class="btn-arena projector-output-toggle" onclick="Studio.toggleProjectorOutput()" title="${Studio.escapeHtml(projectorTitle)}" ${Studio.projectorBusy ? 'disabled' : ''}>
+                            <span class="projector-live-dot"></span>
+                            <i data-lucide="airplay"></i>
+                            <span>${projector.active ? 'On Air' : 'Projector'}</span>
+                        </button>
+                        <button class="btn-arena projector-output-menu-trigger" onclick="Studio.toggleProjectorMenu(event)" title="Output Display" aria-label="Output Display" ${Studio.projectorBusy ? 'disabled' : ''}>
+                            <i data-lucide="chevron-down"></i>
+                        </button>
+                    </div>
+                    ${Studio.projectorMenuOpen ? `<div class="projector-output-menu">${projectorOptions}</div>` : ''}
+                </div>
                 <button class="btn-arena" onclick="Studio.showReport()">
                     <i data-lucide="history"></i>
                     Draw History

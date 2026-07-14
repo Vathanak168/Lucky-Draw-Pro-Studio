@@ -250,6 +250,119 @@ input[type="radio"] {
     box-shadow: 0 1px 0 rgba(18, 207, 255, 0.05), 0 5px 16px rgba(0, 0, 0, 0.28);
 }
 
+.projector-output-wrap {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.projector-split-control {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.projector-output-toggle {
+    width: 94px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 8px !important;
+}
+
+.projector-output-menu-trigger {
+    width: 28px;
+    min-width: 28px;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.projector-output-menu-trigger .lucide {
+    width: 12px;
+    height: 12px;
+}
+
+.projector-live-dot {
+    display: none;
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+    border-radius: 50%;
+    background: #30d158;
+}
+
+.projector-split-control[data-active="true"] .projector-output-toggle {
+    background: rgba(48, 209, 88, 0.14) !important;
+    border-color: rgba(48, 209, 88, 0.55) !important;
+    color: #74e893 !important;
+}
+
+.projector-split-control[data-active="true"] .projector-live-dot {
+    display: block;
+}
+
+.projector-output-menu {
+    position: absolute;
+    z-index: 2200;
+    top: calc(100% + 6px);
+    right: 0;
+    width: 238px;
+    padding: 4px;
+    border: 1px solid #314657;
+    border-radius: 6px;
+    background: #0b131d;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.48);
+}
+
+.projector-output-menu button {
+    width: 100%;
+    min-height: 32px;
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 7px;
+    padding: 0 7px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #dce6ed;
+    cursor: pointer;
+    font-size: 10px;
+    text-align: left;
+}
+
+.projector-output-menu button:hover,
+.projector-output-menu button.selected {
+    background: #18283a;
+    color: #fff;
+}
+
+.projector-output-menu button span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.projector-output-menu button .lucide {
+    width: 14px;
+    height: 14px;
+}
+
+.projector-output-menu button .lucide:last-child {
+    color: #30d158;
+}
+
+.projector-output-empty {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
 .arena-panel-left {
     border-right-color: var(--border-color);
 }

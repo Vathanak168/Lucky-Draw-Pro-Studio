@@ -339,5 +339,42 @@ window.DesktopStorage = {
             method: 'POST',
             body: JSON.stringify({ payload })
         });
+    },
+
+    async projectorStatus() {
+        if (this.bridge && typeof this.bridge.projector_status === 'function') {
+            return this.bridge.projector_status();
+        }
+        return {
+            ok: true,
+            native: false,
+            active: false,
+            canOpen: false,
+            selectedDisplayId: '',
+            activeDisplayId: '',
+            externalDisplayCount: 0,
+            displays: []
+        };
+    },
+
+    async projectorToggle(displayId = '') {
+        if (this.bridge && typeof this.bridge.projector_toggle === 'function') {
+            return this.bridge.projector_toggle(displayId);
+        }
+        throw new Error('Projector Output is available in the Desktop App');
+    },
+
+    async projectorSelectDisplay(displayId) {
+        if (this.bridge && typeof this.bridge.projector_select_display === 'function') {
+            return this.bridge.projector_select_display(displayId);
+        }
+        throw new Error('Projector Output is available in the Desktop App');
+    },
+
+    async projectorClose() {
+        if (this.bridge && typeof this.bridge.projector_close === 'function') {
+            return this.bridge.projector_close();
+        }
+        return this.projectorStatus();
     }
 };
