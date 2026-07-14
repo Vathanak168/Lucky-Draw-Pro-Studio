@@ -111,6 +111,7 @@ window.ZoneB = {
         S.syncSettingsFromConfigs();
 
         const roundResult = S.roundResults[S.currentRound];
+        const previousWinners = roundResult && Array.isArray(roundResult.winners) ? [...roundResult.winners] : [];
         if (roundResult && roundResult.winners) {
             // Return to pool if duplicates disabled
             if (!S.settings.allowDuplicates) {
@@ -134,6 +135,6 @@ window.ZoneB = {
             Draw.initializePoolsSilently();
         }
         Display.resetDisplayForNewRound();
-        Draw.startDraw();
+        Draw.startDraw({ historyType: 'redraw_round', previousWinners });
     }
 };

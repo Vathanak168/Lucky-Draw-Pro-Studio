@@ -110,7 +110,7 @@ window.Draw = {
         return finalWinnerIds;
     },
 
-    startDraw() {
+    startDraw(options = {}) {
         const S = EngineState;
         // Auto-heal stuck isDrawing state if no active intervals/animations exist
         if (S.isDrawing && (!S.AnimationManager || (S.AnimationManager.intervals && S.AnimationManager.intervals.size === 0))) {
@@ -193,6 +193,17 @@ window.Draw = {
             lastDrawnAt: new Date().toISOString()
         };
 
+        S.recordHistoryEvent({
+            type: options.historyType || 'draw',
+            roundIndex: S.currentRound,
+            round: S.currentRound + 1,
+            category: S.settings.roundCategories[S.currentRound] || 'Regular Draw',
+            source: S.settings.roundDataSources[S.currentRound] || currentDataSource,
+            winners: roundWinnerObjects,
+            previousWinners: options.previousWinners || []
+        });
+        S.saveDrawState();
+
         // Pre-render exact geometric virtual stage cards before animation so size & font are 100% identical!
         if (window.Display) {
             const rc = S.roundConfigs[S.currentRound] || S.getDefaultRoundConfig(S.currentRound);
@@ -262,6 +273,17 @@ window.Draw = {
         roundResult.winners[winnerIdx] = newWinner;
         roundResult.type = currentDataSource;
         roundResult.category = rc.category || S.settings.roundCategories[roundIdx] || 'Regular Draw';
+        S.recordHistoryEvent({
+            type: 'redraw',
+            roundIndex: roundIdx,
+            round: roundIdx + 1,
+            category: roundResult.category,
+            source: currentDataSource,
+            slotIndex: winnerIdx,
+            previousWinner: oldWinner,
+            newWinner,
+            winners: [newWinner]
+        });
         S.saveDrawState();
 
         const isStartEnabled = (rc.audioSpinStart !== undefined) ? rc.audioSpinStart : (S.audioSettings && S.audioSettings.autoSpinStart);

@@ -12,7 +12,7 @@
     <!-- Styles -->
     <link rel="stylesheet" href="styles/resolume_arena.css?v=6.0.1">
     <link rel="stylesheet" href="styles/virtual_stage.css?v=6.0.1">
-    <link rel="stylesheet" href="styles/macos_pro.css?v=7.1.0">
+    <link rel="stylesheet" href="styles/macos_pro.css?v=7.2.0">
     
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
@@ -46,27 +46,45 @@
 
     <!-- Report & Export Modal -->
     <div id="reportModal" class="modal-overlay" style="display:none;">
-        <div class="modal-card modal-lg">
+        <div class="modal-card modal-lg history-modal-card">
             <div class="modal-header">
                 <span style="display:flex; align-items:center; gap:8px;">
-                    <svg class="svg-icon svg-icon-lg" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                    <i data-lucide="history"></i>
                     Draw History
                 </span>
-                <button onclick="Studio.closeReport()" class="modal-close">
-                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                <button onclick="Studio.closeReport()" class="modal-close" title="Close" aria-label="Close">
+                    <i data-lucide="x"></i>
                 </button>
             </div>
-            <div id="report-body" class="modal-body"></div>
-            <div class="modal-footer">
-                <button class="btn-arena btn-arena-danger" onclick="Studio.clearReport()" style="margin-right:auto;">Clear History</button>
-                <button class="btn-arena" onclick="Studio.exportReportToExcel()">
-                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                    Export
-                </button>
+            <div id="report-body" class="modal-body history-modal-body"></div>
+            <div class="modal-footer history-modal-footer">
+                <span id="historyFooterStatus" class="history-footer-status"></span>
+                <div class="history-menu-wrap">
+                    <button class="btn-arena" onclick="Studio.toggleHistoryMenu('export', event)" aria-haspopup="menu" title="Export">
+                        <i data-lucide="download"></i>
+                        Export
+                        <i data-lucide="chevron-down"></i>
+                    </button>
+                    <div id="historyExportMenu" class="history-popup-menu" role="menu" hidden>
+                        <button role="menuitem" onclick="Studio.exportHistory('all')">Export All</button>
+                        <button role="menuitem" onclick="Studio.exportHistory('view')">Export Current View</button>
+                    </div>
+                </div>
                 <button class="btn-arena" onclick="Studio.printReport()">
-                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+                    <i data-lucide="printer"></i>
                     Print
                 </button>
+                <div class="history-menu-wrap">
+                    <button class="btn-arena history-more-button" onclick="Studio.toggleHistoryMenu('actions', event)" aria-haspopup="menu" title="More Actions" aria-label="More Actions">
+                        <i data-lucide="ellipsis"></i>
+                    </button>
+                    <div id="historyActionMenu" class="history-popup-menu history-action-menu" role="menu" hidden>
+                        <button class="danger" role="menuitem" onclick="Studio.resetDrawData()">
+                            <i data-lucide="rotate-ccw"></i>
+                            Reset Draw Data...
+                        </button>
+                    </div>
+                </div>
                 <button class="btn-arena" onclick="Studio.closeReport()">Close</button>
             </div>
         </div>

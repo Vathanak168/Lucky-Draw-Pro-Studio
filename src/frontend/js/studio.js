@@ -208,6 +208,7 @@ window.Studio = {
             if (dropdown && !e.target.closest('#ribbonOptionsDropdown') && !e.target.closest('.ribbon-display-trigger')) {
                 Studio.closeRibbonDisplayMenu();
             }
+            if (!e.target.closest('.history-menu-wrap')) Studio.closeHistoryMenus();
         });
 
         window.addEventListener('beforeunload', (event) => {
@@ -324,9 +325,37 @@ window.Studio = {
         );
     },
 
-    getHistoryResultsNewestFirst() {
+    historyView: 'results',
+    historySearch: '',
+    historyCategory: 'all',
+    historySource: 'all',
+    historySort: 'newest',
+    historySelectedRoundIndex: null,
+    historyRoundLimit: 50,
+    historyWinnerLimit: 50,
+    historyActivityLimit: 50,
+    historyOpenMenu: null,
+    historySearchTimer: null,
+
+    getHistorySourceLabel(source) {
+        if (source === 'list') return 'Participant Name';
+        if (source === 'id') return 'ID Ticket';
+        return 'Number Range';
+    },
+
+    formatHistoryTime(value) {
+        const date = value ? new Date(value) : null;
+        if (!date || Number.isNaN(date.getTime())) return '--';
+        return date.toLocaleString('en-GB', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: false
+        });
+    },
+
+    getHistoryResultEntries(sortMode = this.historySort) {
+        const totalRounds = Number(EngineState.totalRounds);
         const entries = Object.entries(EngineState.roundResults || {})
-            .filter(([, result]) => result)
+            .filter(([index, result]) => result && (!Number.isFinite(totalRounds) || totalRounds < 1 || Number(index) < totalRounds))
             .map(([index, result]) => ({ index: Number(index), result }));
 
         entries.sort((a, b) => {
@@ -334,125 +363,453 @@ window.Studio = {
             const bTime = Date.parse(b.result.lastDrawnAt || '');
             const aHasTime = Number.isFinite(aTime);
             const bHasTime = Number.isFinite(bTime);
-
-            if (aHasTime && bHasTime && aTime !== bTime) return bTime - aTime;
-            if (aHasTime !== bHasTime) return bHasTime ? 1 : -1;
+            if (aHasTime !== bHasTime) return aHasTime ? -1 : 1;
+            if (aHasTime && bHasTime && aTime !== bTime) return sortMode === 'oldest' ? aTime - bTime : bTime - aTime;
 
             const aRound = Number(a.result.round) || a.index + 1;
             const bRound = Number(b.result.round) || b.index + 1;
-            return bRound - aRound;
+            return sortMode === 'oldest' ? aRound - bRound : bRound - aRound;
         });
+        return entries;
+    },
 
-        return entries.map(entry => entry.result);
+    getHistoryResultsNewestFirst() {
+        return this.getHistoryResultEntries('newest').map(entry => entry.result);
+    },
+
+    getHistoryActivities(sortMode = this.historySort) {
+        const events = Array.isArray(EngineState.historyEvents) ? [...EngineState.historyEvents] : [];
+        return events.map((event, index) => ({ event, index })).sort((a, b) => {
+            const aTime = Date.parse(a.event.timestamp || '');
+            const bTime = Date.parse(b.event.timestamp || '');
+            const aHasTime = Number.isFinite(aTime);
+            const bHasTime = Number.isFinite(bTime);
+            if (aHasTime !== bHasTime) return aHasTime ? -1 : 1;
+            if (aHasTime && bHasTime && aTime !== bTime) return sortMode === 'oldest' ? aTime - bTime : bTime - aTime;
+            return sortMode === 'oldest' ? a.index - b.index : b.index - a.index;
+        }).map(entry => entry.event);
+    },
+
+    getFilteredHistoryResultEntries() {
+        const query = this.historySearch.trim().toLowerCase();
+        return this.getHistoryResultEntries().filter(({ result, index }) => {
+            const source = result.type || 'numeric';
+            if (this.historyCategory !== 'all' && result.category !== this.historyCategory) return false;
+            if (this.historySource !== 'all' && source !== this.historySource) return false;
+            if (!query) return true;
+            const winnerText = (result.winners || []).map(winner => `${winner?.name || ''} ${winner?.id || ''}`).join(' ');
+            return [`round ${result.round || index + 1}`, result.category || '', this.getHistorySourceLabel(source), winnerText]
+                .join(' ').toLowerCase().includes(query);
+        });
+    },
+
+    getFilteredHistoryEvents() {
+        const query = this.historySearch.trim().toLowerCase();
+        return this.getHistoryActivities().filter(event => {
+            if (this.historyCategory !== 'all' && event.category !== this.historyCategory) return false;
+            if (this.historySource !== 'all' && event.source !== this.historySource) return false;
+            if (!query) return true;
+            const winnerText = [
+                ...(event.winners || []),
+                ...(event.previousWinners || []),
+                event.previousWinner,
+                event.newWinner
+            ].filter(Boolean).map(winner => `${winner.name || ''} ${winner.id || ''} ${winner.participantName || ''}`).join(' ');
+            return [this.getHistoryEventLabel(event.type), `round ${this.getHistoryEventRound(event)}`, event.category || '', this.getHistorySourceLabel(event.source), winnerText]
+                .join(' ').toLowerCase().includes(query);
+        });
+    },
+
+    getHistoryEventLabel(type) {
+        if (type === 'redraw') return 'Redraw Winner';
+        if (type === 'redraw_round') return 'Redraw Round';
+        return 'Draw';
+    },
+
+    getHistoryEventRound(event) {
+        const round = Number(event?.round);
+        if (Number.isFinite(round) && round > 0) return round;
+        const roundIndex = Number(event?.roundIndex);
+        return Number.isFinite(roundIndex) && roundIndex >= 0 ? roundIndex + 1 : '--';
+    },
+
+    getHistoryEventDetail(event) {
+        if (event.type === 'redraw') {
+            const previous = event.previousWinner?.name || 'N/A';
+            const next = event.newWinner?.name || event.winners?.[0]?.name || 'N/A';
+            const slot = Number.isInteger(event.slotIndex) ? event.slotIndex + 1 : 1;
+            return `Winner #${slot}: ${previous} to ${next}`;
+        }
+        if (event.type === 'redraw_round') {
+            return `${event.previousWinners?.length || 0} to ${event.winners?.length || 0} Winners`;
+        }
+        return `${event.winners?.length || 0} Winners`;
+    },
+
+    getHistorySummary() {
+        const results = this.getHistoryResultEntries('newest');
+        const events = this.getHistoryActivities('newest');
+        const winnerCount = results.reduce((total, entry) => total + (entry.result.winners?.length || 0), 0);
+        const redrawCount = events.filter(event => event.type === 'redraw' || event.type === 'redraw_round').length;
+        const timestamps = [
+            ...results.map(entry => Date.parse(entry.result.lastDrawnAt || '')),
+            ...events.map(event => Date.parse(event.timestamp || ''))
+        ].filter(Number.isFinite);
+        return {
+            rounds: results.length,
+            winners: winnerCount,
+            redraws: redrawCount,
+            latest: timestamps.length ? this.formatHistoryTime(Math.max(...timestamps)) : '--'
+        };
+    },
+
+    getHistoryCategories() {
+        const categories = new Set(EngineState.prizeCategories || []);
+        this.getHistoryResultEntries('newest').forEach(({ result }) => categories.add(result.category || 'Draw'));
+        this.getHistoryActivities('newest').forEach(event => categories.add(event.category || 'Draw'));
+        return [...categories].filter(Boolean);
+    },
+
+    renderHistoryToolbar() {
+        const categoryOptions = this.getHistoryCategories().map(category => `
+            <option value="${this.escapeHtml(category)}" ${this.historyCategory === category ? 'selected' : ''}>${this.escapeHtml(category)}</option>
+        `).join('');
+        return `
+            <div class="history-toolbar">
+                <div class="history-segmented" role="tablist" aria-label="History View">
+                    <button class="${this.historyView === 'results' ? 'active' : ''}" onclick="Studio.setHistoryView('results')" role="tab" aria-selected="${this.historyView === 'results'}">Results</button>
+                    <button class="${this.historyView === 'activity' ? 'active' : ''}" onclick="Studio.setHistoryView('activity')" role="tab" aria-selected="${this.historyView === 'activity'}">Activity</button>
+                </div>
+                <label class="history-search-field" title="Search History">
+                    <i data-lucide="search"></i>
+                    <input id="historySearchInput" type="search" value="${this.escapeHtml(this.historySearch)}" oninput="Studio.setHistorySearch(this.value)" placeholder="Search" aria-label="Search History">
+                </label>
+                <select onchange="Studio.setHistoryFilter('category', this.value)" aria-label="Prize Category" title="Prize Category">
+                    <option value="all">All Categories</option>
+                    ${categoryOptions}
+                </select>
+                <select onchange="Studio.setHistoryFilter('source', this.value)" aria-label="Draw Source" title="Draw Source">
+                    <option value="all" ${this.historySource === 'all' ? 'selected' : ''}>All Sources</option>
+                    <option value="numeric" ${this.historySource === 'numeric' ? 'selected' : ''}>Number Range</option>
+                    <option value="list" ${this.historySource === 'list' ? 'selected' : ''}>Participant Name</option>
+                    <option value="id" ${this.historySource === 'id' ? 'selected' : ''}>ID Ticket</option>
+                </select>
+                <select onchange="Studio.setHistoryFilter('sort', this.value)" aria-label="Sort History" title="Sort History">
+                    <option value="newest" ${this.historySort === 'newest' ? 'selected' : ''}>Newest First</option>
+                    <option value="oldest" ${this.historySort === 'oldest' ? 'selected' : ''}>Oldest First</option>
+                </select>
+            </div>
+        `;
+    },
+
+    renderHistoryResults() {
+        const entries = this.getFilteredHistoryResultEntries();
+        if (!entries.some(entry => entry.index === this.historySelectedRoundIndex)) {
+            this.historySelectedRoundIndex = entries.length ? entries[0].index : null;
+            this.historyWinnerLimit = 50;
+        }
+        const selectedEntry = entries.find(entry => entry.index === this.historySelectedRoundIndex) || null;
+        const visibleEntries = entries.slice(0, this.historyRoundLimit);
+        const roundRows = visibleEntries.map(({ index, result }) => {
+            const roundNumber = Number(result.round) || index + 1;
+            const winnerCount = result.winners?.length || 0;
+            return `
+                <button class="history-round-row ${index === this.historySelectedRoundIndex ? 'selected' : ''}" onclick="Studio.selectHistoryRound(${index})">
+                    <span class="history-round-main"><strong>Round ${roundNumber}</strong><span>${this.escapeHtml(result.category || 'Draw')}</span></span>
+                    <span class="history-round-meta"><span>${winnerCount} ${winnerCount === 1 ? 'Winner' : 'Winners'}</span><time>${this.escapeHtml(this.formatHistoryTime(result.lastDrawnAt))}</time></span>
+                </button>
+            `;
+        }).join('');
+        const loadMoreRounds = entries.length > visibleEntries.length ? `
+            <button class="history-load-more" onclick="Studio.showMoreHistory('rounds')">Show More</button>
+        ` : '';
+
+        let detail = '<div class="history-empty">No Results</div>';
+        if (selectedEntry) {
+            const result = selectedEntry.result;
+            const winners = Array.isArray(result.winners) ? result.winners : [];
+            const visibleWinners = winners.slice(0, this.historyWinnerLimit);
+            const winnerRows = visibleWinners.map((winner, index) => `
+                <tr>
+                    <td class="history-slot-cell">#${index + 1}</td>
+                    <td class="history-winner-cell">${this.escapeHtml(winner?.name || 'N/A')}</td>
+                    <td class="history-id-cell">${this.escapeHtml(winner?.id || '')}</td>
+                </tr>
+            `).join('');
+            const loadMoreWinners = winners.length > visibleWinners.length ? `
+                <button class="history-load-more" onclick="Studio.showMoreHistory('winners')">Show More</button>
+            ` : '';
+            detail = `
+                <section class="history-detail-pane">
+                    <header class="history-detail-header">
+                        <div><h3>Round ${Number(result.round) || selectedEntry.index + 1}</h3><span>${this.escapeHtml(result.category || 'Draw')}</span></div>
+                        <div class="history-detail-meta">
+                            <span>${this.escapeHtml(this.getHistorySourceLabel(result.type || 'numeric'))}</span>
+                            <span>${winners.length} ${winners.length === 1 ? 'Winner' : 'Winners'}</span>
+                            <time>${this.escapeHtml(this.formatHistoryTime(result.lastDrawnAt))}</time>
+                        </div>
+                    </header>
+                    <div class="history-table-scroll">
+                        <table class="history-table">
+                            <thead><tr><th>Slot</th><th>Winner</th><th>ID</th></tr></thead>
+                            <tbody>${winnerRows}</tbody>
+                        </table>
+                        ${loadMoreWinners}
+                    </div>
+                </section>
+            `;
+        }
+
+        return `
+            <div class="history-results-layout">
+                <aside class="history-round-pane">
+                    <div class="history-pane-heading"><span>Rounds</span><strong>${entries.length}</strong></div>
+                    <div class="history-round-scroll">${roundRows || '<div class="history-empty">No Results</div>'}${loadMoreRounds}</div>
+                </aside>
+                ${detail}
+            </div>
+        `;
+    },
+
+    renderHistoryActivity() {
+        const events = this.getFilteredHistoryEvents();
+        const visibleEvents = events.slice(0, this.historyActivityLimit);
+        const rows = visibleEvents.map(event => `
+            <tr>
+                <td><time>${this.escapeHtml(this.formatHistoryTime(event.timestamp))}</time></td>
+                <td><span class="history-event-type ${this.escapeHtml(event.type || 'draw')}">${this.escapeHtml(this.getHistoryEventLabel(event.type))}</span></td>
+                <td>Round ${this.getHistoryEventRound(event)}</td>
+                <td>${this.escapeHtml(event.category || 'Draw')}</td>
+                <td>${this.escapeHtml(this.getHistoryEventDetail(event))}</td>
+            </tr>
+        `).join('');
+        const loadMore = events.length > visibleEvents.length ? `
+            <button class="history-load-more" onclick="Studio.showMoreHistory('activity')">Show More</button>
+        ` : '';
+        return `
+            <section class="history-activity-pane">
+                <div class="history-pane-heading"><span>Activity</span><strong>${events.length}</strong></div>
+                <div class="history-table-scroll">
+                    ${events.length ? `
+                        <table class="history-table history-activity-table">
+                            <thead><tr><th>Time</th><th>Event</th><th>Round</th><th>Category</th><th>Details</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                        ${loadMore}
+                    ` : '<div class="history-empty">No Activity</div>'}
+                </div>
+            </section>
+        `;
+    },
+
+    renderHistoryManager() {
+        const body = document.getElementById('report-body');
+        if (!body) return;
+        const summary = this.getHistorySummary();
+        body.innerHTML = `
+            <div class="history-manager">
+                <div class="history-summary-bar">
+                    <div><span>Rounds</span><strong>${summary.rounds}</strong></div>
+                    <div><span>Winners</span><strong>${summary.winners}</strong></div>
+                    <div><span>Redraws</span><strong>${summary.redraws}</strong></div>
+                    <div><span>Latest Draw</span><strong>${this.escapeHtml(summary.latest)}</strong></div>
+                </div>
+                ${this.renderHistoryToolbar()}
+                <div class="history-content">${this.historyView === 'activity' ? this.renderHistoryActivity() : this.renderHistoryResults()}</div>
+            </div>
+        `;
+        const footerStatus = document.getElementById('historyFooterStatus');
+        if (footerStatus) {
+            const count = this.historyView === 'activity' ? this.getFilteredHistoryEvents().length : this.getFilteredHistoryResultEntries().length;
+            footerStatus.textContent = `${count} ${this.historyView === 'activity' ? (count === 1 ? 'Event' : 'Events') : (count === 1 ? 'Round' : 'Rounds')}`;
+        }
+        if (window.lucide) lucide.createIcons();
     },
 
     showReport() {
         const modal = document.getElementById('reportModal');
-        const body = document.getElementById('report-body');
-        if (!modal || !body) return;
-
-        const results = this.getHistoryResultsNewestFirst();
-        if (results.length === 0) {
-            body.innerHTML = '<div class="ui-empty-state">No Draw History</div>';
-        } else {
-            let tableHTML = '<table class="winner-table"><thead><tr><th>Round</th><th>Prize Category</th><th>Draw Source</th><th>Winner</th></tr></thead><tbody>';
-            results.forEach(r => {
-                const roundType = r.type === 'list' ? 'Participant Name' : ((r.type === 'id') ? 'ID Ticket' : 'Number Range');
-                const categoryName = r.category || '<i>Draw</i>';
-                r.winners.forEach((w, i) => {
-                    const winnerName = w ? (w.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')) : '<i>N/A</i>';
-                    tableHTML += `
-                        <tr>
-                            <td>${i === 0 ? `Round ${r.round}` : ''}</td>
-                            <td>${i === 0 ? categoryName : ''}</td>
-                            <td>${roundType}</td>
-                            <td style="color:var(--accent-cyan);">${winnerName}</td>
-                        </tr>
-                    `;
-                });
-            });
-            tableHTML += '</tbody></table>';
-            body.innerHTML = tableHTML;
+        if (!modal) return;
+        if (this.historyCategory !== 'all' && !this.getHistoryCategories().includes(this.historyCategory)) {
+            this.historyCategory = 'all';
         }
+        if (!['all', 'numeric', 'list', 'id'].includes(this.historySource)) this.historySource = 'all';
+        this.historyRoundLimit = 50;
+        this.historyWinnerLimit = 50;
+        this.historyActivityLimit = 50;
+        this.closeHistoryMenus();
         modal.style.display = 'flex';
+        this.renderHistoryManager();
     },
 
     closeReport() {
         const modal = document.getElementById('reportModal');
+        this.closeHistoryMenus();
         if (modal) modal.style.display = 'none';
     },
 
-    clearReport() {
-        if (!confirm('Clear all report history and reset draw progress? This cannot be undone.')) return;
+    setHistoryView(view) {
+        this.historyView = view === 'activity' ? 'activity' : 'results';
+        this.historyRoundLimit = 50;
+        this.historyWinnerLimit = 50;
+        this.historyActivityLimit = 50;
+        this.renderHistoryManager();
+    },
+
+    setHistorySearch(value) {
+        this.historySearch = value || '';
+        if (this.historySearchTimer) clearTimeout(this.historySearchTimer);
+        this.historySearchTimer = setTimeout(() => {
+            this.historyRoundLimit = 50;
+            this.historyWinnerLimit = 50;
+            this.historyActivityLimit = 50;
+            this.renderHistoryManager();
+            const input = document.getElementById('historySearchInput');
+            if (input) {
+                input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
+            }
+        }, 120);
+    },
+
+    setHistoryFilter(field, value) {
+        if (field === 'category') this.historyCategory = value;
+        else if (field === 'source') this.historySource = value;
+        else if (field === 'sort') this.historySort = value === 'oldest' ? 'oldest' : 'newest';
+        this.historyRoundLimit = 50;
+        this.historyWinnerLimit = 50;
+        this.historyActivityLimit = 50;
+        this.renderHistoryManager();
+    },
+
+    selectHistoryRound(index) {
+        this.historySelectedRoundIndex = Number(index);
+        this.historyWinnerLimit = 50;
+        this.renderHistoryManager();
+    },
+
+    showMoreHistory(section) {
+        if (section === 'rounds') this.historyRoundLimit += 50;
+        else if (section === 'winners') this.historyWinnerLimit += 50;
+        else if (section === 'activity') this.historyActivityLimit += 50;
+        this.renderHistoryManager();
+    },
+
+    toggleHistoryMenu(menu, event) {
+        if (event) event.stopPropagation();
+        this.historyOpenMenu = this.historyOpenMenu === menu ? null : menu;
+        const exportMenu = document.getElementById('historyExportMenu');
+        const actionMenu = document.getElementById('historyActionMenu');
+        if (exportMenu) exportMenu.hidden = this.historyOpenMenu !== 'export';
+        if (actionMenu) actionMenu.hidden = this.historyOpenMenu !== 'actions';
+    },
+
+    closeHistoryMenus() {
+        this.historyOpenMenu = null;
+        const exportMenu = document.getElementById('historyExportMenu');
+        const actionMenu = document.getElementById('historyActionMenu');
+        if (exportMenu) exportMenu.hidden = true;
+        if (actionMenu) actionMenu.hidden = true;
+    },
+
+    resetDrawData() {
+        this.closeHistoryMenus();
+        if (!confirm('Reset all draw results, redraw activity, winner progress, and participant pools? This cannot be undone.')) return;
         EngineState.roundResults = [];
+        EngineState.historyEvents = [];
         EngineState.allWinners = [];
-        if (EngineState.masterListPool.length > 0 || EngineState.masterNumericPool.length > 0 || EngineState.masterIdPool.length > 0) {
-            EngineState.drawListPool = [...EngineState.masterListPool];
-            EngineState.drawNumericPool = [...EngineState.masterNumericPool];
+        EngineState.drawCompletedThisRound = false;
+        EngineState.isDrawing = false;
+        if (window.Draw && typeof Draw.initializePoolsSilently === 'function') {
+            Draw.initializePoolsSilently();
+        } else {
+            EngineState.drawListPool = [...(EngineState.masterListPool || [])];
+            EngineState.drawNumericPool = [...(EngineState.masterNumericPool || [])];
             EngineState.drawIdPool = [...(EngineState.masterIdPool || [])];
         }
-        EngineState.clearDrawState();
-        this.showReport();
+        EngineState.saveDrawState();
+        if (window.Display) Display.resetDisplayForNewRound();
         if (window.ZoneA) ZoneA.render();
         if (window.ZoneB) ZoneB.render();
+        if (window.ZoneC) ZoneC.render();
         if (window.ZoneD) ZoneD.render();
         if (window.ZoneE) ZoneE.render();
+        this.historySelectedRoundIndex = null;
+        this.showReport();
+    },
+
+    clearReport() {
+        this.resetDrawData();
     },
 
     printReport() {
+        this.closeHistoryMenus();
         window.print();
     },
 
-    exportReportToExcel() {
-        const results = this.getHistoryResultsNewestFirst();
-        if (results.length === 0) { alert('No report data to export.'); return; }
-
-        const totalWinners = results.reduce((acc, r) => acc + (r.winners?.length || 0), 0);
-        const reportDate = new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'medium' });
-
-        const summaryHTML = `
-            <table style="width:100%;">
-                <thead>
-                    <tr><th colspan="2" style="background-color:#2f80ff; color:#ffffff; padding:10px; font-size:1.2em;">Lucky Draw Pro Studio - Draw History</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td style="padding:8px; border:1px solid #999;">Program Name</td><td style="padding:8px; border:1px solid #999;">Lucky Draw Pro Studio v6.0</td></tr>
-                    <tr><td style="padding:8px; border:1px solid #999;">Report Date</td><td style="padding:8px; border:1px solid #999;">${reportDate}</td></tr>
-                    <tr><td style="padding:8px; border:1px solid #999;">Rounds Drawn</td><td style="padding:8px; border:1px solid #999;">${results.length}</td></tr>
-                    <tr><td style="padding:8px; border:1px solid #999;">Total Winners</td><td style="padding:8px; border:1px solid #999;">${totalWinners}</td></tr>
-                </tbody>
-            </table>
-        `;
-
-        let tableHTML = '<table style="width:100%; margin-top:20px;"><thead><tr><th>Round</th><th>Prize Category</th><th>Draw Source</th><th>Winner Name / Number</th></tr></thead><tbody>';
-        results.forEach(r => {
-            const roundType = r.type === 'list' ? 'Participant Name' : ((r.type === 'id') ? 'ID Ticket' : 'Number Range');
-            const categoryName = r.category || '(None)';
-            r.winners.forEach((w, i) => {
-                const name = w && w.name ? w.name.replace(/</g, '&lt;').replace(/>/g, '&gt;') : 'N/A';
-                const roundCell = i === 0 ? `<td rowspan="${r.winners.length}" style="vertical-align:middle; text-align:center;">${r.round}</td>` : '';
-                const categoryCell = i === 0 ? `<td rowspan="${r.winners.length}" style="vertical-align:middle;">${categoryName}</td>` : '';
-                tableHTML += `<tr>${roundCell}${categoryCell}<td>${roundType}</td><td>${name}</td></tr>`;
-            });
+    getHistoryResultExportRows(entries) {
+        const rows = [];
+        entries.forEach(({ index, result }) => {
+            const winners = Array.isArray(result.winners) ? result.winners : [];
+            winners.forEach((winner, slotIndex) => rows.push({
+                'Draw Time': result.lastDrawnAt || '',
+                'Round': Number(result.round) || index + 1,
+                'Prize Category': result.category || 'Draw',
+                'Draw Source': this.getHistorySourceLabel(result.type || 'numeric'),
+                'Slot': slotIndex + 1,
+                'Winner': winner?.name || 'N/A',
+                'Winner ID': winner?.id || ''
+            }));
         });
-        tableHTML += '</tbody></table>';
+        return rows;
+    },
 
-        const template = `
-            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif; font-weight:400;} table{border-collapse:collapse;} th,td{border:1px solid #999; padding:8px 12px;} th{background-color:#f0f0f0; color:#333;}</style></head>
-            <body>${summaryHTML}${tableHTML}</body>
-            </html>
-        `;
+    getHistoryActivityExportRows(events) {
+        return events.map(event => ({
+            'Time': event.timestamp || '',
+            'Event': this.getHistoryEventLabel(event.type),
+            'Round': this.getHistoryEventRound(event),
+            'Prize Category': event.category || 'Draw',
+            'Draw Source': this.getHistorySourceLabel(event.source || 'numeric'),
+            'Slot': Number.isInteger(event.slotIndex) ? event.slotIndex + 1 : '',
+            'Previous Winner': event.previousWinner?.name || (event.previousWinners || []).map(winner => winner.name).join(', '),
+            'New Winner': event.newWinner?.name || (event.winners || []).map(winner => winner.name).join(', '),
+            'Winner Count': event.winners?.length || 0
+        }));
+    },
 
-        const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", "lucky_draw_history.xls");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+    exportHistory(scope = 'all') {
+        this.closeHistoryMenus();
+        if (!window.XLSX || !XLSX.utils) {
+            alert('Excel export is unavailable.');
+            return;
+        }
+        const workbook = XLSX.utils.book_new();
+        let sheetCount = 0;
+        const appendSheet = (rows, name) => {
+            if (!rows.length) return;
+            const sheet = XLSX.utils.json_to_sheet(rows);
+            XLSX.utils.book_append_sheet(workbook, sheet, name);
+            sheetCount++;
+        };
+
+        if (scope === 'all' || this.historyView === 'results') {
+            const entries = scope === 'all' ? this.getHistoryResultEntries() : this.getFilteredHistoryResultEntries();
+            appendSheet(this.getHistoryResultExportRows(entries), 'Results');
+        }
+        if (scope === 'all' || this.historyView === 'activity') {
+            const events = scope === 'all' ? this.getHistoryActivities() : this.getFilteredHistoryEvents();
+            appendSheet(this.getHistoryActivityExportRows(events), 'Activity');
+        }
+        if (!sheetCount) {
+            alert('No history data to export.');
+            return;
+        }
+        const suffix = scope === 'all' ? 'all' : this.historyView;
+        XLSX.writeFile(workbook, `lucky_draw_history_${suffix}.xlsx`, { compression: true });
+    },
+
+    exportReportToExcel() {
+        this.exportHistory('all');
     },
 
     // ---- Microsoft Word File Workflow & Save Controls (Word Process) ----

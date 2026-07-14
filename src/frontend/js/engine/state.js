@@ -24,6 +24,7 @@ window.EngineState = {
     allWinners: [],
     presetWinners: [],
     roundResults: [],
+    historyEvents: [],
     prizeCategories: ["Grand Prizes", "VIP Rounds", "Regular Draw", "Consolation"],
     categoryThemes: {
         "Grand Prizes": { color: "gold", defaultPool: "numeric" },
@@ -214,12 +215,49 @@ window.EngineState = {
     },
 
     // ---- Draw State Persistence ----
+    snapshotHistoryWinner(winner) {
+        if (!winner || typeof winner !== 'object') return null;
+        const snapshot = {
+            id: winner.id == null ? '' : String(winner.id),
+            name: winner.name == null ? '' : String(winner.name),
+            type: winner.type == null ? '' : String(winner.type)
+        };
+        if (winner.originalParticipant && winner.originalParticipant.name) {
+            snapshot.participantName = String(winner.originalParticipant.name);
+        }
+        return snapshot;
+    },
+
+    recordHistoryEvent(event = {}) {
+        if (!Array.isArray(this.historyEvents)) this.historyEvents = [];
+        const allowedTypes = new Set(['draw', 'redraw', 'redraw_round']);
+        const type = allowedTypes.has(event.type) ? event.type : 'draw';
+        const roundIndex = Number.isInteger(event.roundIndex) ? event.roundIndex : this.currentRound;
+        const record = {
+            id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `history_${Date.now()}_${this.historyEvents.length}`,
+            type,
+            timestamp: event.timestamp || new Date().toISOString(),
+            roundIndex,
+            round: Number(event.round) || roundIndex + 1,
+            category: String(event.category || 'Draw'),
+            source: String(event.source || 'numeric'),
+            slotIndex: Number.isInteger(event.slotIndex) ? event.slotIndex : null,
+            winners: Array.isArray(event.winners) ? event.winners.map(winner => this.snapshotHistoryWinner(winner)).filter(Boolean) : [],
+            previousWinners: Array.isArray(event.previousWinners) ? event.previousWinners.map(winner => this.snapshotHistoryWinner(winner)).filter(Boolean) : [],
+            previousWinner: this.snapshotHistoryWinner(event.previousWinner),
+            newWinner: this.snapshotHistoryWinner(event.newWinner)
+        };
+        this.historyEvents.push(record);
+        return record;
+    },
+
     buildDrawState() {
         return {
             currentRound: this.currentRound,
             totalRounds: this.totalRounds,
             allWinners: this.allWinners,
             roundResults: this.roundResults,
+            historyEvents: this.historyEvents,
             drawListPool: this.drawListPool,
             drawNumericPool: this.drawNumericPool,
             masterListPool: this.masterListPool,
@@ -245,6 +283,7 @@ window.EngineState = {
         if (data.totalRounds !== undefined) this.totalRounds = data.totalRounds;
         if (Array.isArray(data.allWinners)) this.allWinners = data.allWinners;
         if (Array.isArray(data.roundResults)) this.roundResults = data.roundResults;
+        this.historyEvents = Array.isArray(data.historyEvents) ? data.historyEvents : [];
         if (Array.isArray(data.drawListPool)) this.drawListPool = data.drawListPool;
         if (Array.isArray(data.drawNumericPool)) this.drawNumericPool = data.drawNumericPool;
         if (Array.isArray(data.masterListPool)) this.masterListPool = data.masterListPool;
@@ -337,6 +376,7 @@ window.EngineState = {
         this.roundConfigs = [this.getDefaultRoundConfig(0)];
         this.roundConfigs[0].category = this.prizeCategories[0] || "Regular Draw";
         this.roundResults = [];
+        this.historyEvents = [];
         this.allWinners = [];
         this.currentRound = 0;
         this.isDrawing = false;
@@ -453,6 +493,7 @@ window.EngineState = {
             if (this.drawState) this.restoreDrawStateData();
             else {
                 this.roundResults = [];
+                this.historyEvents = [];
                 this.allWinners = [];
                 this.currentRound = 0;
                 this.drawCompletedThisRound = false;
