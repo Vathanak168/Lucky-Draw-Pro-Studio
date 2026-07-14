@@ -471,6 +471,40 @@ input[type="radio"] {
     box-shadow: none;
 }
 
+.round-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    cursor: grab;
+    user-select: none;
+}
+
+.round-drag-handle:active {
+    cursor: grabbing;
+}
+
+.round-drag-handle .lucide {
+    opacity: 0.62;
+}
+
+.round-card-action {
+    width: 32px;
+    min-width: 32px;
+    height: 30px;
+    min-height: 30px !important;
+    padding: 0 !important;
+    flex: 0 0 32px;
+}
+
+.round-card-action .lucide {
+    width: 15px;
+    height: 15px;
+    pointer-events: none;
+}
+
 .round-action-toast {
     position: fixed;
     top: 12px;

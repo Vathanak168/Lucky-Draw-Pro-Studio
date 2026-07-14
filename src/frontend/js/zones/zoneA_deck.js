@@ -66,17 +66,20 @@ window.ZoneA = {
             columnsHtml += `
                 <div class="arena-column-slot ${isActive ? 'active' : ''} ${isDrawing ? 'drawing' : ''}" 
                      data-round-index="${i}"
-                     draggable="true"
-                     ondragstart="ZoneA.onDragStart(event, ${i})"
                      ondragover="ZoneA.onDragOver(event)"
                      ondragleave="ZoneA.onDragLeave(event)"
                      ondrop="ZoneA.onDrop(event, ${i})"
                      onclick="ZoneA.selectSlot(${i})"
-                     title="Reorder Round">
+                     title="Select Round">
                     <div>
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-                            <span style="display:flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:10px; color:var(--text-secondary);">
-                                <i data-lucide="grip-vertical" style="cursor:grab; opacity:0.6;"></i> Round #${i + 1}
+                            <span class="round-drag-handle"
+                                  draggable="true"
+                                  ondragstart="ZoneA.onDragStart(event, ${i})"
+                                  ondragend="ZoneA.onDragEnd(event)"
+                                  onclick="event.stopPropagation()"
+                                  title="Reorder Round">
+                                <i data-lucide="grip-vertical"></i> Round #${i + 1}
                             </span>
                             ${statusPill}
                         </div>
@@ -97,11 +100,11 @@ window.ZoneA = {
                              Round <span style="color:#fff;">#${i + 1}</span>
                         </span>
                         <div style="display:flex; gap:4px;">
-                            <button class="btn-arena" onclick="event.stopPropagation(); ZoneA.duplicateSlot(${i})" title="Duplicate Round" aria-label="Duplicate Round" style="padding:2px 6px; font-size:10px;">
+                            <button type="button" class="btn-arena round-card-action" draggable="false" ondragstart="event.preventDefault()" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation(); ZoneA.duplicateSlot(${i})" title="Duplicate Round" aria-label="Duplicate Round">
                                 <i data-lucide="copy-plus"></i>
                             </button>
                             ${totalRounds > 1 ? `
-                            <button class="btn-arena btn-arena-danger" onclick="event.stopPropagation(); ZoneA.deleteSlot(${i})" title="Delete Round" style="padding:2px 6px; font-size:10px;">
+                            <button type="button" class="btn-arena btn-arena-danger round-card-action" draggable="false" ondragstart="event.preventDefault()" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation(); ZoneA.deleteSlot(${i})" title="Delete Round" aria-label="Delete Round">
                                 <i data-lucide="trash-2"></i>
                             </button>
                             ` : ''}
@@ -149,10 +152,10 @@ window.ZoneA = {
         this.render();
     },
 
-    selectSlot(index) {
+    selectSlot(index, options = {}) {
         if (EngineState.isDrawing) return;
         EngineState.currentRound = index;
-        Draw.initializePoolsSilently();
+        if (options.refreshPools !== false) Draw.initializePoolsSilently();
 
         // Reset stage output or reveal instant winners if already drawn
         const roundResult = EngineState.roundResults[index];
@@ -186,6 +189,10 @@ window.ZoneA = {
 
     deleteSlot(index) {
         const S = EngineState;
+        if (S.isDrawing) {
+            this.showActionStatus('Finish the current draw first', 'warning');
+            return;
+        }
         if (S.totalRounds <= 1) return;
         if (!confirm(`Delete Round ${index + 1}?`)) return;
 
@@ -238,7 +245,7 @@ window.ZoneA = {
         S.syncSettingsFromConfigs();
         S.drawCompletedThisRound = false;
         S.autoSaveAllSettings();
-        this.selectSlot(insertIndex);
+        this.selectSlot(insertIndex, { refreshPools: false });
         this.revealSlot(insertIndex);
         this.showActionStatus(`Round #${insertIndex + 1} duplicated`, 'success');
     },
@@ -273,6 +280,7 @@ window.ZoneA = {
 
     // ---- Drag and Drop Column Reordering (Point 8) ----
     draggedIndex: null,
+    draggedSlotElement: null,
 
     onDragStart(event, index) {
         if (EngineState.isDrawing) {
@@ -282,8 +290,17 @@ window.ZoneA = {
         this.draggedIndex = index;
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('text/plain', index);
-        const slotEl = event.currentTarget;
+        const slotEl = event.currentTarget.closest('.arena-column-slot');
+        this.draggedSlotElement = slotEl;
         setTimeout(() => { if (slotEl) slotEl.classList.add('dragging'); }, 0);
+    },
+
+    onDragEnd(event) {
+        const slotEl = event.currentTarget.closest('.arena-column-slot') || this.draggedSlotElement;
+        if (slotEl) slotEl.classList.remove('dragging');
+        document.querySelectorAll('#zoneA_deckMatrix .arena-column-slot.drag-over').forEach(slot => slot.classList.remove('drag-over'));
+        this.draggedIndex = null;
+        this.draggedSlotElement = null;
     },
 
     onDragOver(event) {
@@ -308,6 +325,7 @@ window.ZoneA = {
 
         const fromIndex = this.draggedIndex;
         this.draggedIndex = null;
+        this.draggedSlotElement = null;
         if (fromIndex === null || fromIndex === targetIndex || EngineState.isDrawing) {
             this.render();
             return;
