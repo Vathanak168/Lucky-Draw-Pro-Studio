@@ -224,8 +224,10 @@ window.Draw = {
     // Individual Re-draw / Replace specific slot without wiping the rest of the round!
     replaceWinnerAt(roundIdx, winnerIdx) {
         const S = EngineState;
+        if (S.isDrawing) return false;
+
         const roundResult = S.roundResults[roundIdx];
-        if (!roundResult || !roundResult.winners || !roundResult.winners[winnerIdx]) return;
+        if (!roundResult || !roundResult.winners || !roundResult.winners[winnerIdx]) return false;
 
         const rc = S.roundConfigs[roundIdx] || S.getDefaultRoundConfig(roundIdx);
         S.syncSettingsFromConfigs();
@@ -237,7 +239,7 @@ window.Draw = {
 
         if (!currentPool || currentPool.length === 0) {
             alert("No more participants available in the pool to replace this winner!");
-            return;
+            return false;
         }
 
         if (!S.settings.allowDuplicates && oldWinner && oldWinner.id) {
@@ -253,7 +255,7 @@ window.Draw = {
 
         const randomIndex = Math.floor(Math.random() * currentPool.length);
         const newWinner = currentPool.splice(randomIndex, 1)[0];
-        if (!newWinner) return;
+        if (!newWinner) return false;
 
         S.allWinners.push(newWinner);
         roundResult.winners[winnerIdx] = newWinner;
@@ -263,9 +265,43 @@ window.Draw = {
 
         const isStartEnabled = (rc.audioSpinStart !== undefined) ? rc.audioSpinStart : (S.audioSettings && S.audioSettings.autoSpinStart);
         const isStopEnabled = (rc.audioSpinStop !== undefined) ? rc.audioSpinStop : (S.audioSettings && S.audioSettings.autoSpinStop);
+        const isLiveRound = roundIdx === S.currentRound;
+        const animationEnabled = isLiveRound && S.settings.animationEnabled && window.Animations && typeof Animations.runAnimationForBox === 'function';
+        const animationDuration = animationEnabled ? Animations.getAnimationDuration(roundIdx) : 0;
+        let tickInterval = null;
+        let redrawFinished = false;
+
+        const refreshOperatorUI = () => {
+            if (window.ZoneA) ZoneA.render();
+            if (window.ZoneB) ZoneB.render();
+            if (window.ZoneD) ZoneD.render();
+            if (window.ZoneE) ZoneE.render();
+        };
 
         const onFinishRedraw = () => {
-            if (window.AudioSynth && isStopEnabled) {
+            if (redrawFinished) return;
+            redrawFinished = true;
+
+            if (tickInterval) {
+                clearInterval(tickInterval);
+                if (S.AnimationManager && S.AnimationManager.intervals) {
+                    S.AnimationManager.intervals.delete(tickInterval);
+                }
+            }
+            S.shuffleIntervals.forEach(clearInterval);
+            S.shuffleIntervals = [];
+            S.isDrawing = false;
+            S.drawCompletedThisRound = true;
+
+            if (isLiveRound && window.Display) {
+                Display.showWinnersInstantly(roundResult.winners);
+            } else if (window.ProjectorSync) {
+                ProjectorSync.publish({ type: 'draw_status', isDrawing: false });
+            }
+
+            S.saveDrawState();
+
+            if (isLiveRound && window.AudioSynth && isStopEnabled) {
                 AudioSynth.playSound(rc.soundSpinStop || 'victory');
             }
             if (window.ZoneETelegramBot && newWinner) {
@@ -277,40 +313,47 @@ window.Draw = {
                     ZoneETelegramBot.executeAutoDirectMessages([newWinner], category);
                 }
             }
+
+            refreshOperatorUI();
         };
 
-        if (roundIdx === S.currentRound) {
-            if (S.settings.animationEnabled && window.Animations && typeof Animations.runAnimationForBox === 'function') {
-                if (window.AudioSynth && isStartEnabled) {
-                    AudioSynth.playSound(rc.soundSpinStart || 'drumroll');
-                }
-                const duration = Animations.getAnimationDuration(roundIdx);
-                Animations.runAnimationForBox(winnerIdx, newWinner, duration, roundIdx, () => {
-                    onFinishRedraw();
-                });
-            } else {
-                const itemEl = document.getElementById(`item-${winnerIdx}`);
-                if (itemEl) {
-                    const valueEl = itemEl.querySelector('.virtual-winner-value') || itemEl.querySelector('.winner-item') || itemEl;
-                    if (valueEl) {
-                        valueEl.innerHTML = newWinner.name;
-                        if (!itemEl.classList.contains('virtual-winner-card')) {
-                            Animations.adjustFontSizeToFit(valueEl);
+        if (isLiveRound) {
+            if (S.AnimationManager) S.AnimationManager.clearAll();
+            S.shuffleIntervals.forEach(clearInterval);
+            S.shuffleIntervals = [];
+            S.isDrawing = true;
+
+            if (window.ZoneB) ZoneB.render();
+            if (window.ProjectorSync) {
+                ProjectorSync.publish({ type: 'draw_status', isDrawing: true });
+                ProjectorSync.publish({ type: 'winner_update', winner: null });
+            }
+
+            if (window.AudioSynth && isStartEnabled) {
+                AudioSynth.playSound(rc.soundSpinStart || 'drumroll');
+                tickInterval = setInterval(() => {
+                    if (!S.isDrawing) {
+                        clearInterval(tickInterval);
+                        if (S.AnimationManager && S.AnimationManager.intervals) {
+                            S.AnimationManager.intervals.delete(tickInterval);
                         }
+                        return;
                     }
-                }
-                if (window.Display) Display.syncToProjectorMirror();
+                    AudioSynth.playTick();
+                }, 120);
+                if (S.AnimationManager) S.AnimationManager.addInterval(tickInterval);
+            }
+
+            if (animationEnabled) {
+                Animations.runAnimationForBox(winnerIdx, newWinner, animationDuration, roundIdx, onFinishRedraw);
+            } else {
                 onFinishRedraw();
             }
         } else {
             onFinishRedraw();
         }
 
-        if (window.ZoneA) ZoneA.render();
-        if (window.ZoneB) ZoneB.render();
-        if (window.ZoneC) ZoneC.render();
-        if (window.ZoneD) ZoneD.render();
-        if (window.ZoneE) ZoneE.render();
+        return true;
     },
 
     initializeDisplayMode(forceNewDraw) {

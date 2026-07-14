@@ -1,6 +1,6 @@
 /**
  * zoneD_inspector.js - Bottom Center: Dashboard / Clip Inspector
- * Resolume Arena 7 tabbed inspector: Round Slot properties, Preset Dropdowns, Winner Re-Draw Table, and Stage FX.
+ * Resolume Arena 7 tabbed inspector: Round Slot properties, Preset Dropdowns, Winner Table, and Stage FX.
  */
 window.ZoneD = {
     activeTab: 'round', // 'round' or 'fx'
@@ -60,7 +60,7 @@ window.ZoneD = {
             `;
         }
 
-        // Build Live Winner Controls Table (with individual Re-draw!)
+        // Build the read-only winner table. Redraw controls live in Zone E.
         let winnerTableHtml = '';
         if (winners && winners.length > 0) {
             let rowsHtml = '';
@@ -70,12 +70,6 @@ window.ZoneD = {
                     <tr>
                         <td style="font-family:var(--font-mono); color:var(--text-secondary); width:50px;">#${idx + 1}</td>
                         <td style="font-weight:700; color:var(--accent-cyan);">${w.name}</td>
-                        <td style="text-align:right; width:110px;">
-                            <button class="btn-arena" onclick="Draw.replaceWinnerAt(${S.currentRound}, ${idx})" title="Redraw Winner" style="padding:2px 8px; font-size:10px;">
-                                <i data-lucide="rotate-ccw"></i>
-                                Redraw Winner
-                            </button>
-                        </td>
                     </tr>
                 `;
             });
@@ -85,7 +79,7 @@ window.ZoneD = {
                         <span style="color:var(--accent-cyan);">Winners (${winners.length})</span>
                     </div>
                     <table class="winner-table">
-                        <thead><tr><th>#</th><th>Winner</th><th style="text-align:right;">Action</th></tr></thead>
+                        <thead><tr><th>#</th><th>Winner</th></tr></thead>
                         <tbody>${rowsHtml}</tbody>
                     </table>
                 </div>
